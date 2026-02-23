@@ -37,7 +37,13 @@ model Apartment {
   /// [Swagger 반영] 아파트 상태는 JoinStatus가 아닌 전용 ApartmentStatus를 사용하도록 분리/수정
   apartmentStatus ApartmentStatus @default(PENDING)
 
-  users       User[]
+  //아파트별 어드민 user 저장
+  adminId String? @unique
+  //동일한 User테이블을 사용하는 필드가 존자해여 관계설정시 이름을 할당
+  admin   User?   @relation("ApartmentAdmin", fields: [adminId], references: [id], onDelete: SetNull)
+
+  //ApartmentUser로 기본 유저들 이름 할당
+  users       User[]       @relation("ApartmentUser")
   residents   Resident[]
   notices     Notice[]
   complaints  Complaint[]
@@ -62,10 +68,13 @@ model User {
   dong       String?
   ho         String?
 
+  //소속된 아파트 id
   apartmentId String?
-  apartment   Apartment? @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
+  apartment   Apartment? @relation("ApartmentUser", fields: [apartmentId], references: [id], onDelete: Cascade)
 
-  resident Resident?
+  //1:1구조이기에 양쪽에 id를 저장할 필요가 없음
+  managedApartment Apartment? @relation("ApartmentAdmin")
+  resident         Resident?
 
   notices    Notice[]
   complaints Complaint[]
