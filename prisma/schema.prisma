@@ -120,9 +120,10 @@ model Notice {
   startDate   DateTime?
   endDate     DateTime?
 
-  viewCount Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  viewCount     Int      @default(0)
+  commentsCount Int      @default(0) /// [추가] 댓글수추가
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   authorId String?
   author   User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
@@ -131,7 +132,6 @@ model Notice {
   apartment   Apartment @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
 
   comments      Comment[]
-  attachments   Attachment[] /// [추가] 공지사항 첨부파일/이미지
   notifications Notification[] /// [추가] 공지사항 관련 알림
   events        Event[] /// [추가] 공지사항이 캘린더에 등록될 경우의 일정
   /// [추가] 리스트 조회 시 아파트 기준 필터링 속도 향상
@@ -141,14 +141,15 @@ model Notice {
 }
 
 model Complaint {
-  id        String          @id @default(uuid())
-  title     String
-  content   String
-  isPublic  Boolean         @default(true)
-  status    ComplaintStatus @default(PENDING)
-  viewCount Int             @default(0)
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
+  id            String          @id @default(uuid())
+  title         String
+  content       String
+  isPublic      Boolean         @default(true)
+  status        ComplaintStatus @default(PENDING)
+  viewCount     Int             @default(0)
+  commentsCount Int             @default(0) /// [추가] 댓글수추가
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 
   authorId String?
   author   User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
@@ -157,7 +158,6 @@ model Complaint {
   apartment   Apartment @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
 
   comments      Comment[]
-  attachments   Attachment[] /// [추가] 민원 현장 사진 등 첨부파일
   notifications Notification[] /// [추가] 민원 상태 변경 알림
 
   @@index([apartmentId])
@@ -211,7 +211,6 @@ model Vote {
   voteOptions   VoteOption[]
   voteRecords   VoteRecord[]
   comments      Comment[]
-  attachments   Attachment[] /// [추가] 투표 안건 관련 설명 자료
   notifications Notification[] /// [추가] 투표 시작/마감 알림
   events        Event[] /// [추가] 투표 기간 캘린더 일정 연동
 
@@ -252,28 +251,6 @@ model VoteRecord {
 // ==========================================
 // [추가] 상호작용 및 부가 기능 모델
 // ==========================================
-
-/// 공통 첨부파일/이미지 모델
-model Attachment {
-  id       String  @id @default(uuid())
-  url      String /// S3 또는 스토리지 저장 경로
-  filename String
-  mimeType String?
-  size     Int?
-
-  noticeId    String?
-  notice      Notice?    @relation(fields: [noticeId], references: [id], onDelete: Cascade)
-  complaintId String?
-  complaint   Complaint? @relation(fields: [complaintId], references: [id], onDelete: Cascade)
-  voteId      String?
-  vote        Vote?      @relation(fields: [voteId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-
-  @@index([noticeId])
-  @@index([complaintId])
-  @@index([voteId])
-}
 
 /// 시스템 및 서비스 알림 모델
 model Notification {
