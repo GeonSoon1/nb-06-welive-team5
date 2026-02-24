@@ -46,21 +46,15 @@ model Apartment {
   users     User[]     @relation("ApartmentUser")
   residents Resident[]
 
-  ApartmentboardId String
-  Apartmentboard   Apartmentboard @relation(fields: [ApartmentboardId], references: [id], onDelete: Cascade)
-
-  // notices     Notice[]
-  // complaints  Complaint[]
-  // votes       Vote[]
-  // voteRecords VoteRecord[]
+  ApartmentboardId String         @unique
+  apartmentboard   Apartmentboard @relation(fields: [ApartmentboardId], references: [id], onDelete: Cascade)
 
   events Event[] /// [추가] 아파트 단위의 캘린더 일정을 위한 관계
 }
 
 model Apartmentboard {
-  id          String    @id @default(uuid())
-  ApartmentId String
-  apartments  Apartment
+  id        String     @id @default(uuid())
+  apartment Apartment?
 
   notices     Notice[]
   complaints  Complaint[]
