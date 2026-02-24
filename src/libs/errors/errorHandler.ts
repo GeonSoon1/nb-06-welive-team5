@@ -1,48 +1,108 @@
-import { ExpressRequest, ExpressResponse, ExpressNextFunction } from "../constants";
-import { StructError } from "superstruct";
-import BadRequestError from "./BadRequestError.js";
-import ConflictError from "./ConflictError.js";
-import ForbiddenError from "./ForbiddenError";
-import NotFoundError from "./NotFoundError";
-import UnauthorizedError from "./UnauthorizedError";
-import { PrismaClient, Prisma } from '@prisma/client';
+import multer from 'multer';
+import { StructError } from 'superstruct';
+import { Prisma, ExpressRequest, ExpressResponse, ExpressNextFunction } from './../constants';
 
+// 커스텀 에러 클래스 임포트
+import BadRequestError from './BadRequestError.js';
+import ConflictError from './ConflictError.js';
+import ForbiddenError from './ForbiddenError';
+import NotFoundError from './NotFoundError';
+import UnauthorizedError from './UnauthorizedError';
+
+/**
+ * 모든 커스텀 에러의 기본이 되는 클래스
+ */
+export class CustomError extends Error {
+    public statusCode: number;
+    public data: Record<string, object> | null;
+
+    constructor(statusCode = 500, message = '', data = null) {
+        super(message);
+        this.statusCode = statusCode;
+        this.name = this.constructor.name;
+        this.data = data;
+        Error.captureStackTrace(this, this.constructor);
+    }
+}
+
+/**
+ * 404 Not Found 처리 라우터
+ */
 export function defaultNotFoundHandler(req: ExpressRequest, res: ExpressResponse) {
-  return res.status(404).json({ message: "Not Found" });
+    return res.status(404).json({
+        success: false,
+        message: "요청하신 리소스를 찾을 수 없습니다. (Not Found)"
+    });
 }
 
-export function globalErrorHandler(err: Error, req: ExpressRequest, res: ExpressResponse, next: ExpressNextFunction) {
-  if (err instanceof StructError || err instanceof BadRequestError) {
-    return res.status(400).json({ message: err.message });
-  }
+/**
+ * 통합 Global Error Handler
+ */
+export const globalErrorHandler = (
+    err: any,
+    req: ExpressRequest,
+    res: ExpressResponse,
+    next: ExpressNextFunction
+) => {
+    // 1. 기본 상태 코드 및 메시지 설정 (CustomError 등에서 전달된 값이 있으면 우선 사용)
+    let statusCode = err.statusCode || err.status || 500;
+    let message = err.message || '서버 내부 오류가 발생했습니다.';
+    let data = err.data || null;
 
-  if (err instanceof UnauthorizedError) {
-    return res.status(401).json({ message: err.message });
-  }
-
-  if (err instanceof ForbiddenError) {
-    return res.status(403).json({ message: err.message });
-  }
-
-  if (err instanceof NotFoundError) {
-    return res.status(404).json({ message: err.message });
-  }
-
-  if (err instanceof ConflictError) {
-    return res.status(409).json({ message: err.message });
-  }
-
-  if (err instanceof Prisma.PrismaClientKnownRequestError) {
-    if (err.code === "P2025") {
-      return res.status(404).json({ message: "존재하지 않는 리소스입니다." });
+    // 2. Prisma 에러 처리
+    if (err instanceof Prisma.PrismaClientInitializationError) {
+        statusCode = 500;
+        message = '데이터베이스 연결에 실패했습니다. DATABASE_URL을 확인해주세요.';
+    } else if (err instanceof Prisma.PrismaClientKnownRequestError) {
+        if (err.code === 'P2002') {
+            statusCode = 409;
+            message = '이미 존재하는 데이터입니다. (중복된 데이터)';
+        } else if (err.code === 'P2025') {
+            statusCode = 404;
+            message = '요청한 데이터를 찾을 수 없습니다.';
+        }
     }
-    
-    if (err.code === "P2002") {
-      return res.status(409).json({ message: "이미 존재하는 데이터입니다." });
-    }
-  }
 
-  return res
-    .status(500)
-    .json({ message: err.message || "Internal Server Error" });
-}
+    // 3. Multer(파일 업로드) 에러 처리
+    else if (err instanceof multer.MulterError) {
+        statusCode = 400;
+        if (err.code === 'LIMIT_FILE_SIZE') {
+            message = '파일 크기가 너무 큽니다.';
+        } else if (err.code === 'LIMIT_FILE_COUNT') {
+            message = '파일 개수가 너무 많습니다.';
+        } else {
+            message = '파일 업로드 중 오류가 발생했습니다.';
+        }
+    }
+
+    // 4. Superstruct 및 커스텀 HTTP 에러 처리
+    else if (err instanceof StructError || err instanceof BadRequestError) {
+        statusCode = 400;
+        message = err.message;
+    } else if (err instanceof UnauthorizedError) {
+        statusCode = 401;
+        message = err.message;
+    } else if (err instanceof ForbiddenError) {
+        statusCode = 403;
+        message = err.message;
+    } else if (err instanceof NotFoundError) {
+        statusCode = 404;
+        message = err.message;
+    } else if (err instanceof ConflictError) {
+        statusCode = 409;
+        message = err.message;
+    }
+
+    // 5. 서버 콘솔에 에러 기록
+    console.error(`[Error] ${statusCode} - ${err.name || 'Unknown'}: ${message}`, err.stack);
+
+    // 6. 클라이언트 응답 전송 (일관된 JSON 포맷)
+    return res.status(statusCode).json({
+        success: false,
+        message,
+        ...(data && { data }), // data가 존재할 때만 객체에 포함
+        ...(process.env.NODE_ENV === 'development' && { stack: err.stack }), // 개발 환경에서만 스택 트레이스 포함
+    });
+};
+
+export default globalErrorHandler;
