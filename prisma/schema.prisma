@@ -43,14 +43,32 @@ model Apartment {
   admin   User?   @relation("ApartmentAdmin", fields: [adminId], references: [id], onDelete: SetNull)
 
   //ApartmentUser로 기본 유저들 이름 할당
-  users       User[]       @relation("ApartmentUser")
-  residents   Resident[]
+  users     User[]     @relation("ApartmentUser")
+  residents Resident[]
+
+  ApartmentboardId String
+  Apartmentboard   Apartmentboard @relation(fields: [ApartmentboardId], references: [id], onDelete: Cascade)
+
+  // notices     Notice[]
+  // complaints  Complaint[]
+  // votes       Vote[]
+  // voteRecords VoteRecord[]
+
+  events Event[] /// [추가] 아파트 단위의 캘린더 일정을 위한 관계
+}
+
+model Apartmentboard {
+  id          String    @id @default(uuid())
+  ApartmentId String
+  apartments  Apartment
+
   notices     Notice[]
   complaints  Complaint[]
   votes       Vote[]
   voteRecords VoteRecord[]
 
-  events Event[] /// [추가] 아파트 단위의 캘린더 일정을 위한 관계
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model User {
@@ -128,15 +146,15 @@ model Notice {
   authorId String?
   author   User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
 
-  apartmentId String
-  apartment   Apartment @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
+  apartmentboardId String
+  apartmentboard   Apartmentboard @relation(fields: [apartmentboardId], references: [id], onDelete: Cascade)
 
   comments      Comment[]
   notifications Notification[] /// [추가] 공지사항 관련 알림
   events        Event[] /// [추가] 공지사항이 캘린더에 등록될 경우의 일정
-  /// [추가] 리스트 조회 시 아파트 기준 필터링 속도 향상
 
-  @@index([apartmentId])
+  /// [추가] 리스트 조회 시 아파트 기준 필터링 속도 향상
+  @@index([apartmentboardId])
   @@index([authorId])
 }
 
@@ -154,13 +172,13 @@ model Complaint {
   authorId String?
   author   User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
 
-  apartmentId String
-  apartment   Apartment @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
+  apartmentboardId String
+  apartmentboard   Apartmentboard @relation(fields: [apartmentboardId], references: [id], onDelete: Cascade)
 
   comments      Comment[]
   notifications Notification[] /// [추가] 민원 상태 변경 알림
 
-  @@index([apartmentId])
+  @@index([apartmentboardId])
   @@index([authorId])
 }
 
@@ -198,15 +216,11 @@ model Vote {
   startTime   DateTime
   endTime     DateTime
   status      VoteStatus @default(SCHEDULED)
-  viewCount   Int        @default(0) /// [추가] 공지사항/민원과 DTO 통일성을 위해 추가
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
   authorId String? // 누가 만들었나 
   author   User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
-
-  apartmentId String
-  apartment   Apartment @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
 
   voteOptions   VoteOption[]
   voteRecords   VoteRecord[]
@@ -214,13 +228,17 @@ model Vote {
   notifications Notification[] /// [추가] 투표 시작/마감 알림
   events        Event[] /// [추가] 투표 기간 캘린더 일정 연동
 
-  @@index([apartmentId])
+  apartmentboardId String
+  apartmentboard   Apartmentboard @relation(fields: [apartmentboardId], references: [id], onDelete: Cascade)
+
+  @@index([apartmentboardId])
 }
 
 //투표항목
 model VoteOption {
-  id      String @id @default(uuid())
-  content String
+  id        String @id @default(uuid())
+  content   String
+  voteCount Int    @default(0)
 
   voteId String
   vote   Vote   @relation(fields: [voteId], references: [id], onDelete: Cascade)
@@ -233,18 +251,20 @@ model VoteRecord {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
 
-  apartmentId String
-  apartment   Apartment @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
   /// [수정] 투표 기록은 유저가 탈퇴해도 남아있어야 통계가 깨지지 않으므로 SetNull 유지
-  userId      String?
-  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
-  voteId      String
-  vote        Vote      @relation(fields: [voteId], references: [id], onDelete: Cascade)
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  voteId String
+  vote   Vote    @relation(fields: [voteId], references: [id], onDelete: Cascade)
 
   voteOptionId String
   voteOption   VoteOption @relation(fields: [voteOptionId], references: [id], onDelete: Cascade)
 
+  apartmentboardId String
+  apartmentboard   Apartmentboard @relation(fields: [apartmentboardId], references: [id], onDelete: Cascade)
+
   @@unique([userId, voteId]) // 한 유저는 한 투표당 하나의 선택지만 투표 가능 (중복 투표 방지)
+  @@index([apartmentboardId])
   @@index([voteId])
 }
 
@@ -277,11 +297,12 @@ model Notification {
 
 /// 아파트 단지 캘린더 일정 모델
 model Event {
-  id        String    @id @default(uuid())
+  id        String           @id @default(uuid())
   title     String
   type      BoardType /// NOTICE, VOTE 등 구분
   startDate DateTime
   endDate   DateTime
+  category  NotificationType
 
   apartmentId String
   apartment   Apartment @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
