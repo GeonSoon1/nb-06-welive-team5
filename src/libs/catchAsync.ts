@@ -1,4 +1,4 @@
-import { ExpressHandler, ExpressRequest, ExpressResponse, ExpressNextFunction } from './constants';
+import { ExpressHandler, ExpressRequest, ExpressResponse, ExpressNextFunction } from './constants.js';
 
 export const catchAsync = (fn: ExpressHandler): ExpressHandler => {
     return (req: ExpressRequest, res: ExpressResponse, next: ExpressNextFunction) => {

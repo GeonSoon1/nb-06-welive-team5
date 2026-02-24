@@ -1,5 +1,5 @@
 import multer from 'multer';
-import { Prisma, ExpressRequest, ExpressResponse, ExpressNextFunction } from './../constants';
+import { Prisma, ExpressRequest, ExpressResponse, ExpressNextFunction } from './../constants.js';
 
 const errorHandler = (err: any
     , req: ExpressRequest, res: ExpressResponse, next: ExpressNextFunction) => {
