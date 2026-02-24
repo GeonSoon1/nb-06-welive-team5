@@ -7,9 +7,7 @@
 
 // 코드 상세 설명
 // 코드를 한 줄씩 분석해 드리겠습니다.
-
-typescript;
-import express from 'express';
+import express from './../libs/constants.js';
 import { JwtPayload } from 'jsonwebtoken';
 
 // 1. declare global

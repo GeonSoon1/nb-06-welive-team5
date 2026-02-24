@@ -34,13 +34,16 @@
     // "noPropertyAccessFromIndexSignature": true,
 
     // Recommended Options
+    "esModuleInterop": true,
     "strict": true,
     // "jsx": "react-jsx", // [삭제] Node.js 서버 개발에는 React JSX 설정 불필요
-    "verbatimModuleSyntax": true,
-    "isolatedModules": true,
+    // "verbatimModuleSyntax": true,
+    // "isolatedModules": true,
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "noImplicitAny": true,
+    "moduleResolution": "node"
   },
   "include": ["src/**/*"]
 }
