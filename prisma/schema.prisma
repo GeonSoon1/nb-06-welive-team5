@@ -207,7 +207,7 @@ model Vote {
   targetScope Int
   startTime   DateTime
   endTime     DateTime
-  status      VoteStatus @default(SCHEDULED)
+  status      VoteStatus @default(PENDING)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
