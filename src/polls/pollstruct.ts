@@ -1,3 +1,4 @@
+import { optional } from 'superstruct';
 import { superstruct, isUuid } from './../libs/constants';
 
 export enum VoteStatus {
@@ -10,5 +11,15 @@ export const CreatePollStruct = superstruct.object({
     boardId: superstruct.define('Uuid', (value) => typeof value === 'string' && isUuid.v4(value)),
     status: superstruct.enums(Object.values(VoteStatus)),
     title: superstruct.size(superstruct.string(), 1, 100),
-
+    content: superstruct.string(),
+    buildingPermission: superstruct.integer(),
+    startDate: superstruct.coerce(superstruct.date(), superstruct.string(), (date) => new Date(date)),
+    endDate: superstruct.coerce(superstruct.date(), superstruct.string(), (date) => new Date(date)),
+    options: superstruct.array(
+        superstruct.object({
+            title: superstruct.string(),
+        })
+    ),
 });
+
+export type CreatePollDto = superstruct.Infer<typeof CreatePollStruct>;
