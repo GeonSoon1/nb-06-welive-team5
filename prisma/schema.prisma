@@ -18,7 +18,7 @@ model Apartment {
   name         String
   address      String
   officeNumber String
-  description  String
+  description  String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
