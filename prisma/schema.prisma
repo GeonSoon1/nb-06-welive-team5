@@ -186,13 +186,13 @@ model Comment {
   author   User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
 
   noticeId String?
-  notice   Notice? @relation(fields: [noticeId], references: [id], onDelete: SetNull)
+  notice   Notice? @relation(fields: [noticeId], references: [id], onDelete: Cascade)
 
   complaintId String?
-  complaint   Complaint? @relation(fields: [complaintId], references: [id], onDelete: SetNull)
+  complaint   Complaint? @relation(fields: [complaintId], references: [id], onDelete: Cascade)
 
   voteId String?
-  vote   Vote?   @relation(fields: [voteId], references: [id], onDelete: SetNull)
+  vote   Vote?   @relation(fields: [voteId], references: [id], onDelete: Cascade)
 
   @@index([noticeId])
   @@index([complaintId])
