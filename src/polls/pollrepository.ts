@@ -10,7 +10,21 @@ class PollRepository {
         });
     }
 
-
+    async findPolls(skip: number, take: number, where: Prisma.VoteWhereInput) {
+        const [totalCount, polls] = await Promise.all([
+            prismaClient.vote.count({ where }),
+            prismaClient.vote.findMany({
+                where,
+                skip,
+                take,
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    author: true,
+                },
+            }),
+        ]);
+        return { totalCount, polls };
+    }
 };
 
 export const pollRepository = new PollRepository();

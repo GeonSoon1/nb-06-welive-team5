@@ -5,5 +5,7 @@ const pollRouter = EXPRESS.Router();
 
 pollRouter.post('/', catchAsync(pollController.CreatePolls));
 
+pollRouter.get('/', catchAsync(pollController.GetAllPollList));
+
 
 export default pollRouter;

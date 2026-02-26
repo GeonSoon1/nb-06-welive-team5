@@ -1,6 +1,6 @@
-import { assert } from './../libs/constants';
+import { assert, superstruct } from './../libs/constants';
 import type { ExpressRequest, ExpressResponse, ExpressHandler, ExpressNextFunction } from '../libs/constants';
-import { CreatePollStruct } from './pollstruct';
+import { CreatePollStruct, GetPollListQuery } from './pollstruct';
 import { CustomError } from '../libs/errors/errorHandler';
 import { pollService } from './pollservices';
 
@@ -18,6 +18,18 @@ class PollController {
             next(error);
         }
     };
+
+    GetAllPollList: ExpressHandler = async (req: ExpressRequest, res: ExpressResponse, next: ExpressNextFunction) => {
+        try {
+            const query = superstruct.create(req.query, GetPollListQuery);
+            const result = await pollService.getPollList(query);
+
+            res.status(200).json(result);
+        } catch (error) {
+            next(error);
+        }
+    };
+
 };
 
 
