@@ -1,6 +1,6 @@
-import { assert, superstruct } from './../libs/constants';
+import { assert, isUuid, superstruct } from './../libs/constants';
 import type { ExpressRequest, ExpressResponse, ExpressHandler, ExpressNextFunction } from '../libs/constants';
-import { CreatePollStruct, GetPollListQuery } from './pollstruct';
+import { CreatePollStruct, GetPollListQuery, UpdatePollStruct } from './pollstruct';
 import { CustomError } from '../libs/errors/errorHandler';
 import { pollService } from './pollservices';
 
@@ -9,7 +9,7 @@ class PollController {
         try {
             assert(req.body, CreatePollStruct);
 
-            // if (!req.user) throw new CustomError(401, '로그인이 필요합니다.');
+            //  if (!req.body.userId) throw new CustomError(400, '로그인이 필요합니다.');
 
             // const newPoll = await pollService.createPoll(req.body, String(req.user.userId));
             const newPoll = await pollService.createPoll(req.body);
@@ -29,7 +29,48 @@ class PollController {
             next(error);
         }
     };
+    GetPollInfomation: ExpressHandler = async (req: ExpressRequest, res: ExpressResponse, next: ExpressNextFunction) => {
+        try {
+            const pollId = req.params.pollId;
+            if (!pollId) throw new CustomError(400, "잘못된 요청입니다.(pollid 값 없음)");
+            if (typeof pollId !== "string") throw new CustomError(400, "잘못된 요청입니다.(pollid 값이 문자열이 아님)");
+            if (!isUuid.v4(pollId)) throw new CustomError(400, "잘못된 요청입니다.(잘못된 pollid 값)");
 
+
+            const result = await pollService.getPollById(pollId);
+
+            res.status(200).json(result);
+
+        }
+        catch (error) {
+            next(error);
+        }
+    };
+
+    UpdatePoll: ExpressHandler = async (req: ExpressRequest, res: ExpressResponse, next: ExpressNextFunction) => {
+        try {
+            const pollId = req.params.pollId;
+            if (typeof pollId !== 'string' || !isUuid.v4(pollId)) throw new CustomError(400, "잘못된 요청입니다.(pollId)");
+
+            assert(req.body, UpdatePollStruct);
+            const updatedPoll = await pollService.updatePoll(pollId, req.body);
+            res.status(200).json({ success: true, message: '투표가 수정되었습니다.', data: updatedPoll });
+        } catch (error) {
+            next(error);
+        }
+    };
+
+    DeletePoll: ExpressHandler = async (req: ExpressRequest, res: ExpressResponse, next: ExpressNextFunction) => {
+        try {
+            const pollId = req.params.pollId;
+            if (typeof pollId !== 'string' || !isUuid.v4(pollId)) throw new CustomError(400, "잘못된 요청입니다.(pollId)");
+
+            await pollService.deletePoll(pollId);
+            res.status(200).json({ success: true, message: '투표가 삭제되었습니다.' });
+        } catch (error) {
+            next(error);
+        }
+    };
 };
 
 

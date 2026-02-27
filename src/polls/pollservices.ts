@@ -1,8 +1,13 @@
 import { Prisma, prismaClient } from '../libs/constants';
 import { CustomError } from '../libs/errors/errorHandler';
-import { CreatePollDto, GetPollListDto } from './pollstruct';
+import { CreatePollDto, GetPollListDto, UpdatePollDto } from './pollstruct';
 import { pollRepository } from './pollrepository';
 
+
+// Prisma의 유틸리티 타입을 사용하여 author가 포함된 Vote 타입을 명시적으로 정의
+type PollWithAuthor = Prisma.VoteGetPayload<{
+    include: { author: true; };
+}>;
 
 class PollService {
     async createPoll(pollData: CreatePollDto) {
@@ -48,17 +53,15 @@ class PollService {
         const { totalCount, polls } = await pollRepository.findPolls(skip, limit, where);
 
         return {
-            polls: polls.map((poll) => {
-                const date = new Date(poll.createdAt);
-                const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+            polls: polls.map((poll: PollWithAuthor) => {
 
                 return {
                     pollId: poll.id,
                     userId: poll.authorId,
                     title: poll.title,
-                    writerName: (poll.author as any)?.nickname || '알 수 없음',
+                    writerName: poll.author?.name || '알 수 없음', // any 제거 및 올바른 필드(name) 사용
                     buildingPermission: poll.targetScope,
-                    createdAt: formattedDate,
+                    createdAt: poll.createdAt,
                     updatedAt: poll.updatedAt,
                     startDate: poll.startTime,
                     endDate: poll.endTime,
@@ -67,6 +70,62 @@ class PollService {
             }),
             totalCount,
         };
+    }
+    async getPollById(pollId: string) {
+        const poll = await pollRepository.findPollById(pollId);
+
+        if (!poll) throw new CustomError(404, '투표 글을 찾을 수 없습니다.');
+
+        return {
+            pollId: poll.id,
+            userId: poll.authorId,
+            title: poll.title,
+            writerName: poll.author?.name || '알 수 없음',
+            buildingPermission: poll.targetScope,
+            createdAt: poll.createdAt,
+            updatedAt: poll.updatedAt,
+            startDate: poll.startTime,
+            endDate: poll.endTime,
+            status: poll.status,
+            content: poll.content,
+            boardName: poll.apartmentboardId,
+            options: poll.voteOptions.map((option) => ({
+                id: option.id,
+                title: option.content,
+                voteCount: option.voteCount,
+            })),
+        };
+    }
+
+    async updatePoll(pollId: string, pollData: UpdatePollDto) {
+        const poll = await pollRepository.findPollById(pollId);
+        if (!poll) throw new CustomError(404, '투표 글을 찾을 수 없습니다.');
+
+        const { options, buildingPermission, startDate, endDate, ...voteData } = pollData;
+
+        const updateData: Prisma.VoteUpdateInput = { ...voteData };
+
+        if (buildingPermission !== undefined) updateData.targetScope = buildingPermission;
+        if (startDate) updateData.startTime = startDate;
+        if (endDate) updateData.endTime = endDate;
+
+        if (options) {
+            updateData.voteOptions = {
+                deleteMany: {},
+                create: options.map((option) => ({
+                    content: option.title,
+                })),
+            };
+        }
+
+        return await pollRepository.updatePoll(pollId, updateData);
+    }
+
+    async deletePoll(pollId: string) {
+        const poll = await pollRepository.findPollById(pollId);
+        if (!poll) throw new CustomError(404, '투표 글을 찾을 수 없습니다.');
+
+        await pollRepository.deletePoll(pollId);
     }
 };
 

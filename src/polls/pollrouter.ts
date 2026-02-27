@@ -7,5 +7,8 @@ pollRouter.post('/', catchAsync(pollController.CreatePolls));
 
 pollRouter.get('/', catchAsync(pollController.GetAllPollList));
 
+pollRouter.get('/:pollId', catchAsync(pollController.GetPollInfomation));
+pollRouter.patch('/:pollId', catchAsync(pollController.UpdatePoll));
+pollRouter.delete('/:pollId', catchAsync(pollController.DeletePoll));
 
 export default pollRouter;

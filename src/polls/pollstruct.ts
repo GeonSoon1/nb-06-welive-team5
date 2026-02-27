@@ -32,4 +32,22 @@ export const GetPollListQuery = superstruct.object({
     keyword: superstruct.optional(superstruct.string()),
 });
 
+
+
 export type GetPollListDto = superstruct.Infer<typeof GetPollListQuery>;
+
+export const UpdatePollStruct = superstruct.partial(superstruct.object({
+    status: superstruct.enums(Object.values(VoteStatus)),
+    title: superstruct.size(superstruct.string(), 1, 100),
+    content: superstruct.string(),
+    buildingPermission: superstruct.integer(),
+    startDate: superstruct.coerce(superstruct.date(), superstruct.string(), (date) => new Date(date)),
+    endDate: superstruct.coerce(superstruct.date(), superstruct.string(), (date) => new Date(date)),
+    options: superstruct.array(
+        superstruct.object({
+            title: superstruct.string(),
+        })
+    ),
+}));
+
+export type UpdatePollDto = superstruct.Infer<typeof UpdatePollStruct>;

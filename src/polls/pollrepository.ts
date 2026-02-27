@@ -25,6 +25,32 @@ class PollRepository {
         ]);
         return { totalCount, polls };
     }
+
+    async findPollById(pollId: string) {
+        return prismaClient.vote.findUnique({
+            where: { id: pollId },
+            include: {
+                author: true,
+                voteOptions: true,
+            },
+        });
+    }
+
+    async updatePoll(pollId: string, data: Prisma.VoteUpdateInput) {
+        return prismaClient.vote.update({
+            where: { id: pollId },
+            data,
+            include: {
+                voteOptions: true,
+            },
+        });
+    }
+
+    async deletePoll(pollId: string) {
+        return prismaClient.vote.delete({
+            where: { id: pollId },
+        });
+    }
 };
 
 export const pollRepository = new PollRepository();
