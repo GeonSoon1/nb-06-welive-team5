@@ -18,7 +18,7 @@ model Apartment {
   name         String
   address      String
   officeNumber String
-  description  String
+  description  String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -47,12 +47,12 @@ model Apartment {
   residents Resident[]
 
   ApartmentboardId String         @unique
-  apartmentboard   Apartmentboard @relation(fields: [ApartmentboardId], references: [id], onDelete: Cascade)
+  apartmentboard   ApartmentBoard @relation(fields: [ApartmentboardId], references: [id], onDelete: Cascade)
 
   events Event[] /// [추가] 아파트 단위의 캘린더 일정을 위한 관계
 }
 
-model Apartmentboard {
+model ApartmentBoard {
   id        String     @id @default(uuid())
   apartment Apartment?
 
@@ -69,7 +69,7 @@ model User {
   id       String  @id @default(uuid())
   username String  @unique
   password String
-  contact  String
+  contact  String  @unique
   name     String
   email    String  @unique
   image    String?
@@ -141,7 +141,7 @@ model Notice {
   author   User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
 
   apartmentboardId String
-  apartmentboard   Apartmentboard @relation(fields: [apartmentboardId], references: [id], onDelete: Cascade)
+  apartmentboard   ApartmentBoard @relation(fields: [apartmentboardId], references: [id], onDelete: Cascade)
 
   comments      Comment[]
   notifications Notification[] /// [추가] 공지사항 관련 알림
@@ -167,7 +167,7 @@ model Complaint {
   author   User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
 
   apartmentboardId String
-  apartmentboard   Apartmentboard @relation(fields: [apartmentboardId], references: [id], onDelete: Cascade)
+  apartmentboard   ApartmentBoard @relation(fields: [apartmentboardId], references: [id], onDelete: Cascade)
 
   comments      Comment[]
   notifications Notification[] /// [추가] 민원 상태 변경 알림
@@ -182,8 +182,8 @@ model Comment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  authorId String
-  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId String?
+  author   User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
 
   noticeId String?
   notice   Notice? @relation(fields: [noticeId], references: [id], onDelete: Cascade)
@@ -191,11 +191,9 @@ model Comment {
   complaintId String?
   complaint   Complaint? @relation(fields: [complaintId], references: [id], onDelete: Cascade)
 
-  /// [추가] 주민투표 게시글에도 댓글이 달릴 수 있도록 관계 추가 (필요 없다면 제거 가능)
   voteId String?
   vote   Vote?   @relation(fields: [voteId], references: [id], onDelete: Cascade)
 
-  //댓글이 필요한 보드별 인덱스 추가
   @@index([noticeId])
   @@index([complaintId])
   @@index([voteId])
@@ -206,10 +204,10 @@ model Vote {
   id          String     @id @default(uuid())
   title       String
   content     String
-  targetScope String     @default("ALL") // '101동'
+  targetScope Int
   startTime   DateTime
   endTime     DateTime
-  status      VoteStatus @default(SCHEDULED)
+  status      VoteStatus @default(PENDING)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
@@ -223,7 +221,7 @@ model Vote {
   events        Event[] /// [추가] 투표 기간 캘린더 일정 연동
 
   apartmentboardId String
-  apartmentboard   Apartmentboard @relation(fields: [apartmentboardId], references: [id], onDelete: Cascade)
+  apartmentboard   ApartmentBoard @relation(fields: [apartmentboardId], references: [id], onDelete: Cascade)
 
   @@index([apartmentboardId])
 }
@@ -255,7 +253,7 @@ model VoteRecord {
   voteOption   VoteOption @relation(fields: [voteOptionId], references: [id], onDelete: Cascade)
 
   apartmentboardId String
-  apartmentboard   Apartmentboard @relation(fields: [apartmentboardId], references: [id], onDelete: Cascade)
+  apartmentboard   ApartmentBoard @relation(fields: [apartmentboardId], references: [id], onDelete: Cascade)
 
   @@unique([userId, voteId]) // 한 유저는 한 투표당 하나의 선택지만 투표 가능 (중복 투표 방지)
   @@index([apartmentboardId])
@@ -283,10 +281,10 @@ model Notification {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  notifiedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@index([userId])
-  @@index([isChecked])
+  @@index([userId, isChecked])
 }
 
 /// 아파트 단지 캘린더 일정 모델
@@ -364,7 +362,7 @@ enum ComplaintStatus {
 }
 
 enum VoteStatus {
-  SCHEDULED //투표전
+  PENDING //투표전
   IN_PROGRESS //투표중
   CLOSED //마감
 }
