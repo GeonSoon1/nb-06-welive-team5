@@ -1,4 +1,4 @@
-import { EXPRESS } from '../libs/constants.js';
+import { EXPRESS } from '../libs/constants';
 import authResidentRouter from './resident/auth-residentrouter';
 import authSignupRouter from './signup/auth-signuprouter';
 import authAdminRouter from './admin/auth-adminrouter';

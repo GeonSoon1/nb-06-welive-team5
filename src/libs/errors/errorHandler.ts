@@ -3,8 +3,8 @@ import { StructError } from 'superstruct';
 import { Prisma, ExpressRequest, ExpressResponse, ExpressNextFunction } from './../constants';
 
 // 커스텀 에러 클래스 임포트
-import BadRequestError from './BadRequestError.js';
-import ConflictError from './ConflictError.js';
+import BadRequestError from './BadRequestError';
+import ConflictError from './ConflictError';
 import ForbiddenError from './ForbiddenError';
 import NotFoundError from './NotFoundError';
 import UnauthorizedError from './UnauthorizedError';
