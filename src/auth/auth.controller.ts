@@ -6,12 +6,12 @@ import {
   SignupSuperAdminBodyStruct,
   SignupAdminBodyStruct,
   LoginBodyStruct,
-} from './auth-struct';
+} from './auth.struct';
 
-import * as authService from './auth-service';
-import * as userAuthService from './services/user-auth-service';
-import * as superAdminAuthService from './services/super-admin-auth-service';
-import * as adminAuthService from './services/admin-auth-service';
+import * as authService from './auth.service';
+import * as userAuthService from './services/user-auth.service';
+import * as superAdminAuthService from './services/super-admin-auth.service';
+import * as adminAuthService from './services/admin-auth.service';
 
 import { clearTokenCookies, setTokenCookies } from '../libs/auth/cookies';
 import UnauthorizedError from '../libs/errors/UnauthorizedError';
@@ -78,7 +78,6 @@ export async function refresh(req: ExpressRequest, res: ExpressResponse) {
   // 브라우저가 /auth/refresh 경로로 자동으로 보내준 쿠키에서 토큰을 추출한다.
   const refreshToken = req.cookies[REFRESH_TOKEN_COOKIE_NAME];
 
-  console.log(refreshToken)
   if (!refreshToken) {
     throw new UnauthorizedError('토큰 갱신 중 오류가 발생했습니다');
   }

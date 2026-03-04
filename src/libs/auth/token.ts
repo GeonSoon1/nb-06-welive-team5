@@ -11,11 +11,11 @@ export type TokenPayload = {
 
 // 1. Access Token 생성
 export function generateTokens(payload: TokenPayload) {
-  const accessToken = jwt.sign(payload, JWT_ACCESS_TOKEN_SECRET, {
-    expiresIn: "20h"
+  const accessToken = jwt.sign(payload, JWT_ACCESS_TOKEN_SECRET!, {
+    expiresIn: "20h" // 5m으로 추후에 수정 예정
   });
   // 2. Refresh Token 생성 (Payload를 최소화하여 보안 강화)
-  const refreshToken = jwt.sign({ id: payload.id }, JWT_REFRESH_TOKEN_SECRET, {
+  const refreshToken = jwt.sign({ id: payload.id }, JWT_REFRESH_TOKEN_SECRET!, {
     expiresIn: "7d" 
   });
   return { accessToken, refreshToken };
@@ -24,7 +24,7 @@ export function generateTokens(payload: TokenPayload) {
 // 3. Access Token 검증
 export function verifyAccessToken(token: string): TokenPayload {
   try {
-    const decoded = jwt.verify(token, JWT_ACCESS_TOKEN_SECRET);
+    const decoded = jwt.verify(token, JWT_ACCESS_TOKEN_SECRET!);
     
     // 단순 캐스팅 대신 구조 확인
     if (typeof decoded === 'object' && 'id' in decoded && 'role' in decoded) {
@@ -42,7 +42,7 @@ export function verifyAccessToken(token: string): TokenPayload {
 // 4. Refresh Token 검증
 export function verifyRefreshToken(token: string): { id: string } {
   try {
-    const decoded = jwt.verify(token, JWT_REFRESH_TOKEN_SECRET);
+    const decoded = jwt.verify(token, JWT_REFRESH_TOKEN_SECRET!);
     if (typeof decoded === 'object' && 'id' in decoded) {
       return decoded as { id: string };
     }

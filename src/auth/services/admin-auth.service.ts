@@ -2,7 +2,7 @@ import { prismaClient } from '../../libs/constants';
 import { hashPassword } from '../../libs/auth/password';
 import ConflictError from '../../libs/errors/ConflictError';
 import { Role, JoinStatus, User, ApartmentStatus, PrismaClient } from '@prisma/client';
-import { SignupAdminBody } from '../auth-struct';
+import { SignupAdminBody } from '../auth.struct';
 import {
   findUserIdByUsername,
   findUserIdByContact,

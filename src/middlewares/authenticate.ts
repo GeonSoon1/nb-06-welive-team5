@@ -22,7 +22,7 @@ export async function authenticate(
 
     // 3. Request 객체에 유저 정보 주입
     // 이제 컨트롤러에서 req.user.id 로 접근 가능
-    (req as any).user = {
+    req.user = {
       id: payload.id,
       role: payload.role,
       apartmentId: payload.apartmentId ?? null,

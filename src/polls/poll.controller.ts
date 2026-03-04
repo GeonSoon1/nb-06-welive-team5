@@ -2,7 +2,7 @@ import { assert, isUuid, superstruct } from '../libs/constants';
 import type { ExpressRequest, ExpressResponse, ExpressHandler, ExpressNextFunction } from '../libs/constants';
 import { CreatePollStruct, GetPollListQuery, UpdatePollStruct } from './poll.struct';
 import { CustomError } from '../libs/errors/errorHandler';
-import * as pollService from './poll-services';
+import * as pollService from './poll.services';
 
 export const CreatePolls: ExpressHandler = async (req: ExpressRequest, res: ExpressResponse, next: ExpressNextFunction) => {
     try {

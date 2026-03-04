@@ -1,5 +1,5 @@
 import express from 'express';
-import * as authController from './auth-controller';
+import * as authController from './auth.controller';
 import { catchAsync } from '../libs/catchAsync';
 import { authenticate } from '../middlewares/authenticate'
 
@@ -14,3 +14,4 @@ authRouter.post('/logout', catchAsync(authController.logout));
 authRouter.post('/refresh', catchAsync(authController.refresh));
 
 export default authRouter;
+
