@@ -4,13 +4,13 @@ import userRouter from './users/userrouter';
 import apartmentRouter from './apartments/apartmentrouter';
 import noticeRouter from './notices/noticerouter';
 import complaintRouter from './complaints/complaintrouter';
-import voteRouter from './polls/pollrouter';
-import residentRouter from './residents/residentrouter';
+import voteRouter from './polls/poll-router';
+import residentRouter from './residents/resident-router';
 import commentRouter from './comments/commentrouter';
 import notificationRouter from './notifications/notificationrouter';
 import eventRouter from './events/eventrouter';
 import authRouter from './auth/authrouter';
-import pollsVoteRouter from './pollsvote/pollsvoterouter';
+import pollsVoteRouter from './pollsvote/pollvote-router';
 import pollSchedulerRouter from './pollScheduler/pollSchedulerrouter';
 
 export const routerManager = EXPRESS.Router();

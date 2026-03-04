@@ -227,6 +227,8 @@ model Vote {
 }
 
 //투표항목
+//투표 생성시 options로 타이틀로 제목만 받는데
+//title 필드를 받은 값을 content로 할당하고 voteid 는 해당 투표보드로 할당
 model VoteOption {
   id        String @id @default(uuid())
   content   String
@@ -236,6 +238,9 @@ model VoteOption {
   vote   Vote   @relation(fields: [voteId], references: [id], onDelete: Cascade)
 
   selections VoteRecord[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 //누가 어느 투표에서 무엇을 찍었는지
