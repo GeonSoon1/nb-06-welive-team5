@@ -13,7 +13,7 @@
     "typeRoots": ["./types", "./node_modules/@types"],
     // For nodejs:
     "lib": ["esnext"], // [수정] 서버 환경이므로 DOM(브라우저) 라이브러리 제거, 최신 JS 문법 사용
-    "types": ["node"], // [수정] process.env 등 Node.js 내장 타입 인식을 위해 필수 (npm i -D @types/node 필요)
+    "types": ["node", "express"], // [수정] process.env 등 Node.js 내장 타입 인식을 위해 필수 (npm i -D @types/node 필요)
     // and npm install -D @types/node
 
     // Other Outputs
@@ -24,7 +24,8 @@
     // Stricter Typechecking Options
     "noUncheckedIndexedAccess": true,
     // "exactOptionalPropertyTypes": true, // [제안] Prisma 등 사용 시 undefined와 키 생략을 엄격히 구분하면 불편할 수 있어 비활성화 추천
-
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     // Style Options
     // "noImplicitReturns": true,
     // "noImplicitOverride": true,
