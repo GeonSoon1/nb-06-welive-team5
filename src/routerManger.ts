@@ -5,7 +5,7 @@ import apartmentRouter from './apartments/apartmentrouter';
 import noticeRouter from './notices/noticerouter';
 import complaintRouter from './complaints/complaintrouter';
 import voteRouter from './polls/pollrouter';
-import residentRouter from './residents/residentrouter';
+import residentRouter from './residents/resident-router';
 import commentRouter from './comments/commentrouter';
 import notificationRouter from './notifications/notificationrouter';
 import eventRouter from './events/eventrouter';
