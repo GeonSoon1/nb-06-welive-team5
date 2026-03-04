@@ -1,4 +1,4 @@
-import { EXPRESS } from '../../libs/constants.js';
+import { EXPRESS } from '../../libs/constants';
 
 const authSignupRouter = EXPRESS.Router();
 

@@ -1,10 +1,10 @@
 import 'dotenv/config';
-import { PORT, EXPRESS } from './libs/constants.js';
+import { PORT, EXPRESS } from './libs/constants';
 import cors from 'cors';
 import { createServer } from 'http';
-import { getCorsOrigin } from './libs/corsSetup.js';
-import { routerManager } from './routerManger.js';
-import { globalErrorHandler } from './libs/errors/errorHandler.js';
+import { getCorsOrigin } from './libs/corsSetup';
+import { routerManager } from './routerManger';
+import { globalErrorHandler } from './libs/errors/errorHandler';
 
 const app = EXPRESS();
 const httpServer = createServer(app);
@@ -25,3 +25,7 @@ app.use('/api', routerManager);
 
 // 3. 전역 에러 핸들러 등록 (모든 라우터 뒤에 위치)
 app.use(globalErrorHandler);
+
+app.listen(PORT, () => {
+  console.log(`Server started on port ${PORT}`)
+})
