@@ -1,5 +1,5 @@
-import { ResidentRepository } from './residentrepository';
-import { CreateResidentDto } from './residentstruct';
+import { ResidentRepository } from './resident-repository';
+import { CreateResidentDto } from './resident-struct';
 import { prismaClient as prisma, Prisma } from '../libs/constants';
 import * as csv from 'fast-csv';
 import { Readable } from 'stream';

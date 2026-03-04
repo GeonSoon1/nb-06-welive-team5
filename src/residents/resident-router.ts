@@ -1,6 +1,6 @@
 import { catchAsync } from '../libs/catchAsync';
 import { EXPRESS } from '../libs/constants';
-import { ResidentController } from './residentcontroller';
+import { ResidentController } from './resident-controller';
 import multer from 'multer';
 
 const residentRouter = EXPRESS.Router();

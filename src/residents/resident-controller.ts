@@ -1,6 +1,6 @@
 import { ExpressRequest, ExpressResponse, Prisma } from '../libs/constants';
-import { ResidentService } from './residentservices';
-import { CreateResidentDto } from './residentstruct';
+import { ResidentService } from './resident-services';
+import { CreateResidentDto } from './resident-struct';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { GetResidentsQuery, ResidentWithUser, CsvUploadResult } from './resident.type';

@@ -1,5 +1,5 @@
 import { prismaClient as prisma, Prisma } from '../libs/constants';
-import { CreateResidentDto, UpdateResidentDto } from './residentstruct';
+import { CreateResidentDto, UpdateResidentDto } from './resident-struct';
 import { GetResidentsQuery } from './resident.type';
 
 export class ResidentRepository {
