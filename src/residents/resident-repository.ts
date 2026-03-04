@@ -87,3 +87,47 @@ export class ResidentRepository {
     });
   }
 }
+
+// src/residents/residents.repository.ts (건순) //
+import { PrismaClient, ResidenceStatus } from '@prisma/client';
+
+export type DbClient = Prisma.TransactionClient | PrismaClient;
+
+export async function findResidentForAutoApprove(
+  db: DbClient,
+  params: {
+    apartmentId: string;
+    dong: string;
+    ho: string;
+    name: string;
+    contact: string;
+  },
+) {
+  return db.resident.findFirst({
+    where: {
+      apartmentId: params.apartmentId,
+      dong: params.dong,
+      ho: params.ho,
+      name: params.name,
+      contact: params.contact,
+    },
+    select: { id: true, userId: true },
+  });
+}
+
+export async function linkResidentToUser(
+  db: DbClient,
+  params: {
+    residentId: string;
+    userId: string;
+    residenceStatus?: ResidenceStatus;
+  },
+) {
+  return db.resident.update({
+    where: { id: params.residentId },
+    data: {
+      userId: params.userId,
+      residenceStatus: params.residenceStatus ?? ResidenceStatus.RESIDENCE, //기본값은 거주중
+    },
+  });
+}
