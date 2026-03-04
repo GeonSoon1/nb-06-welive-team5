@@ -50,6 +50,8 @@ model Apartment {
   apartmentboard   ApartmentBoard @relation(fields: [ApartmentboardId], references: [id], onDelete: Cascade)
 
   events Event[] /// [추가] 아파트 단위의 캘린더 일정을 위한 관계
+
+  @@unique([name, address, officeNumber])
 }
 
 model ApartmentBoard {

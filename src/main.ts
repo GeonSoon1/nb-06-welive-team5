@@ -5,6 +5,7 @@ import { createServer } from 'http';
 import { getCorsOrigin } from './libs/corsSetup';
 import { routerManager } from './routerManger';
 import { globalErrorHandler } from './libs/errors/errorHandler';
+import cookieParser from 'cookie-parser';
 
 const app = EXPRESS();
 const httpServer = createServer(app);
@@ -19,6 +20,7 @@ app.use(cors({
 app.use(EXPRESS.static('public'));
 app.use(EXPRESS.json());
 app.use(EXPRESS.urlencoded({ extended: true }));
+app.use(cookieParser())
 
 // 2. 라우터 등록 (catchAsync 제거)
 app.use('/api', routerManager);
