@@ -1,8 +1,8 @@
-import { assert, isUuid, superstruct } from './../libs/constants';
+import { assert, isUuid, superstruct } from '../libs/constants';
 import type { ExpressRequest, ExpressResponse, ExpressHandler, ExpressNextFunction } from '../libs/constants';
-import { CreatePollStruct, GetPollListQuery, UpdatePollStruct } from './pollstruct';
+import { CreatePollStruct, GetPollListQuery, UpdatePollStruct } from './poll-struct';
 import { CustomError } from '../libs/errors/errorHandler';
-import { pollService } from './pollservices';
+import { pollService } from './poll-services';
 
 class PollController {
     CreatePolls: ExpressHandler = async (req: ExpressRequest, res: ExpressResponse, next: ExpressNextFunction) => {

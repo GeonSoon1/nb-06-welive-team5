@@ -1,5 +1,5 @@
 import { optional } from 'superstruct';
-import { superstruct, isUuid } from './../libs/constants';
+import { superstruct, isUuid } from '../libs/constants';
 
 export enum VoteStatus {
     PENDING = 'PENDING', //투표전

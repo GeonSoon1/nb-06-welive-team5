@@ -1,4 +1,4 @@
-import { VoteStatus } from './pollstruct';
+import { VoteStatus } from './poll-struct';
 
 
 export interface PollType {
