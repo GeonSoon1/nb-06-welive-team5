@@ -5,7 +5,7 @@ import apartmentRouter from './apartments/apartmentrouter';
 import noticeRouter from './notices/noticerouter';
 import complaintRouter from './complaints/complaintrouter';
 import voteRouter from './polls/poll-router';
-import residentRouter from './residents/residentrouter';
+import residentRouter from './residents/resident-router';
 import commentRouter from './comments/commentrouter';
 import notificationRouter from './notifications/notificationrouter';
 import eventRouter from './events/eventrouter';
@@ -13,9 +13,7 @@ import authRouter from './auth/authrouter';
 import pollsVoteRouter from './pollsvote/pollvote-router';
 import pollSchedulerRouter from './pollScheduler/pollSchedulerrouter';
 
-
 export const routerManager = EXPRESS.Router();
-
 
 //인증관리
 routerManager.use('/auth', authRouter);
@@ -27,7 +25,7 @@ routerManager.use('/users', userRouter);
 routerManager.use('/apartments', apartmentRouter);
 
 //입주민 관리
-routerManager.use('/residents', noticeRouter);
+routerManager.use('/residents', residentRouter);
 
 //민원 관리
 routerManager.use('/complaints', complaintRouter);
@@ -36,7 +34,7 @@ routerManager.use('/complaints', complaintRouter);
 routerManager.use('/polls', voteRouter);
 
 //공지사항관리
-routerManager.use('/notices', residentRouter);
+routerManager.use('/notices', noticeRouter);
 
 //댓글관리
 routerManager.use('/comments', commentRouter);
