@@ -1,16 +1,16 @@
 import { EXPRESS } from './libs/constants';
 
-import userRouter from './users/users-router';
-import apartmentRouter from './apartments/apartments-router';
+import userRouter from './users/users.router';
+import apartmentRouter from './apartments/apartments.router';
 import noticeRouter from './notices/noticerouter';
 import complaintRouter from './complaints/complaintrouter';
-import voteRouter from './polls/poll-router';
-import residentRouter from './residents/resident-router';
+import voteRouter from './polls/poll.router';
+import residentRouter from './residents/resident.router';
 import commentRouter from './comments/commentrouter';
 import notificationRouter from './notifications/notificationrouter';
 import eventRouter from './events/eventrouter';
-import pollsVoteRouter from './pollsvote/pollvote-router';
-import authRouter from './auth/auth-router';
+import pollsVoteRouter from './pollsvote/poll-vote.router';
+import authRouter from './auth/auth.router';
 import pollSchedulerRouter from './pollScheduler/pollSchedulerrouter';
 
 export const routerManager = EXPRESS.Router();

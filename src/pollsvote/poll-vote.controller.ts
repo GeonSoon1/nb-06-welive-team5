@@ -1,7 +1,7 @@
 import { isUuid } from '../libs/constants';
 import type { ExpressRequest, ExpressResponse, ExpressNextFunction, ExpressHandler } from '../libs/constants';
 import { CustomError } from '../libs/errors/errorHandler';
-import * as pollsVoteService from './poll-vote.service.js';
+import * as pollsVoteService from './poll-vote.service';
 import { RequestWithUser } from './poll-vote.struct';
 
 export const addVote: ExpressHandler = async (req: ExpressRequest, res: ExpressResponse, next: ExpressNextFunction) => {

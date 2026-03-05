@@ -6,12 +6,12 @@ import {
   SignupSuperAdminBodyStruct,
   SignupAdminBodyStruct,
   LoginBodyStruct,
-} from './auth-struct';
+} from './auth.struct';
 
-import * as authService from './auth-service';
-import * as userAuthService from './services/user-auth-service';
-import * as superAdminAuthService from './services/super-admin-auth-service';
-import * as adminAuthService from './services/admin-auth-service';
+import * as authService from './auth.service';
+import * as userAuthService from './services/user-auth.service';
+import * as superAdminAuthService from './services/super-admin-auth.service';
+import * as adminAuthService from './services/admin-auth.service';
 
 import { clearTokenCookies, setTokenCookies } from '../libs/auth/cookies';
 import UnauthorizedError from '../libs/errors/UnauthorizedError';
@@ -53,32 +53,24 @@ export async function login(req: ExpressRequest, res: ExpressResponse) {
   const { user, tokens } = await authService.login(data);
   setTokenCookies(res, tokens.accessToken, tokens.refreshToken);
   return res.status(200).json({
-    message: '로그인이 완료되었습니다',
+    message: '로그인이 완료되었습니다', //extends (message, success) 만들어서 하나로 돌려쓰기
     user,
   });
 }
 
 export async function logout(req: ExpressRequest, res: ExpressResponse) {
   try {
-    // Q) '로그아웃 중 오류가 발생했습니다'를 구현하기 위해 catchAsync 미들웨어를 거치는데 try, catch를 쓰는게 맞는지. //
     clearTokenCookies(res);
     return res.status(200).send({ message: '로그아웃이 완료되었습니다' });
   } catch (err) {
     return res.status(401).json({ message: '로그아웃 중 오류가 발생했습니다.' });
   }
 }
-// export async function logout(req: ExpressRequest, res: ExpressResponse) {
-//   clearTokenCookies(res);
-//   return res.status(200).json({ message: "로그아웃이 완료되었습니다" });
-// }
-
-// next(err)
 
 export async function refresh(req: ExpressRequest, res: ExpressResponse) {
   // 브라우저가 /auth/refresh 경로로 자동으로 보내준 쿠키에서 토큰을 추출한다.
   const refreshToken = req.cookies[REFRESH_TOKEN_COOKIE_NAME];
 
-  console.log(refreshToken)
   if (!refreshToken) {
     throw new UnauthorizedError('토큰 갱신 중 오류가 발생했습니다');
   }

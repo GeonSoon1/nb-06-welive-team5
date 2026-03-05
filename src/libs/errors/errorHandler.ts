@@ -10,7 +10,7 @@ import NotFoundError from './NotFoundError';
 import UnauthorizedError from './UnauthorizedError';
 
 /**
- * 모든 커스텀 에러의 기본이 되는 클래스
+ * 모든 커스텀 에러의 기본이 되는 클래스 (커스텀으로 시작해도 괜찮다.)
  */
 export class CustomError extends Error {
     public statusCode: number;

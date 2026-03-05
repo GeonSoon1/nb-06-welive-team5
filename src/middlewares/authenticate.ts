@@ -20,9 +20,10 @@ export async function authenticate(
     }
     const payload: TokenPayload = verifyAccessToken(token);
 
-    // 3. Request 객체에 유저 정보 주입
+    // 3. Request 객체에 유저 정보 주입 (이전에는 req.user가 없었는데 여기서 추가해줌)
     // 이제 컨트롤러에서 req.user.id 로 접근 가능
-    (req as any).user = {
+    // express.d.ts가 정상 작동한다면 req.user = {id: , role: , apartmentId: } 정상 작동 
+    req.user = {
       id: payload.id,
       role: payload.role,
       apartmentId: payload.apartmentId ?? null,

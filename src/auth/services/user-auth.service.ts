@@ -5,17 +5,17 @@ import BadRequestError from '../../libs/errors/BadRequestError';
 import ConflictError from '../../libs/errors/ConflictError';
 import { JoinStatus, Role, User } from '@prisma/client';
 
-import { findApartmentIdByName } from '../../apartments/apartments-repository';
+import { findApartmentIdByName } from '../../apartments/apartments.repository';
 import {
   findUserIdByUsername,
   findUserIdByEmail,
   findUserIdByContact,
   createUserForSignupUser,
-} from '../../users/users-repository';
+} from '../../users/users.repository';
 import {
   findResidentForAutoApprove,
   linkResidentToUser,
-} from '../../residents/resident-repository';
+} from '../../residents/resident.repository';
 
 export type SignupUserResponse = Pick<User, 'id' | 'name' | 'email' | 'role' | 'joinStatus'> & {
   isActive: boolean;

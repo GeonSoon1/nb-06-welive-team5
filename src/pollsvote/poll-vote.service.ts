@@ -1,5 +1,5 @@
 import { CustomError } from '../libs/errors/errorHandler';
-import * as pollsVoteRepository from './pollvote-repository';
+import * as pollsVoteRepository from './poll-vote.repository';
 
 export const addVote = async (optionId: string, userId: string) => {
     const option = await pollsVoteRepository.findOptionWithVote(optionId);

@@ -27,7 +27,7 @@ export function setTokenCookies(res: ExpressResponse, accessToken: string, refre
   res.cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken, {
     ...commonOptions,
     maxAge: 7 * 24 * 60 * 60 * 1000, 
-    path: '/auth/refresh', // 브라우저는 오직 /auth/refresh로 시작하는 경로에 요청을 보낼 때만 이 쿠키를 서버에 같이 보냄.
+    path: '/api/auth/refresh', // 브라우저는 오직 /auth/refresh로 시작하는 경로에 요청을 보낼 때만 이 쿠키를 서버에 같이 보냄.
   });
 }
 
@@ -35,6 +35,6 @@ export function setTokenCookies(res: ExpressResponse, accessToken: string, refre
 export function clearTokenCookies(res: ExpressResponse) {
   res.clearCookie(ACCESS_TOKEN_COOKIE_NAME);
   res.clearCookie(REFRESH_TOKEN_COOKIE_NAME, {
-    path: '/auth/refresh', // 생성할 때 설정한 path와 일치해야 삭제됨
+    path: '/api/auth/refresh', // 생성할 때 설정한 path와 일치해야 삭제됨
   });
 }

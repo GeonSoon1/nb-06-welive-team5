@@ -1,7 +1,7 @@
 import { Prisma, prismaClient } from '../libs/constants';
 import { CustomError } from '../libs/errors/errorHandler';
 import { CreatePollDto, GetPollListDto, UpdatePollDto } from './poll.struct';
-import * as pollRepository from './poll-repository';
+import * as pollRepository from './poll.repository';
 
 
 // Prisma의 유틸리티 타입을 사용하여 author가 포함된 Vote 타입을 명시적으로 정의

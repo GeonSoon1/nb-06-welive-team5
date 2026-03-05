@@ -1,5 +1,5 @@
 import { Role, JoinStatus } from '@prisma/client'
-import * as authRepository from './auth-repository';
+import * as authRepository from './auth.repository';
 import { verifyPassword } from '../libs/auth/password';
 import { verifyRefreshToken, generateTokens } from '../libs/auth/token';
 import UnauthorizedError from '../libs/errors/UnauthorizedError';
@@ -57,7 +57,7 @@ export async function login(input: LoginInput): Promise<{user: LoginResponse; to
   if (board) {
     if (board.complaints?.[0]) boardIds['COMPLAINT'] = board.complaints[0].id;
     if (board.notices?.[0]) boardIds['NOTICE'] = board.notices[0].id;
-    if (board.votes?.[0]) boardIds['VOTE'] = board.votes[0].id;
+    if (board.votes?.[0]) boardIds['POLL'] = board.votes[0].id;
   }
 
   // 5. 응답 데이터 조립

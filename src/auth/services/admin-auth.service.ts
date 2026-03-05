@@ -2,12 +2,12 @@ import { prismaClient } from '../../libs/constants';
 import { hashPassword } from '../../libs/auth/password';
 import ConflictError from '../../libs/errors/ConflictError';
 import { Role, JoinStatus, User, ApartmentStatus, PrismaClient } from '@prisma/client';
-import { SignupAdminBody } from '../auth-struct';
+import { SignupAdminBody } from '../auth.struct';
 import {
   findUserIdByUsername,
   findUserIdByContact,
   findUserIdByEmail,
-} from '../../users/users-repository';
+} from '../../users/users.repository';
 
 export async function signupAdmin(input: SignupAdminBody): Promise<User> {
   // 1. 유저 정보 중복 체크 (ID, Email, Contact)

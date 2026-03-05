@@ -46,5 +46,5 @@
     "noImplicitAny": true,
     "moduleResolution": "node"
   },
-  "include": ["src/**/*", "src/auth/resident"]
+  "include": ["src/**/*", "types/**/*"] // 수정
 }

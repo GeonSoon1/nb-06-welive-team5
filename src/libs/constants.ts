@@ -3,6 +3,7 @@ import { PrismaClient, Prisma } from '@prisma/client';
 import express, { RequestHandler, Request, Response, NextFunction } from 'express';
 import * as superstruct from 'superstruct';
 import isUuid from 'is-uuid';
+import NotFoundError from './errors/NotFoundError';
 
 
 dotenv.config();
@@ -23,9 +24,13 @@ export { isUuid };
 export const PUBLIC_PATH = './public';
 export const STATIC_PATH = '/public';
 
-// jwt 토큰
-const JWT_ACCESS_TOKEN_SECRET = process.env.JWT_ACCESS_TOKEN_SECRET || 'default_access_secret_key';
-const JWT_REFRESH_TOKEN_SECRET = process.env.JWT_REFRESH_TOKEN_SECRET || 'default_refresh_secret_key';
+// jwt 토큰 (.env 없어도 실행될 수 있기 때문에 .env에 JWT_ACCESS_TOKEN_SECRET 없으면 에러 발생)
+const JWT_ACCESS_TOKEN_SECRET = process.env.JWT_ACCESS_TOKEN_SECRET 
+const JWT_REFRESH_TOKEN_SECRET = process.env.JWT_REFRESH_TOKEN_SECRET 
+
+if (!JWT_ACCESS_TOKEN_SECRET || !JWT_REFRESH_TOKEN_SECRET) {
+  throw new NotFoundError( 'JWT_ACCESS_TOKEN_SECRET 또는 JWT_REFRESH_TOKEN_SECRET이 환경변수에 존재하지 않습니다.')
+}
 
 const ACCESS_TOKEN_COOKIE_NAME = "accessToken";
 const REFRESH_TOKEN_COOKIE_NAME = "refreshToken";
