@@ -11,7 +11,7 @@ import {
   findUserIdByEmail,
   findUserIdByContact,
   createUserForSignupUser,
-} from '../../users/users-repository';
+} from '../../users/users.repository';
 import {
   findResidentForAutoApprove,
   linkResidentToUser,

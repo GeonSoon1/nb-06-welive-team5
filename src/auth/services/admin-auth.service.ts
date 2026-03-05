@@ -7,7 +7,7 @@ import {
   findUserIdByUsername,
   findUserIdByContact,
   findUserIdByEmail,
-} from '../../users/users-repository';
+} from '../../users/users.repository';
 
 export async function signupAdmin(input: SignupAdminBody): Promise<User> {
   // 1. 유저 정보 중복 체크 (ID, Email, Contact)

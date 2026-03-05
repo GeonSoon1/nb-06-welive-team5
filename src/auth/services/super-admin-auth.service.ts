@@ -7,7 +7,7 @@ import {
   findUserIdByUsername,
   findUserIdByEmail,
   findUserIdByContact,
-} from '../../users/users-repository';
+} from '../../users/users.repository';
 
 export async function signupSuperAdmin(input: SignupSuperAdminBody): Promise<User> {
   const [u1, u2, u3] = await Promise.all([
