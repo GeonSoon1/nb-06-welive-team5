@@ -1,6 +1,6 @@
 import { EXPRESS } from '../libs/constants.js';
 import { catchAsync } from '../libs/catchAsync.js';
-import { pollsVoteController } from './pollvote-controller.js';
+import * as pollsVoteController from './poll-vote.controller.js';
 
 const pollsVoteRouter = EXPRESS.Router();
 

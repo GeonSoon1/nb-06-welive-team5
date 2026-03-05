@@ -26,7 +26,7 @@ export type CreatePollDto = superstruct.Infer<typeof CreatePollStruct>;
 
 export const GetPollListQuery = superstruct.object({
     page: superstruct.defaulted(superstruct.coerce(superstruct.number(), superstruct.string(), (v) => Number(v)), 1),
-    limit: superstruct.defaulted(superstruct.coerce(superstruct.number(), superstruct.string(), (v) => Number(v)), 11),
+    limit: superstruct.defaulted(superstruct.coerce(superstruct.number(), superstruct.string(), (v) => Number(v)), 10),
     buildingPermission: superstruct.optional(superstruct.coerce(superstruct.number(), superstruct.string(), (v) => Number(v))),
     status: superstruct.optional(superstruct.enums(Object.values(VoteStatus))),
     keyword: superstruct.optional(superstruct.string()),

@@ -22,18 +22,6 @@ model Apartment {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  startComplexNumber Int @default(1)
-  endComplexNumber   Int
-
-  startDongNumber Int @default(1)
-  endDongNumber   Int
-
-  startFloorNumber Int @default(1)
-  endFloorNumber   Int
-
-  startHoNumber Int @default(1)
-  endHoNumber   Int
-
   /// [Swagger 반영] 아파트 상태는 JoinStatus가 아닌 전용 ApartmentStatus를 사용하도록 분리/수정
   apartmentStatus ApartmentStatus @default(PENDING)
 
@@ -50,6 +38,24 @@ model Apartment {
   apartmentboard   ApartmentBoard @relation(fields: [ApartmentboardId], references: [id], onDelete: Cascade)
 
   events Event[] /// [추가] 아파트 단위의 캘린더 일정을 위한 관계
+}
+
+model ApartmentInfo {
+  id                 String @id @default(uuid())
+  name               String
+  startComplexNumber Int    @default(1)
+  endComplexNumber   Int
+
+  startDongNumber Int @default(1)
+  endDongNumber   Int
+
+  startFloorNumber Int @default(1)
+  endFloorNumber   Int
+
+  startHoNumber Int      @default(1)
+  endHoNumber   Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model ApartmentBoard {
