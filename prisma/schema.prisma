@@ -152,6 +152,7 @@ model Notice {
   comments      Comment[]
   notifications Notification[] /// [추가] 공지사항 관련 알림
   events        Event[] /// [추가] 공지사항이 캘린더에 등록될 경우의 일정
+  isPinned      Boolean        @default(false)
 
   /// [추가] 리스트 조회 시 아파트 기준 필터링 속도 향상
   @@index([apartmentboardId])
