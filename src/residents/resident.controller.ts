@@ -24,6 +24,11 @@ const mapToResidentResponse = (r: ResidentWithUser) => ({
 export async function createResident(req: ExpressRequest, res: ExpressResponse) {
   const apartmentId = req.user?.apartmentId;
   const data = s.create(req.body, CreateResidentStruct);
+
+  if (!apartmentId) {
+    throw new UnauthorizedError('아파트 정보가 유효하지 않습니다.');
+  }
+
   const result = await residentService.createResident(apartmentId, data);
   return res.status(201).json({
     ...mapToResidentResponse(result as ResidentWithUser),
@@ -35,6 +40,11 @@ export async function createResident(req: ExpressRequest, res: ExpressResponse) 
 export async function getResidents(req: ExpressRequest, res: ExpressResponse) {
   const apartmentId = req.user?.apartmentId;
   const query = req.query as unknown as GetResidentsQuery;
+
+  if (!apartmentId) {
+    throw new UnauthorizedError('아파트 정보가 유효하지 않습니다.');
+  }
+
   const { residents, totalCount } = await residentService.getResidents(apartmentId, query);
   return res.status(200).json({
     residents: residents.map(mapToResidentResponse),
@@ -48,6 +58,11 @@ export async function getResidents(req: ExpressRequest, res: ExpressResponse) {
 export async function createResidentFromUser(req: ExpressRequest, res: ExpressResponse) {
   const apartmentId = req.user?.apartmentId;
   const { userId } = req.params;
+
+  if (!apartmentId) {
+    throw new UnauthorizedError('아파트 정보가 유효하지 않습니다.');
+  }
+
   const result = await residentService.createResidentFromUser(apartmentId, userId as string);
   return res.status(201).json({
     ...mapToResidentResponse(result as ResidentWithUser),
@@ -65,7 +80,7 @@ export async function getResidentDetail(req: ExpressRequest, res: ExpressRespons
 // 5. 입주민 정보 수정
 export async function updateResident(req: ExpressRequest, res: ExpressResponse) {
   const { residentId } = req.params;
-  const data = s.create(req.body, UpdateResidentStruct); // 검증
+  const data = s.create(req.body, UpdateResidentStruct);
   const result = await residentService.updateResident(residentId as string, data);
   return res.status(200).json(mapToResidentResponse(result as ResidentWithUser));
 }
@@ -80,8 +95,15 @@ export async function deleteResident(req: ExpressRequest, res: ExpressResponse) 
 // 7. CSV 업로드
 export async function uploadCsv(req: ExpressRequest, res: ExpressResponse) {
   const apartmentId = req.user?.apartmentId;
+
   if (!req.file) throw new BadRequestError('파일로부터 입주민 리소스 생성 실패');
+
+  if (!apartmentId) {
+    throw new UnauthorizedError('아파트 정보가 유효하지 않습니다.');
+  }
+
   const result = await residentService.uploadResidentsFromCsv(apartmentId, req.file.buffer);
+
   return res.status(201).json({
     message: `${result.count}명의 입주민이 등록되었습니다`,
     count: result.count,

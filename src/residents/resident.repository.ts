@@ -20,7 +20,7 @@ export async function createResident(apartmentId: string, data: CreateResidentDt
 
 // 2. 조회
 export async function findResidentsByApartment(apartmentId: string, query: GetResidentsQuery = {}) {
-  const { page, limit, building, unitNumber, residenceStatus, keyword } = query;
+  const { page, limit, building, unitNumber, residenceStatus, keyword, isRegistered } = query;
 
   const take = Math.min(Number(limit || 20), 100);
   const skip = (Math.max(Number(page || 1), 1) - 1) * take;
@@ -30,7 +30,11 @@ export async function findResidentsByApartment(apartmentId: string, query: GetRe
     ...(building && { dong: building }),
     ...(unitNumber && { ho: unitNumber }),
     ...(residenceStatus && { residenceStatus }),
-    ...(keyword && { name: { contains: keyword } }),
+    ...(isRegistered === 'true' && { userId: { not: null } }),
+    ...(isRegistered === 'false' && { userId: null }),
+    ...(keyword && {
+      OR: [{ name: { contains: keyword } }, { contact: { contains: keyword } }],
+    }),
   };
 
   const [residents, totalCount] = await Promise.all([
@@ -71,8 +75,20 @@ export async function updateResident(id: string, data: UpdateResidentDto) {
 
 // 5. 입주민 삭제
 export async function deleteResident(id: string) {
+  const resident = await prisma.resident.findUnique({
+    where: { id },
+    select: { userId: true },
+  });
+
+  if (resident?.userId) {
+    return await prisma.$transaction([
+      prisma.resident.delete({ where: { id } }),
+      prisma.user.delete({ where: { id: resident.userId } }),
+    ]);
+  }
+
   return await prisma.resident.delete({
-    where: { id: id },
+    where: { id },
   });
 }
 
