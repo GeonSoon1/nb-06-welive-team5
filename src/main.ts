@@ -1,13 +1,11 @@
 import 'dotenv/config';
 import { PORT, EXPRESS } from './libs/constants';
 import cors from 'cors';
-import { createServer } from 'http';
 import { getCorsOrigin } from './libs/corsSetup';
 import { routerManager } from './routerManger';
 import { globalErrorHandler } from './libs/errors/errorHandler';
 
 const app = EXPRESS();
-const httpServer = createServer(app);
 
 // 1. 기본 미들웨어 설정 (CORS, Body Parser 등은 라우터보다 먼저 선언해야 함)
 app.use(cors({
