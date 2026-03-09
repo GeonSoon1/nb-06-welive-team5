@@ -1,6 +1,6 @@
-import { EXPRESS } from '../libs/constants';
-import * as pollController from './poll.controller';
-import { catchAsync } from '../libs/catchAsync';
+import { EXPRESS } from '../libs/constants.js';
+import * as pollController from './poll.controller.js';
+import { catchAsync } from '../libs/catchAsync.js';
 const pollRouter = EXPRESS.Router();
 
 pollRouter.post('/', catchAsync(pollController.CreatePolls));

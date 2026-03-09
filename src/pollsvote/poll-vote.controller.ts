@@ -1,13 +1,12 @@
 import { isUuid } from '../libs/constants';
 import type { ExpressRequest, ExpressResponse, ExpressNextFunction, ExpressHandler } from '../libs/constants';
 import { CustomError } from '../libs/errors/errorHandler';
-import * as pollsVoteService from './poll-vote.service';
-import { RequestWithUser } from './poll-vote.struct';
+import * as pollsVoteService from './poll-vote.service.js';
 
 export const addVote: ExpressHandler = async (req: ExpressRequest, res: ExpressResponse, next: ExpressNextFunction) => {
     try {
         const { optionId } = req.params;
-        const userId = (req as RequestWithUser).user?.userId;
+        const userId = req.user?.id;
         if (!userId) {
             throw new CustomError(401, '로그인이 필요합니다.');
         }
@@ -25,7 +24,7 @@ export const addVote: ExpressHandler = async (req: ExpressRequest, res: ExpressR
 export const cancelVote: ExpressHandler = async (req: ExpressRequest, res: ExpressResponse, next: ExpressNextFunction) => {
     try {
         const { optionId } = req.params;
-        const userId = (req as RequestWithUser).user?.userId;
+        const userId = req.user?.id;
         if (!userId) {
             throw new CustomError(401, '로그인이 필요합니다.');
         }
