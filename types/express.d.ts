@@ -1,9 +1,15 @@
-import { JwtPayload } from 'jsonwebtoken';
+import { Role } from '@prisma/client';
+// Request 객체에는 user라는 필드가 없어서 모든 Request 객체에 user라는 속성을 동적으로 추가
 declare global {
-    namespace Express {
-        interface Request {
-            user?: JwtPayload & { userId: string; };
-            auth?: JwtPayload & { userId: string; };
-        }
+  namespace Express {
+    interface Request {
+      user?: {
+        id: string;
+        role: Role;
+        apartmentId: string | null;
+      };
     }
+  }
 }
+
+export { };
