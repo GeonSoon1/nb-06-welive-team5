@@ -100,8 +100,10 @@ export async function createManyResidents(data: Prisma.ResidentCreateManyInput[]
   });
 }
 
-// src/residents/residents.repository.ts (건순) //
 
+
+
+// src/residents/residents.repository.ts (건순)
 import { PrismaClient, ResidenceStatus } from '@prisma/client';
 
 export type DbClient = Prisma.TransactionClient | PrismaClient;
@@ -116,6 +118,7 @@ export async function findResidentForAutoApprove(
     contact: string;
   },
 ) {
+  // 조건이 모두 일치(AND 조건)하는 첫 번째 데이터를 찾아오라는 뜻이라네.
   return db.resident.findFirst({
     where: {
       apartmentId: params.apartmentId,
@@ -140,7 +143,8 @@ export async function linkResidentToUser(
     where: { id: params.residentId },
     data: {
       userId: params.userId,
-      residenceStatus: params.residenceStatus ?? ResidenceStatus.RESIDENCE, // 기본값은 거주중
-    },
+      residenceStatus: params.residenceStatus ?? ResidenceStatus.RESIDENCE, //기본값은 거주중
+    }, // ?? - 왼쪽 값이 없으면(null 또는 undefined), 오른쪽 값을 써라.
   });
 }
+

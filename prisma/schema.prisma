@@ -8,19 +8,23 @@ generator client {
 }
 
 model Apartment {
-  id               String          @id @default(uuid())
-  name             String
-  address          String
-  officeNumber     String
-  description      String?
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
-  apartmentStatus  ApartmentStatus @default(PENDING)
-  ApartmentboardId String          @unique
-  adminId          String?         @unique
+  id              String          @id @default(uuid())
+  name            String
+  address         String
+  officeNumber    String
+  description     String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  apartmentStatus ApartmentStatus @default(PENDING)
 
-  admin          User?          @relation("ApartmentAdmin", fields: [adminId], references: [id], onDelete: SetNull)
+  ApartmentboardId String  @unique
+  adminId          String? @unique
+
   apartmentboard ApartmentBoard @relation(fields: [ApartmentboardId], references: [id], onDelete: Cascade)
+  admin          User?          @relation("ApartmentAdmin", fields: [adminId], references: [id], onDelete: SetNull)
+
+  structureGroups ApartmentStructureGroup[]
+  units           ApartmentUnit[]
 
   users     User[]     @relation("ApartmentUser")
   residents Resident[]
@@ -29,19 +33,34 @@ model Apartment {
   @@unique([name, address, officeNumber])
 }
 
-model ApartmentInfo {
-  id                 String   @id @default(uuid())
-  name               String   @unique
-  startComplexNumber Int      @default(1)
-  endComplexNumber   Int
-  startDongNumber    Int      @default(1)
-  endDongNumber      Int
-  startFloorNumber   Int      @default(1)
-  endFloorNumber     Int
-  startHoNumber      Int      @default(1)
-  endHoNumber        Int
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+model ApartmentStructureGroup {
+  id          String    @id @default(uuid())
+  apartmentId String
+  apartment   Apartment @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
+
+  dongList      String //A동, 101-가동 
+  startFloor    Int
+  maxFloor      Int
+  unitsPerFloor Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ApartmentUnit {
+  id          String   @id @default(uuid())
+  apartmentId String
+  dong        String
+  floor       Int
+  ho          String
+  // 관리자가 수동으로 특정 호수를 제외하거나 비활성화할 수 있는 장치 (나중을 위해 남겨놓음)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  apartment Apartment @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
+  users     User[]
+
+  @@unique([apartmentId, dong, ho])
 }
 
 model ApartmentBoard {
@@ -55,19 +74,18 @@ model ApartmentBoard {
 }
 
 model User {
-  id          String  @id @default(uuid())
-  username    String  @unique
-  password    String
-  contact     String  @unique
-  name        String
-  email       String  @unique
-  image       String?
-  role        Role
-  apartmentId String?
+  id              String  @id @default(uuid())
+  username        String  @unique
+  password        String
+  contact         String  @unique
+  name            String
+  email           String  @unique
+  image           String?
+  role            Role
+  apartmentId     String?
+  apartmentUnitId String?
 
   joinStatus JoinStatus @default(PENDING)
-  dong       String?
-  ho         String?
 
   apartment        Apartment? @relation("ApartmentUser", fields: [apartmentId], references: [id], onDelete: Cascade)
   managedApartment Apartment? @relation("ApartmentAdmin")
@@ -79,6 +97,7 @@ model User {
   votes         Vote[]
   myVotes       VoteRecord[]
   notifications Notification[]
+  apartmentUnit ApartmentUnit? @relation(fields: [apartmentUnitId], references: [id])
 
   @@index([apartmentId])
 }
@@ -125,7 +144,7 @@ model Notice {
   comments      Comment[]
   notifications Notification[]
   events        Event[]
-  
+
   // @@index([authorId])
   @@index([apartmentboardId])
 }
@@ -200,7 +219,7 @@ model Vote {
   comments      Comment[]
   notifications Notification[]
   events        Event[]
-  
+
   // @@index([authorId])
   @@index([apartmentboardId])
 }

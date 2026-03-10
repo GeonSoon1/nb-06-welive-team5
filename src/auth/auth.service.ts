@@ -47,6 +47,7 @@ export async function login(input: LoginInput): Promise<{user: LoginResponse; to
   const tokens: AuthTokens = generateTokens({
     id: user.id,
     role: user.role,
+    joinStatus: user.joinStatus,
     apartmentId: user.apartmentId
   });
 
@@ -54,6 +55,7 @@ export async function login(input: LoginInput): Promise<{user: LoginResponse; to
   const board = user.apartment?.apartmentboard; // findUserForAuth를 통해 가져온 데이터
   const boardIds: Record<string, string> = {};
   
+  // 프론트엔드가 게시판 목록을 불러올 때, DB를 뒤지는 고생 없이 바로 쓸 수 있게 미리 모아두는것.
   if (board) {
     if (board.complaints?.[0]) boardIds['COMPLAINT'] = board.complaints[0].id;
     if (board.notices?.[0]) boardIds['NOTICE'] = board.notices[0].id;
@@ -72,9 +74,10 @@ export async function login(input: LoginInput): Promise<{user: LoginResponse; to
     contact: user.contact,
     avatar: user.image || null,
     apartmentId: user.apartmentId || null,
-    apartmentName: user.apartment?.name || null,
-    residentDong: user.dong || null,
+    apartmentName: user.apartment?.name || null, //super-admin은 없다.
+    residentDong: user.apartmentUnit?.dong || null,
     boardIds: Object.keys(boardIds).length>0 ? boardIds : null,
+    // 객체의 key값만 꺼내서 배열로 만들어서 있으면 boardIds 객체 출력.
   };
 
   return { user: userResponse, tokens} 
@@ -88,15 +91,14 @@ export async function refresh(refreshToken: string): Promise<AuthTokens> {
   // 2. [Security Check] 토큰은 유효해도 그 사이 유저가 삭제되었거나 정지되었을 수 있다.
   // DB를 조회하여 최신 상태를 확인하는 것이 'Stateful'한 검증의 핵심이다.
   const user = await authRepository.findUserById(decoded.id);
-  if (!user) {
-    throw new UnauthorizedError("유효하지 않은 사용자입니다.");
-  }
-
+  if (!user) throw new UnauthorizedError("유효하지 않은 사용자입니다.");
+  
   // 3. 모든 검증이 끝나면 새로운 토큰 쌍(Access, Refresh)을 생성한다.
   // Refresh Token Rotation 전략을 사용하여 보안성을 높인다.
   const tokens = generateTokens({
     id: user.id,
     role: user.role,
+    joinStatus: user.joinStatus,
     apartmentId: user.apartmentId,
   });
 

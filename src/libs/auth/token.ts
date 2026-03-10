@@ -1,11 +1,12 @@
 import jwt from 'jsonwebtoken';
 import { JWT_ACCESS_TOKEN_SECRET, JWT_REFRESH_TOKEN_SECRET } from "../constants";
 import UnauthorizedError from '../errors/UnauthorizedError';
-import { Role } from '@prisma/client';
+import { JoinStatus, Role } from '@prisma/client';
 
 export type TokenPayload = {
   id: string;
   role: Role;
+  joinStatus: JoinStatus;
   apartmentId?: string | null;
 };
 
