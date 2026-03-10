@@ -6,7 +6,7 @@ import * as pollsVoteService from './poll-vote.service.js';
 export const addVote: ExpressHandler = async (req: ExpressRequest, res: ExpressResponse, next: ExpressNextFunction) => {
     try {
         const { optionId } = req.params;
-        const userId = req.user?.userId;
+        const userId = req.user?.id;
         if (!userId) {
             throw new CustomError(401, '로그인이 필요합니다.');
         }
@@ -24,7 +24,7 @@ export const addVote: ExpressHandler = async (req: ExpressRequest, res: ExpressR
 export const cancelVote: ExpressHandler = async (req: ExpressRequest, res: ExpressResponse, next: ExpressNextFunction) => {
     try {
         const { optionId } = req.params;
-        const userId = req.user?.userId;
+        const userId = req.user?.id;
         if (!userId) {
             throw new CustomError(401, '로그인이 필요합니다.');
         }

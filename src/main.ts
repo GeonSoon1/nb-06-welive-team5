@@ -2,8 +2,9 @@ import 'dotenv/config';
 import { PORT, EXPRESS } from './libs/constants';
 import cors from 'cors';
 import { getCorsOrigin } from './libs/corsSetup';
-import { routerManager } from './routerManger';
+import { routerManager } from './routerManager';
 import { globalErrorHandler } from './libs/errors/errorHandler';
+import cookieParser from 'cookie-parser';
 
 const app = EXPRESS();
 
@@ -14,6 +15,7 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+app.use(cookieParser())
 app.use(EXPRESS.static('public'));
 app.use(EXPRESS.json());
 app.use(EXPRESS.urlencoded({ extended: true }));

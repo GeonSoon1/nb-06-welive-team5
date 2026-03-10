@@ -7,7 +7,7 @@ import * as noticeService from './notice.service';
 export const createNotice: ExpressHandler = async (req, res, next) => {
     try {
         assert(req.body, CreateNoticeStruct);
-        const userId = req.user?.userId;
+        const userId = req.user?.id;
         if (!userId) throw new CustomError(401, '로그인이 필요합니다.');
 
         await noticeService.createNotice(userId, req.body);
@@ -46,7 +46,7 @@ export const updateNotice: ExpressHandler = async (req, res, next) => {
         if (typeof noticeId !== 'string' || !noticeId || !isUuid.v4(noticeId)) throw new CustomError(400, '잘못된 요청입니다. (noticeId)');
 
         assert(req.body, UpdateNoticeStruct);
-        const userId = req.user?.userId;
+        const userId = req.user?.id;
         if (!userId) throw new CustomError(401, '로그인이 필요합니다.');
 
         const result = await noticeService.updateNotice(noticeId, userId, req.body);
@@ -61,7 +61,7 @@ export const deleteNotice: ExpressHandler = async (req, res, next) => {
         const { noticeId } = req.params;
         if (typeof noticeId !== 'string' || !noticeId || !isUuid.v4(noticeId)) throw new CustomError(400, '잘못된 요청입니다. (noticeId)');
 
-        const userId = req.user?.userId;
+        const userId = req.user?.id;
         if (!userId) throw new CustomError(401, '로그인이 필요합니다.');
 
         await noticeService.deleteNotice(noticeId, userId);
