@@ -24,6 +24,7 @@ export async function getResidents(apartmentId: string, query: GetResidentsQuery
 export async function createResidentFromUser(apartmentId: string, userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
+    include: { apartmentUnit: true },
   });
 
   if (!user) {
@@ -33,8 +34,8 @@ export async function createResidentFromUser(apartmentId: string, userId: string
   const result = await createResident(apartmentId, {
     name: user.name,
     contact: user.contact,
-    building: user.dong ?? '',
-    unitNumber: user.ho ?? '',
+    building: user.apartmentUnit?.dong ?? '',
+    unitNumber: user.apartmentUnit?.ho ?? '',
     isHouseholder: 'MEMBER',
   });
 
