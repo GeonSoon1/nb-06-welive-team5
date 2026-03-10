@@ -20,9 +20,9 @@ model Apartment {
   ApartmentboardId String  @unique
   adminId          String? @unique
 
-  apartmentboard ApartmentBoard @relation(fields: [ApartmentboardId], references: [id], onDelete: Cascade)
-  admin          User?          @relation("ApartmentAdmin", fields: [adminId], references: [id], onDelete: SetNull)
-
+  apartmentboard  ApartmentBoard            @relation(fields: [ApartmentboardId], references: [id], onDelete: Cascade)
+  admin           User?                     @relation("ApartmentAdmin", fields: [adminId], references: [id], onDelete: SetNull)
+  
   structureGroups ApartmentStructureGroup[]
   units           ApartmentUnit[]
 
@@ -38,6 +38,7 @@ model ApartmentStructureGroup {
   apartmentId String
   apartment   Apartment @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
 
+  // 불규칙한 동별 구조(예: "101, 103, 105")를 수용하기 위한 명시적 리스트
   dongList      String //A동, 101-가동 
   startFloor    Int
   maxFloor      Int
@@ -48,17 +49,18 @@ model ApartmentStructureGroup {
 }
 
 model ApartmentUnit {
-  id          String   @id @default(uuid())
+  id          String  @id @default(uuid())
   apartmentId String
   dong        String
   floor       Int
   ho          String
   // 관리자가 수동으로 특정 호수를 제외하거나 비활성화할 수 있는 장치 (나중을 위해 남겨놓음)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
+  isActive    Boolean @default(true)
 
+  // 이 유닛에 거주하는 유저들 (1:N 관계)
   apartment Apartment @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
   users     User[]
+  createdAt DateTime  @default(now())
 
   @@unique([apartmentId, dong, ho])
 }
