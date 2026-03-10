@@ -1,19 +1,16 @@
 import { prismaClient } from '../../libs/constants';
 import { hashPassword } from '../../libs/auth/password';
 import ConflictError from '../../libs/errors/ConflictError';
-import { Role, JoinStatus, User } from '@prisma/client';
+import { User } from '@prisma/client';
 import { SignupSuperAdminBody } from '../auth.struct';
-import {
-  findUserIdByUsername,
-  findUserIdByEmail,
-  findUserIdByContact,
-} from '../../users/users.repository';
+import * as userRepository from '../../users/user.repository';
+import * as authRepository from '../auth.repository';
 
 export async function signupSuperAdmin(input: SignupSuperAdminBody): Promise<User> {
   const [u1, u2, u3] = await Promise.all([
-    findUserIdByUsername(prismaClient, input.username),
-    findUserIdByEmail(prismaClient, input.email),
-    findUserIdByContact(prismaClient, input.contact),
+    userRepository.findUserIdByUsername(prismaClient, input.username),
+    userRepository.findUserIdByEmail(prismaClient, input.email),
+    userRepository.findUserIdByContact(prismaClient, input.contact),
   ]);
 
   if (u1 || u2 || u3) {
@@ -22,17 +19,13 @@ export async function signupSuperAdmin(input: SignupSuperAdminBody): Promise<Use
 
   const hashedPassword = await hashPassword(input.password);
 
-  return await prismaClient.user.create({
-    data: {
-      username: input.username,
-      password: hashedPassword,
-      name: input.name,
-      email: input.email,
-      contact: input.contact,
-      role: Role.SUPER_ADMIN,
-      joinStatus: JoinStatus.APPROVED,
-    },
-  });
+  return (await authRepository.createSuperAdmin(prismaClient, {
+    username: input.username,
+    hashedPassword: hashedPassword,
+    name: input.name,
+    email: input.email,
+    contact: input.contact,
+  })) as User;
 }
 
 export type SignupSuperAdminResponse = Pick<

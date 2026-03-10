@@ -1,7 +1,7 @@
 import { EXPRESS } from './libs/constants';
 
-import userRouter from './users/users.router';
-import apartmentRouter from './apartments/apartments.router';
+import userRouter from './users/user.router';
+import apartmentRouter from './apartments/apartment.router';
 import noticeRouter from './notices/noticerouter';
 import complaintRouter from './complaints/complaintrouter';
 import voteRouter from './polls/poll.router';
