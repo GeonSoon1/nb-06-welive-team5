@@ -26,6 +26,7 @@ export async function authenticate(
     req.user = {
       id: payload.id,
       role: payload.role,
+      joinStatus: payload.joinStatus,
       apartmentId: payload.apartmentId ?? null,
     };
 

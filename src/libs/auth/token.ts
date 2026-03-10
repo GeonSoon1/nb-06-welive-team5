@@ -14,7 +14,7 @@ export type TokenPayload = {
 // constants.ts에서 JWT_ACCESS_TOKEN_SECRET가 있음을 검증을 했으므로 '!'를 붙여서 통과시킴
 export function generateTokens(payload: TokenPayload) {
   const accessToken = jwt.sign(payload, JWT_ACCESS_TOKEN_SECRET!, {
-    expiresIn: "20h" //5m or 1h
+    expiresIn: "20h" // 추후에 15m or 1h 수정 예정.
   });
   // 2. Refresh Token 생성 (Payload를 최소화하여 보안 강화)
   const refreshToken = jwt.sign({ id: payload.id }, JWT_REFRESH_TOKEN_SECRET!, {
@@ -24,6 +24,7 @@ export function generateTokens(payload: TokenPayload) {
 }
 
 // 3. Access Token 검증
+// try 블록 안에서 return이 실행되면 함수는 그 즉시 값을 반환하고 종료된다
 export function verifyAccessToken(token: string): TokenPayload {
   try {
     const decoded = jwt.verify(token, JWT_ACCESS_TOKEN_SECRET!);
