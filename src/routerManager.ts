@@ -4,7 +4,7 @@ import { EXPRESS } from './libs/constants';
 //import userRouter from './users/user.router';
 import apartmentRouter from './apartments/apartment.router';
 import noticeRouter from './notices/notice.router';
-import complaintRouter from './complaints/complaintrouter';
+import complaintRouter from './complaints/complaint.router';
 import pollRouter from './polls/poll.router';
 import residentRouter from './residents/resident.router';
 import commentRouter from './comments/commentrouter';
