@@ -4,6 +4,7 @@ import { AdminApartmentQuery, PublicApartmentQuery } from './apartment.struct';
 import { prismaClient } from '../libs/constants';
 import NotFoundError from '../libs/errors/NotFoundError';
 
+
 /**
  * [1] 공개용 아파트 목록 조회 
  */
@@ -55,4 +56,30 @@ export async function getAdminApartments(filters: AdminApartmentQuery) {
     limit,
   );
   return { apartments, totalCount, page, limit };
+}
+
+/**
+ * [3] 관리자용 아파트 상세 조회
+ */
+export async function getApartmentDetail(apartmentId: string) {
+  const apartment = await apartmentRepository.findApartmentById(prismaClient, apartmentId);
+
+  if (!apartment) {
+    throw new NotFoundError('존재하지 않는 아파트 입니다.')
+  }
+
+  return apartment;
+}
+
+/**
+ * [4] 공개용 아파트 상세 조회
+ */
+export async function getPublicApartmentDetail(id: string) {
+  const apartment = await apartmentRepository.findPublicApartmentById(prismaClient, id);
+
+  if (!apartment) {
+    throw new NotFoundError('해당 아파트 정보를 찾을 수 없습니다.');
+  }
+
+  return apartment;
 }

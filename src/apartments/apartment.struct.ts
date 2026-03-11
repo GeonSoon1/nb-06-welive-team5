@@ -23,3 +23,10 @@ export const AdminApartmentQueryStruct = s.object({
 });
 
 export type AdminApartmentQuery = s.Infer<typeof AdminApartmentQueryStruct>;
+
+// 공통으로 쓸 ID 검증 로직
+const Id = s.nonempty(s.string())
+
+export const ApartmentIdParamsStruct = s.object({
+  id: Id, // 여기서 adminId는 반드시 있어야 함을 명시하지
+});

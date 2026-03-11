@@ -147,3 +147,59 @@ export async function findAdminApartments(
     db.apartment.count({ where }),
   ]);
 }
+
+/**
+ * [관리자용] apartmentId로 아파트 상세 정보 조회
+ */
+export async function findApartmentById(
+  db: DbClient,
+  id: string
+): Promise<Apartment | null> {
+  return db.apartment.findUnique({
+    where: { id },
+    include: {
+      structureGroups: {
+        select: {
+          id: true,
+          dongList: true,
+          startFloor: true,
+          maxFloor: true,
+          unitsPerFloor: true
+        }
+      },
+      admin: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          contact: true,
+        }
+      },
+    },
+  });
+}
+
+/**
+ * [공개용] apartmentId로 아파트 상세 정보 조회
+ */
+export async function findPublicApartmentById(
+  db: DbClient,
+  id: string
+): Promise<PublicApartmentDetail | null> {
+  return db.apartment.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      name: true,
+      address: true,
+      structureGroups: {
+        select: {
+          dongList: true,
+          startFloor: true,
+          maxFloor: true,
+          unitsPerFloor: true,
+        },
+      },
+    },
+  }) as Promise<PublicApartmentDetail | null>;
+}

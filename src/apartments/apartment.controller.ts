@@ -3,7 +3,7 @@ import * as apartmentService from './apartment.services';
 import * as s from 'superstruct';
 import { PublicApartmentQueryStruct } from './apartment.struct';
 import { AdminApartmentQueryStruct } from './apartment.struct';
-
+import { ApartmentIdParamsStruct } from './apartment.struct';
 
 /**
  * [GET] /api/apartments/public
@@ -38,4 +38,34 @@ export async function getAdminApartments(req: ExpressRequest, res: ExpressRespon
     page,
     limit,
   });
+}
+
+// /**
+//  * [GET] api/apartments/:apartmentId
+//  * 관리자용 아파트 상세 조회 
+//  */
+export async function getApartmentDetail(req: ExpressRequest, res: ExpressResponse) {
+  const { id } = s.create(req.params, ApartmentIdParamsStruct);
+
+  const apartment = await apartmentService.getApartmentDetail(id);
+
+  res.status(200).json({
+    message: '아파트 상세 조회 성공',
+    apartment,
+  });
+}
+
+// /**
+//  * [GET] api/apartments/public/:apartmentId
+//  * 공개용 아파트 상세 조회 
+//  */
+export async function getPublicApartmentDetail(req: ExpressRequest, res: ExpressResponse) {
+  const { id } = s.create(req.params, ApartmentIdParamsStruct);
+
+  const apartment = await apartmentService.getPublicApartmentDetail(id);
+
+  res.status(200).json({
+    message: '공개용 아파트 상세 조회 성공',
+    apartment,
+  })
 }
