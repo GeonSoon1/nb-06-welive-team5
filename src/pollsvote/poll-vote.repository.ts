@@ -48,7 +48,6 @@ export const createVoteAndUpdateCount = async (optionId: string, userId: string,
                 userId,
                 voteId: pollId,
                 voteOptionId: optionId,
-                apartmentboardId,
             },
         }),
         prismaClient.voteOption.update({
