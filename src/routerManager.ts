@@ -1,13 +1,14 @@
 import { EXPRESS } from './libs/constants';
 
-import userRouter from './users/user.router';
+//아직 사용되지 않은 것 같아 잠시 주석처리
+//import userRouter from './users/user.router';
 import apartmentRouter from './apartments/apartment.router';
-import noticeRouter from './notices/noticerouter';
+import noticeRouter from './notices/notice.router';
 import complaintRouter from './complaints/complaintrouter';
-import voteRouter from './polls/poll.router';
+import pollRouter from './polls/poll.router';
 import residentRouter from './residents/resident.router';
 import commentRouter from './comments/commentrouter';
-import notificationRouter from './notifications/notificationrouter';
+import notificationRouter from './notifications/notification.router';
 import eventRouter from './events/eventrouter';
 import pollsVoteRouter from './pollsvote/poll-vote.router';
 import authRouter from './auth/auth.router';
@@ -18,8 +19,8 @@ export const routerManager = EXPRESS.Router();
 //인증관리
 routerManager.use('/auth', authRouter);
 
-//사용자관리
-routerManager.use('/users', userRouter);
+//사용자관리 
+// routerManager.use('/users', userRouter);
 
 //아파트 관리
 routerManager.use('/apartments', apartmentRouter);
@@ -31,7 +32,7 @@ routerManager.use('/residents', residentRouter);
 routerManager.use('/complaints', complaintRouter);
 
 //투표관리
-routerManager.use('/polls', voteRouter);
+routerManager.use('/polls', pollRouter);
 
 //공지사항관리
 routerManager.use('/notices', noticeRouter);

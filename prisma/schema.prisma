@@ -20,9 +20,9 @@ model Apartment {
   ApartmentboardId String  @unique
   adminId          String? @unique
 
-  apartmentboard  ApartmentBoard            @relation(fields: [ApartmentboardId], references: [id], onDelete: Cascade)
-  admin           User?                     @relation("ApartmentAdmin", fields: [adminId], references: [id], onDelete: SetNull)
-  
+  apartmentboard ApartmentBoard @relation(fields: [ApartmentboardId], references: [id], onDelete: Cascade)
+  admin          User?          @relation("ApartmentAdmin", fields: [adminId], references: [id], onDelete: SetNull)
+
   structureGroups ApartmentStructureGroup[]
   units           ApartmentUnit[]
 
@@ -144,8 +144,9 @@ model Notice {
   apartmentboard ApartmentBoard @relation(fields: [apartmentboardId], references: [id], onDelete: Cascade)
 
   comments      Comment[]
-  notifications Notification[]
-  events        Event[]
+  notifications Notification[] /// [추가] 공지사항 관련 알림
+  events        Event[] /// [추가] 공지사항이 캘린더에 등록될 경우의 일정
+  isPinned      Boolean        @default(false)
 
   // @@index([authorId])
   @@index([apartmentboardId])
