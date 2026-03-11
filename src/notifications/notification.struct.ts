@@ -1,0 +1,16 @@
+import { superstruct } from '../libs/constants';
+
+export const NotificationType = {
+    GENERAL: 'GENERAL',
+    SIGNUP_REQ: 'SIGNUP_REQ',
+    COMPLAINT_REQ: 'COMPLAINT_REQ',
+    COMPLAINT_IN_PROGRESS: 'COMPLAINT_IN_PROGRESS',
+    COMPLAINT_RESOLVED: 'COMPLAINT_RESOLVED',
+    COMPLAINT_REJECTED: 'COMPLAINT_REJECTED',
+    NOTICE_REG: 'NOTICE_REG',
+    VOTE_REG: 'VOTE_REG',
+    VOTE_CLOSED: 'VOTE_CLOSED',
+    VOTE_RESULT: 'VOTE_RESULT',
+    SYSTEM: 'SYSTEM',
+    TEST: 'TEST'
+} as const;

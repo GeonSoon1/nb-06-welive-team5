@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -14,89 +8,99 @@ generator client {
 }
 
 model Apartment {
-  id           String   @id @default(uuid())
-  name         String
-  address      String
-  officeNumber String
-  description  String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  startComplexNumber Int @default(1)
-  endComplexNumber   Int
-
-  startDongNumber Int @default(1)
-  endDongNumber   Int
-
-  startFloorNumber Int @default(1)
-  endFloorNumber   Int
-
-  startHoNumber Int @default(1)
-  endHoNumber   Int
-
-  /// [Swagger 반영] 아파트 상태는 JoinStatus가 아닌 전용 ApartmentStatus를 사용하도록 분리/수정
+  id              String          @id @default(uuid())
+  name            String
+  address         String
+  officeNumber    String
+  description     String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
   apartmentStatus ApartmentStatus @default(PENDING)
 
-  //아파트별 어드민 user 저장
-  adminId String? @unique
-  //동일한 User테이블을 사용하는 필드가 존자해여 관계설정시 이름을 할당
-  admin   User?   @relation("ApartmentAdmin", fields: [adminId], references: [id], onDelete: SetNull)
+  ApartmentboardId String  @unique
+  adminId          String? @unique
 
-  //ApartmentUser로 기본 유저들 이름 할당
+  apartmentboard ApartmentBoard @relation(fields: [ApartmentboardId], references: [id], onDelete: Cascade)
+  admin          User?          @relation("ApartmentAdmin", fields: [adminId], references: [id], onDelete: SetNull)
+
+  structureGroups ApartmentStructureGroup[]
+  units           ApartmentUnit[]
+
   users     User[]     @relation("ApartmentUser")
   residents Resident[]
+  events    Event[]
 
-  ApartmentboardId String         @unique
-  apartmentboard   ApartmentBoard @relation(fields: [ApartmentboardId], references: [id], onDelete: Cascade)
-
-  events Event[] /// [추가] 아파트 단위의 캘린더 일정을 위한 관계
+  @@unique([name, address, officeNumber])
 }
 
-model ApartmentBoard {
-  id        String     @id @default(uuid())
-  apartment Apartment?
+model ApartmentStructureGroup {
+  id          String    @id @default(uuid())
+  apartmentId String
+  apartment   Apartment @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
 
-  notices     Notice[]
-  complaints  Complaint[]
-  votes       Vote[]
-  voteRecords VoteRecord[]
+  // 불규칙한 동별 구조(예: "101, 103, 105")를 수용하기 위한 명시적 리스트
+  dongList      String //A동, 101-가동 
+  startFloor    Int
+  maxFloor      Int
+  unitsPerFloor Int
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
+model ApartmentUnit {
+  id          String  @id @default(uuid())
+  apartmentId String
+  dong        String
+  floor       Int
+  ho          String
+  // 관리자가 수동으로 특정 호수를 제외하거나 비활성화할 수 있는 장치 (나중을 위해 남겨놓음)
+  isActive    Boolean @default(true)
+
+  // 이 유닛에 거주하는 유저들 (1:N 관계)
+  apartment Apartment @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
+  users     User[]
+  createdAt DateTime  @default(now())
+
+  @@unique([apartmentId, dong, ho])
+}
+
+model ApartmentBoard {
+  id         String      @id @default(uuid())
+  apartment  Apartment?
+  notices    Notice[]
+  complaints Complaint[]
+  votes      Vote[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+}
+
 model User {
-  id       String  @id @default(uuid())
-  username String  @unique
-  password String
-  contact  String  @unique
-  name     String
-  email    String  @unique
-  image    String?
-  role     Role
+  id              String  @id @default(uuid())
+  username        String  @unique
+  password        String
+  contact         String  @unique
+  name            String
+  email           String  @unique
+  image           String?
+  role            Role
+  apartmentId     String?
+  apartmentUnitId String?
 
-  /// [Swagger 반영] PENDING, APPROVED, REJECTED, NEED_UPDATE 4가지 상태 적용됨
   joinStatus JoinStatus @default(PENDING)
-  dong       String?
-  ho         String?
 
-  //소속된 아파트 id
-  apartmentId String?
-  apartment   Apartment? @relation("ApartmentUser", fields: [apartmentId], references: [id], onDelete: Cascade)
-
-  //1:1구조이기에 양쪽에 id를 저장할 필요가 없음
+  apartment        Apartment? @relation("ApartmentUser", fields: [apartmentId], references: [id], onDelete: Cascade)
   managedApartment Apartment? @relation("ApartmentAdmin")
   resident         Resident?
 
-  notices    Notice[]
-  complaints Complaint[]
-  comments   Comment[]
-  votes      Vote[]
-  myVotes    VoteRecord[]
+  notices       Notice[]
+  complaints    Complaint[]
+  comments      Comment[]
+  votes         Vote[]
+  myVotes       VoteRecord[]
+  notifications Notification[]
+  apartmentUnit ApartmentUnit? @relation(fields: [apartmentUnitId], references: [id])
 
-  notifications Notification[] /// [추가] 유저 수신 알림 관계
-
-  //아파트별 유저 조회가 잦으므로 인덱스 추가
   @@index([apartmentId])
 }
 
@@ -107,15 +111,12 @@ model Resident {
   name          String
   contact       String
   isHouseholder HouseHolderStatus
+  userId        String?           @unique
+  apartmentId   String
 
-  /// [Swagger 반영] 미가입자/거주자 구분을 위한 거주 상태(ResidenceStatus) 필드 복구
   residenceStatus ResidenceStatus @default(NO_RESIDENCE)
-
-  userId String? @unique
-  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  apartmentId String
-  apartment   Apartment @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
+  user            User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  apartment       Apartment       @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
 
   @@unique([apartmentId, contact])
   @@unique([apartmentId, dong, ho, name])
@@ -132,24 +133,23 @@ model Notice {
   startDate   DateTime?
   endDate     DateTime?
 
-  viewCount     Int      @default(0)
-  commentsCount Int      @default(0) /// [추가] 댓글수추가
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  authorId String?
-  author   User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
-
+  viewCount        Int      @default(0)
+  commentsCount    Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  authorId         String?
   apartmentboardId String
-  apartmentboard   ApartmentBoard @relation(fields: [apartmentboardId], references: [id], onDelete: Cascade)
+
+  author         User?          @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  apartmentboard ApartmentBoard @relation(fields: [apartmentboardId], references: [id], onDelete: Cascade)
 
   comments      Comment[]
   notifications Notification[] /// [추가] 공지사항 관련 알림
   events        Event[] /// [추가] 공지사항이 캘린더에 등록될 경우의 일정
+  isPinned      Boolean        @default(false)
 
-  /// [추가] 리스트 조회 시 아파트 기준 필터링 속도 향상
+  // @@index([authorId])
   @@index([apartmentboardId])
-  @@index([authorId])
 }
 
 model Complaint {
@@ -159,18 +159,17 @@ model Complaint {
   isPublic      Boolean         @default(true)
   status        ComplaintStatus @default(PENDING)
   viewCount     Int             @default(0)
-  commentsCount Int             @default(0) /// [추가] 댓글수추가
+  commentsCount Int             @default(0)
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 
-  authorId String?
-  author   User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
-
+  authorId         String?
   apartmentboardId String
-  apartmentboard   ApartmentBoard @relation(fields: [apartmentboardId], references: [id], onDelete: Cascade)
 
-  comments      Comment[]
-  notifications Notification[] /// [추가] 민원 상태 변경 알림
+  author         User?          @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  apartmentboard ApartmentBoard @relation(fields: [apartmentboardId], references: [id], onDelete: Cascade)
+  comments       Comment[]
+  notifications  Notification[]
 
   @@index([apartmentboardId])
   @@index([authorId])
@@ -197,6 +196,7 @@ model Comment {
   @@index([noticeId])
   @@index([complaintId])
   @@index([voteId])
+  @@index([authorId])
 }
 
 //주민투표
@@ -211,22 +211,22 @@ model Vote {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
-  authorId String? // 누가 만들었나 
-  author   User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  authorId         String?
+  apartmentboardId String
+
+  author         User?          @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  apartmentboard ApartmentBoard @relation(fields: [apartmentboardId], references: [id], onDelete: Cascade)
 
   voteOptions   VoteOption[]
   voteRecords   VoteRecord[]
   comments      Comment[]
-  notifications Notification[] /// [추가] 투표 시작/마감 알림
-  events        Event[] /// [추가] 투표 기간 캘린더 일정 연동
+  notifications Notification[]
+  events        Event[]
 
-  apartmentboardId String
-  apartmentboard   ApartmentBoard @relation(fields: [apartmentboardId], references: [id], onDelete: Cascade)
-
+  // @@index([authorId])
   @@index([apartmentboardId])
 }
 
-//투표항목
 model VoteOption {
   id        String @id @default(uuid())
   content   String
@@ -236,6 +236,9 @@ model VoteOption {
   vote   Vote   @relation(fields: [voteId], references: [id], onDelete: Cascade)
 
   selections VoteRecord[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 //누가 어느 투표에서 무엇을 찍었는지
@@ -243,26 +246,17 @@ model VoteRecord {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
 
-  /// [수정] 투표 기록은 유저가 탈퇴해도 남아있어야 통계가 깨지지 않으므로 SetNull 유지
-  userId String?
-  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
-  voteId String
-  vote   Vote    @relation(fields: [voteId], references: [id], onDelete: Cascade)
-
+  userId       String?
+  voteId       String
   voteOptionId String
-  voteOption   VoteOption @relation(fields: [voteOptionId], references: [id], onDelete: Cascade)
 
-  apartmentboardId String
-  apartmentboard   ApartmentBoard @relation(fields: [apartmentboardId], references: [id], onDelete: Cascade)
+  user       User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  vote       Vote       @relation(fields: [voteId], references: [id], onDelete: Cascade)
+  voteOption VoteOption @relation(fields: [voteOptionId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, voteId]) // 한 유저는 한 투표당 하나의 선택지만 투표 가능 (중복 투표 방지)
-  @@index([apartmentboardId])
+  @@unique([userId, voteId])
   @@index([voteId])
 }
-
-// ==========================================
-// [추가] 상호작용 및 부가 기능 모델
-// ==========================================
 
 /// 시스템 및 서비스 알림 모델
 model Notification {
@@ -272,14 +266,14 @@ model Notification {
   isChecked        Boolean          @default(false)
 
   noticeId    String?
-  notice      Notice?    @relation(fields: [noticeId], references: [id], onDelete: Cascade)
   complaintId String?
-  complaint   Complaint? @relation(fields: [complaintId], references: [id], onDelete: Cascade)
   voteId      String?
-  vote        Vote?      @relation(fields: [voteId], references: [id], onDelete: Cascade)
+  userId      String
 
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notice    Notice?    @relation(fields: [noticeId], references: [id], onDelete: Cascade)
+  complaint Complaint? @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  vote      Vote?      @relation(fields: [voteId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -287,7 +281,7 @@ model Notification {
   @@index([userId, isChecked])
 }
 
-/// 아파트 단지 캘린더 일정 모델
+// 아파트 단지 캘린더 일정 모델
 model Event {
   id        String           @id @default(uuid())
   title     String
@@ -297,12 +291,12 @@ model Event {
   category  NotificationType
 
   apartmentId String
-  apartment   Apartment @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
+  noticeId    String?
+  voteId      String?
 
-  noticeId String?
-  notice   Notice? @relation(fields: [noticeId], references: [id], onDelete: Cascade)
-  voteId   String?
-  vote     Vote?   @relation(fields: [voteId], references: [id], onDelete: Cascade)
+  apartment Apartment @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
+  notice    Notice?   @relation(fields: [noticeId], references: [id], onDelete: Cascade)
+  vote      Vote?     @relation(fields: [voteId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -317,7 +311,7 @@ enum Role {
   ADMIN
 }
 
-/// [Swagger 반영] NEED_UPDATE 추가
+/// NEED_UPDATE 추가
 enum JoinStatus {
   PENDING
   APPROVED
@@ -325,14 +319,14 @@ enum JoinStatus {
   NEED_UPDATE
 }
 
-/// [Swagger 반영] 아파트 전용 상태값 추가
+/// 아파트 전용 상태값 추가
 enum ApartmentStatus {
   PENDING
   APPROVED
   REJECTED
 }
 
-/// [Swagger 반영] 입주민 거주 상태 추가
+/// 입주민 거주 상태 추가
 enum ResidenceStatus {
   RESIDENCE
   NO_RESIDENCE
@@ -343,7 +337,7 @@ enum HouseHolderStatus {
   MEMBER //세대원
 }
 
-/// [Swagger 반영] 초기 Swagger 명세에 맞추어 카테고리 복구
+/// 초기 Swagger 명세에 맞추어 카테고리 복구
 enum NoticeCategory {
   MAINTENANCE // 유지보수
   EMERGENCY // 긴급
@@ -367,14 +361,14 @@ enum VoteStatus {
   CLOSED //마감
 }
 
-/// [추가] 이벤트(일정) 구분을 위한 열거형
+/// 이벤트(일정) 구분을 위한 열거형
 enum BoardType {
   NOTICE
   COMPLAINT
   VOTE
 }
 
-/// [추가] 알림 종류를 구체적으로 나누기 위한 열거형
+/// 알림 종류를 구체적으로 나누기 위한 열거형
 enum NotificationType {
   GENERAL
   SIGNUP_REQ
