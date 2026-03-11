@@ -28,7 +28,7 @@ export type ApartmentWithRelations = Prisma.ApartmentGetPayload<{
         id: true,
         name: true,
         email: true,
-        contact: true;
+        contact: true,
       };
     };
   };
@@ -47,7 +47,7 @@ export type PublicApartmentDetail = Prisma.ApartmentGetPayload<{
         dongList: true,
         startFloor: true,
         maxFloor: true,
-        unitsPerFloor: true;
+        unitsPerFloor: true
       };
     };
   };
