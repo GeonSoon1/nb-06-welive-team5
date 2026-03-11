@@ -9,17 +9,49 @@ import {
 
 export type DbClient = Prisma.TransactionClient | PrismaClient;
 
-export type PublicApartmentDetail = {
-  id: string;
-  name: string;
-  address: string;
-  sructureGroups: {
-    dongList: string;
-    stargFloor: number;
-    maxFloor: number;
-    unitsPerFloor: number;
-  }[];
-};
+/**
+ * 1. [관리자용] 상세 정보 타입 정의
+ */
+export type ApartmentWithRelations = Prisma.ApartmentGetPayload<{
+  include: {
+    structureGroups: {
+      select: {
+        id: true,
+        dongList: true,
+        startFloor: true,
+        maxFloor: true,
+        unitsPerFloor: true
+      };
+    };
+    admin: {
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        contact: true,
+      };
+    };
+  };
+}>;
+
+/**
+ * 2. [공개용] 상세 정보 타입 정의
+ */
+export type PublicApartmentDetail = Prisma.ApartmentGetPayload<{
+  select: {
+    id: true,
+    name: true,
+    address: true,
+    structureGroups: {
+      select: {
+        dongList: true,
+        startFloor: true,
+        maxFloor: true,
+        unitsPerFloor: true
+      };
+    };
+  };
+}>;
 
 /**
  * [1] 아파트 기본 정보 생성
@@ -154,7 +186,7 @@ export async function findAdminApartments(
 export async function findApartmentById(
   db: DbClient,
   id: string
-): Promise<Apartment | null> {
+): Promise<ApartmentWithRelations | null> {
   return db.apartment.findUnique({
     where: { id },
     include: {
@@ -165,7 +197,7 @@ export async function findApartmentById(
           startFloor: true,
           maxFloor: true,
           unitsPerFloor: true
-        }
+        },
       },
       admin: {
         select: {
@@ -201,5 +233,5 @@ export async function findPublicApartmentById(
         },
       },
     },
-  }) as Promise<PublicApartmentDetail | null>;
+  });
 }
