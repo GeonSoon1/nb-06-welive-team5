@@ -2,6 +2,8 @@ import { Role, JoinStatus } from '@prisma/client';
 import * as userRepository from './user.repository';
 import BadRequestError from '../libs/errors/BadRequestError';
 import { prismaClient } from '../libs/constants';
+import path from 'path';
+import fs from 'fs';
 
 /**
  * [admin] 일반 주민(USER)의 가입 상태를 변경.
@@ -40,4 +42,21 @@ export async function updateAdminStatus(adminId: string, status: JoinStatus) {
   }
 
   return await userRepository.updateAdminStatus(prismaClient, adminId, status);
+}
+
+/**
+ * 프로필 이미지 변경.
+ */
+export async function updateProfileImage(userId: string, imagePath: string) {
+  const user = await userRepository.findUserRoleById(prismaClient, userId);
+
+  // 1. DB에 저장된 값이 있고, 그게 '/public'으로 시작한다면
+  if (user?.image && user.image.startsWith('/public')) {
+    const oldPath = path.join(process.cwd(), user.image);
+    if (fs.existsSync(oldPath)) {
+      fs.unlinkSync(oldPath); // 이전 파일 삭제
+    }
+  }
+
+  return await userRepository.updateImage(prismaClient, userId, imagePath);
 }

@@ -69,6 +69,24 @@ export async function updateUserStatus(db: DbClient, residentId: string, status:
 export async function findUserRoleById(db: DbClient, id: string) {
   return db.user.findUnique({
     where: { id },
-    select: { role: true },
+    select: { 
+      role: true,
+      joinStatus: true,
+      image: true,
+     },
+  });
+}
+
+/**
+ * 프로필 이미지 변경.
+ */
+export async function updateImage(
+  db: DbClient, 
+  userId: string, 
+  imagePath: string
+) {
+  return await db.user.update({
+    where: { id: userId },
+    data: { image: imagePath },
   });
 }
