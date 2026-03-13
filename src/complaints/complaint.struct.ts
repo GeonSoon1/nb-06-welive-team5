@@ -25,7 +25,14 @@ export const UpdateComplaintStatusStruct = s.object({
 export const GetComplaintsQueryStruct = s.type({
   page: s.optional(s.string()),
   limit: s.optional(s.string()),
-  status: s.optional(s.enums(Object.keys(ComplaintStatus))),
+  status: s.optional(
+    s.enums([
+      ComplaintStatus.PENDING,
+      ComplaintStatus.IN_PROGRESS,
+      ComplaintStatus.RESOLVED,
+      ComplaintStatus.REJECTED,
+    ]),
+  ),
   isPublic: s.optional(s.enums(['true', 'false'])),
   dong: s.optional(s.string()),
   ho: s.optional(s.string()),

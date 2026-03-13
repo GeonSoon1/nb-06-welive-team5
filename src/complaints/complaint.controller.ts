@@ -38,7 +38,7 @@ export async function getComplaints(req: ExpressRequest, res: ExpressResponse) {
   if (!apartmentId || !userId || !userRole)
     throw new UnauthorizedError('인증 정보가 유효하지 않습니다.');
 
-  const query = s.create(req.query, GetComplaintsQueryStruct) as GetComplaintsQuery;
+  const query = s.create(req.query, GetComplaintsQueryStruct);
   const result = await complaintService.getComplaints(apartmentId, userId, userRole, query);
 
   return res.status(200).json(result);
