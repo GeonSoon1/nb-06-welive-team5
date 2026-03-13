@@ -3,8 +3,8 @@ import { Readable } from 'stream';
 import { prismaClient as prisma, Prisma } from '../libs/constants';
 import BadRequestError from '../libs/errors/BadRequestError';
 import * as residentRepository from './resident.repository';
-import { GetResidentsQuery, CsvUploadResult } from './resident.type';
-import { CreateResidentDto, UpdateResidentDto } from './resident.struct';
+import { CsvUploadResult } from './resident.type';
+import { CreateResidentDto, UpdateResidentDto, GetResidentsQueryDto } from './resident.struct';
 
 // 1. 입주민 리소스 생성(개별 등록)
 export async function createResident(apartmentId: string, data: CreateResidentDto) {
@@ -14,7 +14,7 @@ export async function createResident(apartmentId: string, data: CreateResidentDt
 }
 
 // 2. 조회
-export async function getResidents(apartmentId: string, query: GetResidentsQuery) {
+export async function getResidents(apartmentId: string, query: GetResidentsQueryDto) {
   const result = await residentRepository.findResidentsByApartment(apartmentId, query);
   if (!result) throw new BadRequestError('입주민 목록 조회 실패');
   return result;
@@ -114,7 +114,7 @@ export async function getCsvTemplate() {
 }
 
 // 9. 입주민 목록 파일 다운로드
-export async function exportResidentsToCsv(apartmentId: string, query: GetResidentsQuery) {
+export async function exportResidentsToCsv(apartmentId: string, query: GetResidentsQueryDto) {
   const { residents } = await residentRepository.findResidentsByApartment(apartmentId, {
     ...query,
     limit: '10000',

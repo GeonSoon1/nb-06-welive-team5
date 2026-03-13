@@ -16,10 +16,11 @@ export const GetResidentsQueryStruct = s.type({
   limit: s.optional(s.string()),
   building: s.optional(s.string()),
   unitNumber: s.optional(s.string()),
-  residenceStatus: s.optional(s.enums(Object.keys(ResidenceStatus))),
+  residenceStatus: s.optional(s.enums([ResidenceStatus.RESIDENCE, ResidenceStatus.NO_RESIDENCE])),
   isRegistered: s.optional(s.enums(['true', 'false'])),
   keyword: s.optional(s.string()),
 });
 
 export type CreateResidentDto = s.Infer<typeof CreateResidentStruct>;
 export type UpdateResidentDto = s.Infer<typeof UpdateResidentStruct>;
+export type GetResidentsQueryDto = s.Infer<typeof GetResidentsQueryStruct>;
