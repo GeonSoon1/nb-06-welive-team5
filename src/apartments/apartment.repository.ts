@@ -6,9 +6,52 @@ import {
   ApartmentUnit,
   ApartmentStructureGroup,
 } from '@prisma/client';
-import { prismaClient } from '../libs/constants';
 
 export type DbClient = Prisma.TransactionClient | PrismaClient;
+
+/**
+ * 1. [관리자용] 상세 정보 타입 정의
+ */
+export type ApartmentWithRelations = Prisma.ApartmentGetPayload<{
+  include: {
+    structureGroups: {
+      select: {
+        id: true,
+        dongList: true,
+        startFloor: true,
+        maxFloor: true,
+        unitsPerFloor: true
+      };
+    };
+    admin: {
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        contact: true,
+      };
+    };
+  };
+}>;
+
+/**
+ * 2. [공개용] 상세 정보 타입 정의
+ */
+export type PublicApartmentDetail = Prisma.ApartmentGetPayload<{
+  select: {
+    id: true,
+    name: true,
+    address: true,
+    structureGroups: {
+      select: {
+        dongList: true,
+        startFloor: true,
+        maxFloor: true,
+        unitsPerFloor: true
+      };
+    };
+  };
+}>;
 
 /**
  * [1] 아파트 기본 정보 생성
@@ -61,51 +104,6 @@ export async function findExistingApartment(
   });
 }
 
-export async function findApartmentIdByName(
-  db: DbClient,
-  name: string,
-): Promise<{ id: string } | null> {
-  return db.apartment.findFirst({
-    where: { name },
-    select: { id: true },
-  });
-}
-
-// 밑에서 쓰려고 새로 타입 정의
-export type ApartmentWithStructure = Prisma.ApartmentGetPayload<{
-  include: { structureGroups: true };
-}>;
-
-export async function findApartmentDeailById(
-  db: DbClient,
-  id: string,
-): Promise<ApartmentWithStructure | null> {
-  return db.apartment.findUnique({
-    where: { id },
-    include: {
-      structureGroups: true,
-    },
-  });
-}
-
-export async function findUnitsByApartmentId(
-  db: DbClient,
-  apartmentId: string,
-): Promise<Pick<ApartmentUnit, 'id' | 'dong' | 'ho'>[]> {
-  return db.apartmentUnit.findMany({
-    where: {
-      apartmentId,
-      isActive: true,
-    },
-    orderBy: [{ dong: 'asc' }, { ho: 'asc' }],
-    select: {
-      id: true,
-      dong: true,
-      ho: true,
-    },
-  });
-}
-
 /**
  * unitId(UUID)를 실제 텍스트 정보(dong, ho)로 변환
  * 서비스 레이어에서 이 정보를 이용해 '입주민 명부'와 대조
@@ -120,6 +118,120 @@ export async function findUnitInfoById(
       apartmentId: true,
       dong: true,
       ho: true,
+    },
+  });
+}
+
+/**
+ * [공개용] 아파트 목록 및 전체 개수 조회
+ * 트랜잭션이 필요 없는 단순 조회이므로 prismaClient를 직접 사용.
+ */
+export async function findPublicApartments(
+  db: DbClient,
+  where: Prisma.ApartmentWhereInput
+): Promise<[Pick<Apartment, 'id' | 'name' | 'address'>[], number]> {
+  return Promise.all([
+    db.apartment.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        address: true,
+      },
+      orderBy: { name: 'asc' }, // 가나다순 정렬
+    }),
+    db.apartment.count({ where }),
+  ]);
+}
+
+/**
+ * [관리자용] 페이징이 포함된 상세 목록 조회
+ */
+export async function findAdminApartments(
+  db: DbClient,
+  where: Prisma.ApartmentWhereInput,
+  skip: number,
+  take: number,
+): Promise<[
+  (Apartment & { 
+    structureGroups: Pick<ApartmentStructureGroup, 'dongList' | 'startFloor' | 'maxFloor' | 'unitsPerFloor'>[] 
+  })[], 
+  number
+]> {
+  return Promise.all([
+    db.apartment.findMany({
+      where,
+      skip,
+      take, 
+      // 필요한 관계 모델을 명시적으로 포함(include)
+      include: {
+        structureGroups: {
+          select: {
+            dongList: true,
+            startFloor: true,
+            maxFloor: true,
+            unitsPerFloor: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' }, // 최신 등록순
+    }),
+    db.apartment.count({ where }),
+  ]);
+}
+
+/**
+ * [관리자용] apartmentId로 아파트 상세 정보 조회
+ */
+export async function findApartmentById(
+  db: DbClient,
+  id: string
+): Promise<ApartmentWithRelations | null> {
+  return db.apartment.findUnique({
+    where: { id },
+    include: {
+      structureGroups: {
+        select: {
+          id: true,
+          dongList: true,
+          startFloor: true,
+          maxFloor: true,
+          unitsPerFloor: true
+        },
+      },
+      admin: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          contact: true,
+        }
+      },
+    },
+  });
+}
+
+/**
+ * [공개용] apartmentId로 아파트 상세 정보 조회
+ */
+export async function findPublicApartmentById(
+  db: DbClient,
+  id: string
+): Promise<PublicApartmentDetail | null> {
+  return db.apartment.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      name: true,
+      address: true,
+      structureGroups: {
+        select: {
+          dongList: true,
+          startFloor: true,
+          maxFloor: true,
+          unitsPerFloor: true,
+        },
+      },
     },
   });
 }

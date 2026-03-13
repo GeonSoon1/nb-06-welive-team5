@@ -1,49 +1,85 @@
-import { prismaClient } from '../libs/constants';
-import BadRequestError from '../libs/errors/BadRequestError';
+import { Prisma } from '@prisma/client';
 import * as apartmentRepository from './apartment.repository';
+import { AdminApartmentQuery, PublicApartmentQuery } from './apartment.struct';
+import { prismaClient } from '../libs/constants';
+import NotFoundError from '../libs/errors/NotFoundError';
+
+
 /**
- * [1] 아파트 상세 정보 조회 (기존의 start/end 방식 탈피)
- * 슈퍼관리자/관리자용 및 공개용 상세 페이지에서 사용하네.
+ * [1] 공개용 아파트 목록 조회 
  */
-export async function getApartmentDetail(id: string) {
-  const apartment = await apartmentRepository.findApartmentDeailById(prismaClient, id);
+//ApartmentWhereInput타입 - 아파트 테이블에서 검색할 때 쓸 수 있는 모든 조건 규격
+export async function getPublicApartments(filters: PublicApartmentQuery) {
+  const { keyword, name, address } = filters;
+
+  const where: Prisma.ApartmentWhereInput = {
+    // 통합 검색 (keyword가 있을 때: { OR: [ ... ] } 객체가 where 안으로 쏙(Spread) 들어간다) / true && { OR: [...] }  -->  { OR: [...] }
+    ...(keyword && { // 앞이 true면 뒤에 있는 값이 결과값으로 나온다.
+      OR: [
+        { name: { contains: keyword, mode: 'insensitive' } },
+        { address: { contains: keyword, mode: 'insensitive' } },
+      ],
+    }),
+    // 있으면 필터링, 없으면 패스
+    name: name ? { contains: name, mode: 'insensitive' } : undefined,
+    address: address ? { contains: address, mode: 'insensitive' } : undefined,
+  };
+
+  const [apartments, count] = await apartmentRepository.findPublicApartments(prismaClient, where);
+  return { apartments, count };
+}
+
+/**
+ * [2] 관리자용 아파트 목록 조회
+ */
+export async function getAdminApartments(filters: AdminApartmentQuery) {
+  const { searchKeyword, name, address, apartmentStatus, page = 1, limit = 10 } = filters;
+
+  const where: Prisma.ApartmentWhereInput = {
+    ...(searchKeyword && {
+      OR: [
+        { name: { contains: searchKeyword, mode: 'insensitive' } },
+        { address: { contains: searchKeyword, mode: 'insensitive' } },
+      ],
+    }),
+    name: name ? { contains: name, mode: 'insensitive' } : undefined,
+    address: address ? { contains: address, mode: 'insensitive' } : undefined,
+    apartmentStatus: apartmentStatus || undefined, //엄격한 분류
+  };
+
+  const skip = (page - 1) * limit;
+
+  const [apartments, totalCount] = await apartmentRepository.findAdminApartments(
+    prismaClient,
+    where,
+    skip,
+    limit,
+  );
+  return { apartments, totalCount, page, limit };
+}
+
+/**
+ * [3] 관리자용 아파트 상세 조회
+ */
+export async function getApartmentDetail(apartmentId: string) {
+  const apartment = await apartmentRepository.findApartmentById(prismaClient, apartmentId);
 
   if (!apartment) {
-    throw new BadRequestError('존재하지 않는 아파트입니다.');
+    throw new NotFoundError('존재하지 않는 아파트 입니다.')
   }
 
   return apartment;
 }
 
 /**
- * [2] 회원가입용 동/호수 선택 리스트 조회
- * 프론트엔드에서 '동' 선택 시 '호수'가 필터링되는 UI를 위해
- * 데이터를 동(Key)별로 그룹화하여 전달하네.
+ * [4] 공개용 아파트 상세 조회
  */
-export async function getApartmentUnitsForSignup(apartmentId: string) {
-  const units = await apartmentRepository.findUnitsByApartmentId(prismaClient, apartmentId);
+export async function getPublicApartmentDetail(id: string) {
+  const apartment = await apartmentRepository.findPublicApartmentById(prismaClient, id);
 
-  const groupByDong = units.reduce(
-    (acc, unit) => {
-      // 1. 우선 값을 꺼내서 변수에 담네. (이때 타입은 배열 | undefined)
-      let targetDong = acc[unit.dong];
+  if (!apartment) {
+    throw new NotFoundError('해당 아파트 정보를 찾을 수 없습니다.');
+  }
 
-      // 2. 만약 없다면 빈 배열을 만들고, 원본 객체(acc)에도 넣기.
-      if (!targetDong) {
-        targetDong = [];
-        acc[unit.dong] = targetDong;
-      }
-
-      // 3. 이제 targetDong은 무조건 배열(undefined 아님)이라고 TS가 확신
-      targetDong.push({
-        id: unit.id,
-        ho: unit.ho,
-      });
-
-      return acc;
-    },
-    {} as Record<string, { id: string; ho: string }[]>,
-  );
-
-  return groupByDong;
+  return apartment;
 }

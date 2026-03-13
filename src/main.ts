@@ -1,9 +1,10 @@
 import 'dotenv/config';
-import { PORT, EXPRESS } from './libs/constants';
+import { PORT, EXPRESS, PUBLIC_PATH, STATIC_PATH } from './libs/constants';
+import path from 'path';
 import cors from 'cors';
 import { getCorsOrigin } from './libs/corsSetup';
 import { routerManager } from './routerManager';
-import { globalErrorHandler } from './libs/errors/errorHandler';
+import { globalErrorHandler, defaultNotFoundHandler } from './libs/errors/errorHandler';
 import cookieParser from 'cookie-parser';
 
 const app = EXPRESS();
@@ -16,7 +17,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(cookieParser())
-app.use(EXPRESS.static('public'));
+app.use(STATIC_PATH, EXPRESS.static(path.resolve(process.cwd(), PUBLIC_PATH)));
 app.use(EXPRESS.json());
 app.use(EXPRESS.urlencoded({ extended: true }));
 
@@ -24,7 +25,9 @@ app.use(EXPRESS.urlencoded({ extended: true }));
 app.use('/api', routerManager);
 
 // 3. 전역 에러 핸들러 등록 (모든 라우터 뒤에 위치)
+app.use(defaultNotFoundHandler)
 app.use(globalErrorHandler);
+
 
 app.listen(PORT, () => {
   console.log(`Server started on port ${PORT}`);

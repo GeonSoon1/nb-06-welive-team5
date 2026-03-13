@@ -4,3 +4,5 @@ dist/
 .DS_Store
 /generated/prisma
 /upload
+
+public/uploads/profiles/*
