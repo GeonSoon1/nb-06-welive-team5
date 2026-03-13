@@ -4,7 +4,7 @@ import path from 'path';
 import cors from 'cors';
 import { getCorsOrigin } from './libs/corsSetup';
 import { routerManager } from './routerManager';
-import { globalErrorHandler } from './libs/errors/errorHandler';
+import { globalErrorHandler, defaultNotFoundHandler } from './libs/errors/errorHandler';
 import cookieParser from 'cookie-parser';
 
 const app = EXPRESS();
@@ -25,7 +25,9 @@ app.use(EXPRESS.urlencoded({ extended: true }));
 app.use('/api', routerManager);
 
 // 3. 전역 에러 핸들러 등록 (모든 라우터 뒤에 위치)
+app.use(defaultNotFoundHandler)
 app.use(globalErrorHandler);
+
 
 app.listen(PORT, () => {
   console.log(`Server started on port ${PORT}`);
