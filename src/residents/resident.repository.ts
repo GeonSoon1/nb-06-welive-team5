@@ -1,3 +1,4 @@
+import { PrismaClient, ResidenceStatus } from '@prisma/client'; // 건순님
 import { prismaClient as prisma, Prisma } from '../libs/constants';
 import { CreateResidentDto, UpdateResidentDto } from './resident.struct';
 import { GetResidentsQuery } from './resident.type';
@@ -100,12 +101,7 @@ export async function createManyResidents(data: Prisma.ResidentCreateManyInput[]
   });
 }
 
-
-
-
 // src/residents/residents.repository.ts (건순)
-import { PrismaClient, ResidenceStatus } from '@prisma/client';
-
 export type DbClient = Prisma.TransactionClient | PrismaClient;
 
 export async function findResidentForAutoApprove(
@@ -147,4 +143,3 @@ export async function linkResidentToUser(
     }, // ?? - 왼쪽 값이 없으면(null 또는 undefined), 오른쪽 값을 써라.
   });
 }
-

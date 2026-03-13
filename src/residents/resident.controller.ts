@@ -1,7 +1,11 @@
 import * as s from 'superstruct';
 import { ExpressRequest, ExpressResponse } from '../libs/constants';
 import * as residentService from './resident.services';
-import { CreateResidentStruct, UpdateResidentStruct } from './resident.struct';
+import {
+  CreateResidentStruct,
+  UpdateResidentStruct,
+  GetResidentsQueryStruct,
+} from './resident.struct';
 import { GetResidentsQuery, ResidentWithUser } from './resident.type';
 import BadRequestError from '../libs/errors/BadRequestError';
 import UnauthorizedError from '../libs/errors/UnauthorizedError';
@@ -17,7 +21,7 @@ const mapToResidentResponse = (r: ResidentWithUser) => ({
   residenceStatus: r.residenceStatus,
   isHouseholder: r.isHouseholder,
   isRegistered: !!r.userId,
-  approvalStatus: 'PENDING',
+  approvalStatus: r.user?.joinStatus || null,
 });
 
 // 1. 입주민 리소스 생성(개별 등록)
@@ -39,7 +43,7 @@ export async function createResident(req: ExpressRequest, res: ExpressResponse) 
 // 2. 조회
 export async function getResidents(req: ExpressRequest, res: ExpressResponse) {
   const apartmentId = req.user?.apartmentId;
-  const query = req.query as unknown as GetResidentsQuery;
+  const query = s.create(req.query, GetResidentsQueryStruct) as GetResidentsQuery;
 
   if (!apartmentId) {
     throw new UnauthorizedError('아파트 정보가 유효하지 않습니다.');
@@ -122,7 +126,7 @@ export async function getTemplate(req: ExpressRequest, res: ExpressResponse) {
 export async function exportCsv(req: ExpressRequest, res: ExpressResponse) {
   if (!req.user?.apartmentId)
     throw new UnauthorizedError('입주민 목록 파일 다운로드 실패(권한 없음)');
-  const query = req.query as unknown as GetResidentsQuery;
+  const query = s.create(req.query, GetResidentsQueryStruct) as GetResidentsQuery;
   const csvStream = await residentService.exportResidentsToCsv(req.user.apartmentId, query);
   res.setHeader('Content-disposition', 'attachment; filename="residents.csv"');
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
