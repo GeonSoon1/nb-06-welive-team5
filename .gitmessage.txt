@@ -8,8 +8,8 @@
 # ✨ feat : 새로운 기능 추가
 # 🐛 fix : 버그 수정
 # 📝 docs : 문서 수정
-# 🛠️ refactor : 리팩토링
+# 🛠️ refactor : 코드 구조 개선
 # ✅ test : 테스트 추가/수정
 # 🔥 remove : 코드/파일 삭제
-# ♻️ chore(update) : 유지보수 작업(코드/빌드/설정/패키지 등)
+# ♻️ chore(update) : 유지보수 작업(dependency, CI/CD/, docker, package.json, tsconfig 수정)
 ################
