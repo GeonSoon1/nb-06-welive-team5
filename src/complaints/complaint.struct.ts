@@ -1,16 +1,10 @@
 import * as s from 'superstruct';
 import { ComplaintStatus } from '@prisma/client';
 
-const Uuid = s.pattern(
-  s.string(),
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-);
-
 export const CreateComplaintStruct = s.object({
   title: s.size(s.string(), 1, 100),
   content: s.size(s.string(), 1, 2000),
   isPublic: s.boolean(),
-  boardId: Uuid,
 });
 
 export const UpdateUserComplaintStruct = s.object({

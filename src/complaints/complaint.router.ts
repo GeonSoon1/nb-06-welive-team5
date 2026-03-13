@@ -1,6 +1,8 @@
 import { EXPRESS } from '../libs/constants';
 import { catchAsync } from '../libs/catchAsync';
 import { authenticate } from '../middlewares/authenticate';
+import { authorize } from '../middlewares/authorize';
+import { Role } from '@prisma/client';
 import * as complaintController from './complaint.controller';
 
 const complaintRouter = EXPRESS.Router();
@@ -14,6 +16,7 @@ complaintRouter.patch('/:complaintId', catchAsync(complaintController.updateUser
 complaintRouter.delete('/:complaintId', catchAsync(complaintController.deleteUserComplaint));
 complaintRouter.patch(
   '/:complaintId/status',
+  authorize(Role.ADMIN, Role.SUPER_ADMIN),
   catchAsync(complaintController.updateComplaintStatus),
 );
 

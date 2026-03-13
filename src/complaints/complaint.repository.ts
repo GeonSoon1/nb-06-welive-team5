@@ -13,6 +13,15 @@ const authorSelectQuery = {
   },
 };
 
+// 아파트 ID로 게시판 ID만 빼오는 조회 함수
+export async function getBoardIdByApartment(apartmentId: string) {
+  const apartment = await prisma.apartment.findUnique({
+    where: { id: apartmentId },
+    select: { ApartmentboardId: true },
+  });
+  return apartment?.ApartmentboardId;
+}
+
 // 1. 민원 등록
 export async function createComplaint(
   authorId: string,

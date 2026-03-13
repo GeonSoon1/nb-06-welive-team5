@@ -9,10 +9,6 @@ import BadRequestError from '../libs/errors/BadRequestError';
 import NotFoundError from '../libs/errors/NotFoundError';
 import ForbiddenError from '../libs/errors/ForbiddenError';
 
-// ---------------------------------------------------------
-// 🛠️ [실무 꿀팁] 재사용을 위한 Helper 함수들
-// ---------------------------------------------------------
-
 const formatComplaint = (
   c: any,
   options: { isMasked?: boolean; includeDetails?: boolean } = {},
@@ -69,8 +65,16 @@ export async function createComplaint(
   apartmentId: string,
   data: CreateComplaintDto,
 ) {
-  const newComplaint = await complaintRepository.createComplaint(authorId, data.boardId, data);
+  const boardId = await complaintRepository.getBoardIdByApartment(apartmentId);
+
+  if (!boardId) {
+    throw new BadRequestError('해당 아파트의 게시판 정보를 찾을 수 없습니다.');
+  }
+
+  const newComplaint = await complaintRepository.createComplaint(authorId, boardId, data);
+
   if (!newComplaint) throw new BadRequestError('민원 등록에 실패했습니다.');
+
   return newComplaint;
 }
 
@@ -124,14 +128,7 @@ export async function deleteUserComplaint(complaintId: string, userId: string) {
   await complaintRepository.deleteUserComplaint(complaintId);
 }
 
-export async function updateComplaintStatus(
-  complaintId: string,
-  userRole: string,
-  data: UpdateComplaintStatusDto,
-) {
-  if (userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN') {
-    throw new ForbiddenError('관리자만 민원 상태를 변경할 수 있습니다.');
-  }
+export async function updateComplaintStatus(complaintId: string, data: UpdateComplaintStatusDto) {
   const updatedComplaint = await complaintRepository.updateComplaintStatus(
     complaintId,
     data.status,
