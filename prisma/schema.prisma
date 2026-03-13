@@ -17,10 +17,10 @@ model Apartment {
   updatedAt       DateTime        @updatedAt
   apartmentStatus ApartmentStatus @default(PENDING)
 
-  ApartmentboardId String  @unique
+  apartmentboardId String  @unique
   adminId          String? @unique
 
-  apartmentboard ApartmentBoard @relation(fields: [ApartmentboardId], references: [id], onDelete: Cascade)
+  apartmentboard ApartmentBoard @relation(fields: [apartmentboardId], references: [id], onDelete: Cascade)
   admin          User?          @relation("ApartmentAdmin", fields: [adminId], references: [id], onDelete: SetNull)
 
   structureGroups ApartmentStructureGroup[]

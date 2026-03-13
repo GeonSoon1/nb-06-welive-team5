@@ -1,4 +1,3 @@
-import { optional } from 'superstruct';
 import { superstruct, isUuid } from '../libs/constants';
 
 export enum VoteStatus {
