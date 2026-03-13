@@ -37,22 +37,23 @@ export async function updateUserStatus(req: ExpressRequest, res: ExpressResponse
  * 프로필 이미지 변경.
  */
 export async function updateProfileImage(req: ExpressRequest, res: ExpressResponse) {
-  // 1. 미들웨어가 넣어준 파일 정보 확인
-  const file = req.file;
+  
+  const file = req.file as Express.MulterS3.File;
 
   if (!file) {
-    return res.status(400).json({ message: '업로드된 파일이 없습니다.' });
+    return res.status(400).json({ message: '업로드된 파일이 없습니다.'});
   }
 
-  // 2. 인증 미들웨어(authenticate)를 통과했으므로 req.user.id 값이 있음.
+  // authenticate를 통과했으니 강제로 req.user!.id 해도 괜찮은지
   const userId = req.user!.id;
+  
+  // 저장된 파일 경로(s3 URL)
+  const imagePath = file.location;
 
-  // 2. 저장된 파일 경로(나중에 S3 URL로 바뀔 부분)
-  const imageUrl = `/public/uploads/profiles/${file.filename}`;
-  await userAuthService.updateProfileImage(userId, imageUrl);
+  await userAuthService.updateProfileImage(userId, imagePath);
 
   return res.status(200).json({
     message: '프로필 이미지 수정이 완료되었습니다.',
-    imageUrl: imageUrl,
-  });
+    imageUrl: imagePath
+  })
 }

@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { PORT, EXPRESS, PUBLIC_PATH, STATIC_PATH } from './libs/constants';
+import { PORT, EXPRESS } from './libs/constants';
 import path from 'path';
 import cors from 'cors';
 import { getCorsOrigin } from './libs/corsSetup';
@@ -17,7 +17,6 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(cookieParser())
-app.use(STATIC_PATH, EXPRESS.static(path.resolve(process.cwd(), PUBLIC_PATH)));
 app.use(EXPRESS.json());
 app.use(EXPRESS.urlencoded({ extended: true }));
 

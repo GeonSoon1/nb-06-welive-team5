@@ -1,9 +1,9 @@
 import { Role, JoinStatus } from '@prisma/client';
 import * as userRepository from './user.repository';
 import BadRequestError from '../libs/errors/BadRequestError';
-import { prismaClient } from '../libs/constants';
-import path from 'path';
-import fs from 'fs';
+import { prismaClient, S3_BUCKET_NAME } from '../libs/constants';
+import { DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { s3Client } from '../libs/s3Client';
 
 /**
  * [admin] 일반 주민(USER)의 가입 상태를 변경.
@@ -51,10 +51,19 @@ export async function updateProfileImage(userId: string, imagePath: string) {
   const user = await userRepository.findUserRoleById(prismaClient, userId);
 
   // 1. DB에 저장된 값이 있고, 그게 '/public'으로 시작한다면
-  if (user?.image && user.image.startsWith('/public')) {
-    const oldPath = path.join(process.cwd(), user.image);
-    if (fs.existsSync(oldPath)) {
-      fs.unlinkSync(oldPath); // 이전 파일 삭제
+  if (user?.image && user.image.includes('amazonaws.com')) {
+    try { // .com/ 뒤쪽만 짤라냄/ fileKey는 파일 이름
+      const fileKey = user.image.split('.com/')[1];
+
+      if (fileKey) {
+        await s3Client.send(new DeleteObjectCommand({
+          Bucket: S3_BUCKET_NAME,
+          Key: decodeURIComponent(fileKey),
+        }));
+        console.log("기존 S3 파일 삭제 완료:", fileKey);
+      }
+    } catch (err) {
+      console.error("기존 S3 파일 삭제 중 오류 발생:", err);
     }
   }
 
