@@ -5,6 +5,7 @@ import {
   CreateComplaintStruct,
   UpdateUserComplaintStruct,
   UpdateComplaintStatusStruct,
+  GetComplaintsQueryStruct,
 } from './complaint.struct';
 import { GetComplaintsQuery } from './complaint.type';
 import UnauthorizedError from '../libs/errors/UnauthorizedError';
@@ -37,7 +38,7 @@ export async function getComplaints(req: ExpressRequest, res: ExpressResponse) {
   if (!apartmentId || !userId || !userRole)
     throw new UnauthorizedError('인증 정보가 유효하지 않습니다.');
 
-  const query = req.query as unknown as GetComplaintsQuery;
+  const query = s.create(req.query, GetComplaintsQueryStruct) as GetComplaintsQuery;
   const result = await complaintService.getComplaints(apartmentId, userId, userRole, query);
 
   return res.status(200).json(result);
