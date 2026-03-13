@@ -1,7 +1,6 @@
 import { PrismaClient, ResidenceStatus } from '@prisma/client'; // 건순님
 import { prismaClient as prisma, Prisma } from '../libs/constants';
-import { CreateResidentDto, UpdateResidentDto } from './resident.struct';
-import { GetResidentsQuery } from './resident.type';
+import { CreateResidentDto, UpdateResidentDto, GetResidentsQueryDto } from './resident.struct';
 
 // 1. 입주민 리소스 생성(개별 등록)
 export async function createResident(apartmentId: string, data: CreateResidentDto) {
@@ -20,7 +19,10 @@ export async function createResident(apartmentId: string, data: CreateResidentDt
 }
 
 // 2. 조회
-export async function findResidentsByApartment(apartmentId: string, query: GetResidentsQuery = {}) {
+export async function findResidentsByApartment(
+  apartmentId: string,
+  query: GetResidentsQueryDto = {},
+) {
   const { page, limit, building, unitNumber, residenceStatus, keyword, isRegistered } = query;
 
   const take = Math.min(Number(limit || 20), 100);
