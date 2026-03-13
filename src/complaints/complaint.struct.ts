@@ -42,3 +42,4 @@ export const GetComplaintsQueryStruct = s.type({
 export type CreateComplaintDto = s.Infer<typeof CreateComplaintStruct>;
 export type UpdateUserComplaintDto = s.Infer<typeof UpdateUserComplaintStruct>;
 export type UpdateComplaintStatusDto = s.Infer<typeof UpdateComplaintStatusStruct>;
+export type GetComplaintsQueryDto = s.Infer<typeof GetComplaintsQueryStruct>;
