@@ -1,5 +1,10 @@
-// import { EXPRESS } from '../libs/constants';
+import { Router } from 'express';
+import { upload } from '../libs/storage';
+import * as userController from './user.controller';
+import { authenticate } from '../middlewares/authenticate';
 
-// const userRouter = EXPRESS.Router();
+const userRouter = Router();
 
-// export default userRouter;
+userRouter.patch('/me', authenticate, upload.single('file'), userController.updateProfileImage);
+
+export default userRouter;

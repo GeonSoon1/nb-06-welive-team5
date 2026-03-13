@@ -1,7 +1,7 @@
 import { EXPRESS } from './libs/constants';
 
 //아직 사용되지 않은 것 같아 잠시 주석처리
-//import userRouter from './users/user.router';
+import userRouter from './users/user.router';
 import apartmentRouter from './apartments/apartment.router';
 import noticeRouter from './notices/notice.router';
 import complaintRouter from './complaints/complaint.router';
@@ -20,7 +20,7 @@ export const routerManager = EXPRESS.Router();
 routerManager.use('/auth', authRouter);
 
 //사용자관리 
-// routerManager.use('/users', userRouter);
+routerManager.use('/users', userRouter);
 
 //아파트 관리
 routerManager.use('/apartments', apartmentRouter);

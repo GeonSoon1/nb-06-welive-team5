@@ -17,15 +17,15 @@ apartmentRouter.get(
 );
 
 apartmentRouter.get(
+  '/public/:id', 
+  catchAsync(apartmentController.getPublicApartmentDetail)
+);
+
+apartmentRouter.get(
   '/:id', 
   authenticate, 
   authorize(Role.SUPER_ADMIN, Role.ADMIN),
   catchAsync(apartmentController.getApartmentDetail)
 )
-
-apartmentRouter.get(
-  '/public/:id', 
-  catchAsync(apartmentController.getPublicApartmentDetail)
-);
 
 export default apartmentRouter;
