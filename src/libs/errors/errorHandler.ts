@@ -8,6 +8,7 @@ import ConflictError from './ConflictError';
 import ForbiddenError from './ForbiddenError';
 import NotFoundError from './NotFoundError';
 import UnauthorizedError from './UnauthorizedError';
+import ValidationError from './ValidationError';
 
 /**
  * 모든 커스텀 에러의 기본이 되는 클래스 (커스텀으로 시작해도 괜찮다.)
@@ -89,6 +90,9 @@ export const globalErrorHandler = (
         statusCode = 404;
         message = err.message;
     } else if (err instanceof ConflictError) {
+        statusCode = 409;
+        message = err.message;
+    } else if (err instanceof ValidationError) {
         statusCode = 409;
         message = err.message;
     }

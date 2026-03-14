@@ -4,7 +4,6 @@ import { Prisma, PrismaClient, JoinStatus, Role } from '@prisma/client';
 // 일반 쿼리와 트랜잭션 쿼리 모두에 대응
 export type DbClient = Prisma.TransactionClient | PrismaClient;
 
-
 export async function findUserIdByUsername(db: DbClient, username: string) {
   return db.user.findUnique({ where: { username }, select: { id: true } });
 } //이 유저가 이미 가입되어 있는가?"만 확인하면 돼서 id만 추출.(메모리 절약)
@@ -19,7 +18,7 @@ export async function findUserIdByContact(db: DbClient, contact: string) {
 
 // 관리자 유저 생성
 export async function createAdminUser(
-  db: DbClient, 
+  db: DbClient,
   params: {
     username: string;
     hashedPassword: string;
@@ -27,7 +26,7 @@ export async function createAdminUser(
     email: string;
     contact: string;
     apartmentId: string;
-  }
+  },
 ) {
   return db.user.create({
     data: {
@@ -69,24 +68,43 @@ export async function updateUserStatus(db: DbClient, residentId: string, status:
 export async function findUserRoleById(db: DbClient, id: string) {
   return db.user.findUnique({
     where: { id },
-    select: { 
+    select: {
       role: true,
       joinStatus: true,
       image: true,
-     },
+    },
   });
 }
 
 /**
  * 프로필 이미지 변경.
  */
-export async function updateImage(
-  db: DbClient, 
-  userId: string, 
-  imagePath: string
-) {
+export async function updateImage(db: DbClient, userId: string, imagePath: string) {
   return await db.user.update({
     where: { id: userId },
     data: { image: imagePath },
+  });
+}
+
+/**
+ * 비밀번호 변경을 위해 현재 비밀번호를 추출하는 로직
+ */
+export async function findUserPasswordById(db: DbClient, userId: string) {
+  return await db.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      password: true,
+    },
+  });
+}
+
+/**
+ * 새로운 비밀번호를 DB에 넣어주는 로직
+ */
+export async function updateUserPassword(db: DbClient, userId: string, password: string) {
+  return await db.user.update({
+    where: { id: userId },
+    data: { password },
   });
 }

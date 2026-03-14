@@ -28,7 +28,8 @@
     "@types/is-uuid": "^1.0.2",
     "@types/jest": "^29.5.14",
     "@types/jsonwebtoken": "^9.0.10",
-    "@types/multer": "^1.4.12",
+    "@types/multer": "^1.4.13",
+    "@types/multer-s3": "^3.0.3",
     "@types/supertest": "^6.0.3",
     "jest": "^29.7.0",
     "nodemon": "^3.1.9",
@@ -40,7 +41,7 @@
     "typescript": "^5.8.2"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1007.0",
+    "@aws-sdk/client-s3": "^3.1008.0",
     "@prisma/client": "^6.18.0",
     "bcrypt": "^5.1.1",
     "class-transformer": "^0.5.1",

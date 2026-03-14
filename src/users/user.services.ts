@@ -1,10 +1,13 @@
 import { Role, JoinStatus } from '@prisma/client';
 import * as userRepository from './user.repository';
 import BadRequestError from '../libs/errors/BadRequestError';
-import { prismaClient } from '../libs/constants';
-import path from 'path';
-import fs from 'fs';
-
+import { prismaClient, S3_BUCKET_NAME } from '../libs/constants';
+import { DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { s3Client } from '../libs/s3Client';
+import { verifyPassword, hashPassword } from '../libs/auth/password';
+import { PasswordBody } from './user.struct';
+import NotFoundError from '../libs/errors/NotFoundError';
+import ValidationError from '../libs/errors/ValidationError';
 /**
  * [admin] 일반 주민(USER)의 가입 상태를 변경.
  */
@@ -51,12 +54,52 @@ export async function updateProfileImage(userId: string, imagePath: string) {
   const user = await userRepository.findUserRoleById(prismaClient, userId);
 
   // 1. DB에 저장된 값이 있고, 그게 '/public'으로 시작한다면
-  if (user?.image && user.image.startsWith('/public')) {
-    const oldPath = path.join(process.cwd(), user.image);
-    if (fs.existsSync(oldPath)) {
-      fs.unlinkSync(oldPath); // 이전 파일 삭제
+  if (user?.image && user.image.includes('amazonaws.com')) {
+    try {
+      // .com/ 뒤쪽만 짤라냄/ fileKey는 파일 이름
+      const fileKey = user.image.split('.com/')[1];
+
+      if (fileKey) {
+        await s3Client.send(
+          new DeleteObjectCommand({
+            Bucket: S3_BUCKET_NAME,
+            Key: decodeURIComponent(fileKey),
+          }),
+        );
+        console.log('기존 S3 파일 삭제 완료:', fileKey);
+      }
+    } catch (err) {
+      console.error('기존 S3 파일 삭제 중 오류 발생:', err);
     }
   }
 
   return await userRepository.updateImage(prismaClient, userId, imagePath);
+}
+
+/**
+ * 비밀번호 변경.
+ */
+export async function updatePassword(userId: string, data: PasswordBody) {
+  const { currentPassword, newPassword } = data;
+
+  // DB에서 유저와 기존 해시된 비밀번호를 가져온다.
+  const user = await userRepository.findUserPasswordById(prismaClient, userId);
+
+  // 토큰은 살아있지만 관리자에 의해 탈퇴당한 경우 대비 방어적 코드
+  if (!user) {
+    throw new NotFoundError('사용자를 찾을 수 없습니다.');
+  }
+
+  const isMatch = await verifyPassword(currentPassword, user.password);
+  if (!isMatch) {
+    throw new ValidationError('비밀번호가 일치하지 않습니다.');
+  }
+
+  if (currentPassword === newPassword) {
+    throw new ValidationError('새 비밀번호는 현재 비밀번호와 동일할 수 없습니다.');
+  }
+
+  const hashedNewPassword = await hashPassword(newPassword);
+
+  await userRepository.updateUserPassword(prismaClient, userId, hashedNewPassword);
 }
