@@ -1,8 +1,13 @@
 import * as s from 'superstruct';
 import { ExpressRequest, ExpressResponse } from '../libs/constants';
-import { UpdateStatusBodyStruct, AdminIdParamsStruct, UserIdParamsStruct } from './user.struct';
+import {
+  UpdateStatusBodyStruct,
+  AdminIdParamsStruct,
+  UserIdParamsStruct,
+  PasswordBody,
+  ChangePasswordBodyStruct,
+} from './user.struct';
 import * as userService from './user.services';
-
 
 /**
  * [슈퍼 관리자] 관리자 가입 상태 변경 (단건)
@@ -37,16 +42,15 @@ export async function updateUserStatus(req: ExpressRequest, res: ExpressResponse
  * 프로필 이미지 변경.
  */
 export async function updateProfileImage(req: ExpressRequest, res: ExpressResponse) {
-  
   const file = req.file as Express.MulterS3.File;
 
   if (!file) {
-    return res.status(400).json({ message: '업로드된 파일이 없습니다.'});
+    return res.status(400).json({ message: '업로드된 파일이 없습니다.' });
   }
 
   // authenticate를 통과했으니 강제로 req.user!.id 해도 괜찮은지
   const userId = req.user!.id;
-  
+
   // 저장된 파일 경로(s3 URL)
   const imagePath = file.location;
 
@@ -54,6 +58,21 @@ export async function updateProfileImage(req: ExpressRequest, res: ExpressRespon
 
   return res.status(200).json({
     message: '프로필 이미지 수정이 완료되었습니다.',
-    imageUrl: imagePath
-  })
+    imageUrl: imagePath,
+  });
+}
+
+/**
+ * 비밀번호 변경.
+ */
+export async function updatePassword(req: ExpressRequest, res: ExpressResponse) {
+  const data: PasswordBody = s.create(req.body, ChangePasswordBodyStruct);
+
+  const userId = req.user!.id;
+
+  await userService.updatePassword(userId, data);
+
+  return res.status(200).json({
+    message: '비밀번호 변경이 완료되었습니다. 다시 로그인해주세요.',
+  });
 }
