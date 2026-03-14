@@ -3,8 +3,6 @@ import { PrismaClient, Prisma } from '@prisma/client';
 import express, { RequestHandler, Request, Response, NextFunction } from 'express';
 import * as superstruct from 'superstruct';
 import isUuid from 'is-uuid';
-import NotFoundError from './errors/NotFoundError';
-
 
 dotenv.config();
 
@@ -30,7 +28,6 @@ requiredEnv.forEach((name) => {
   }
 });
 
-
 /**
  * 2. 타입 및 유틸리티 Export
  */
@@ -48,14 +45,12 @@ export const assert: typeof superstruct.assert = superstruct.assert;
 export { superstruct };
 export { isUuid };
 
-
 /**
  * 3. 설정값
  */
-const ACCESS_TOKEN_COOKIE_NAME = "accessToken";
-const REFRESH_TOKEN_COOKIE_NAME = "refreshToken";
-const NODE_ENV = process.env.NODE_ENV || "development";
-
+export const NODE_ENV = process.env.NODE_ENV || "development";
+export const ACCESS_TOKEN_COOKIE_NAME = "accessToken";
+export const REFRESH_TOKEN_COOKIE_NAME = "refreshToken"
 
 /**
  * 4. 검증된 환경 변수 Export

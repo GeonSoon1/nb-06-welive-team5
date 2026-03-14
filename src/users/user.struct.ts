@@ -52,11 +52,13 @@ export const UpdateStatusBodyStruct = s.object({
   status: s.enums(['APPROVED', 'REJECTED']),
 });
 
+export type PasswordBody = s.Infer<typeof ChangePasswordBodyStruct>
+
 // --------------------
 // 비밀번호 변경
 // --------------------
 export const ChangePasswordBodyStruct = s.object({
-  currentPassword: PasswordStruct,
+  currentPassword: s.string(), // 이미 가입한 유저 고려.
   newPassword: PasswordStruct,
 });
 

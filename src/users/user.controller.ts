@@ -1,7 +1,7 @@
 import * as s from 'superstruct';
 import { ExpressRequest, ExpressResponse } from '../libs/constants';
 import { UpdateStatusBodyStruct, AdminIdParamsStruct, UserIdParamsStruct } from './user.struct';
-import * as userAuthService from './user.services';
+import * as userService from './user.services';
 
 
 /**
@@ -12,7 +12,7 @@ export async function updateAdminStatus(req: ExpressRequest, res: ExpressRespons
   const { adminId } = s.create(req.params, AdminIdParamsStruct);
   const { status } = s.create(req.body, UpdateStatusBodyStruct);
 
-  await userAuthService.updateAdminStatus(adminId, status);
+  await userService.updateAdminStatus(adminId, status);
 
   return res.status(200).json({ message: '관라자 가입 상태 변경이 완료되었습니다.' });
 }
@@ -28,7 +28,7 @@ export async function updateUserStatus(req: ExpressRequest, res: ExpressResponse
   const { status } = s.create(req.body, UpdateStatusBodyStruct);
 
   // 3. 서비스 호출
-  await userAuthService.updateUserStatus(residentId, status);
+  await userService.updateUserStatus(residentId, status);
 
   return res.status(200).json({ message: '주민 가입 상태 변경이 완료되었습니다.' });
 }
@@ -50,7 +50,7 @@ export async function updateProfileImage(req: ExpressRequest, res: ExpressRespon
   // 저장된 파일 경로(s3 URL)
   const imagePath = file.location;
 
-  await userAuthService.updateProfileImage(userId, imagePath);
+  await userService.updateProfileImage(userId, imagePath);
 
   return res.status(200).json({
     message: '프로필 이미지 수정이 완료되었습니다.',
