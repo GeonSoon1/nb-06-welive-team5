@@ -3,7 +3,6 @@ import { ExpressRequest, ExpressResponse } from '../libs/constants';
 import {
   UpdateStatusBodyStruct,
   AdminIdParamsStruct,
-  UserIdParamsStruct,
   PasswordBody,
   ChangePasswordBodyStruct,
 } from './user.struct';
@@ -40,24 +39,6 @@ export async function updateAllAdminStatus(req: ExpressRequest, res: ExpressResp
         : '변경할 대기 상태의 관리자가 없습니다.',
   });
 }
-
-
-/**
- * [Admin] 주민 가입 상태 변경 (단건)
- */
-export async function updateUserStatus(req: ExpressRequest, res: ExpressResponse) {
-  // 1. URL 파라미터에서 대상 주민(USER) ID 추출
-  const { residentId } = s.create(req.params, UserIdParamsStruct);
-
-  // 2. 바디 데이터 검증
-  const { status } = s.create(req.body, UpdateStatusBodyStruct);
-
-  // 3. 서비스 호출
-  await userService.updateUserStatus(residentId, status);
-
-  return res.status(200).json({ message: '주민 가입 상태 변경이 완료되었습니다.' });
-}
-
 
 /**
  * 프로필 이미지 변경.

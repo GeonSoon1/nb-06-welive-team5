@@ -82,7 +82,3 @@ const Id = s.nonempty(s.string());
 export const AdminIdParamsStruct = s.object({
   adminId: Id, // 여기서 adminId는 반드시 있어야 함을 명시하지
 });
-
-export const UserIdParamsStruct = s.object({
-  residentId: Id, // 여기서 userId는 반드시 있어야 함을 명시하지
-});

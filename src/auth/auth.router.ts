@@ -5,6 +5,7 @@ import { authorize } from '../middlewares/authorize';
 import { authenticate } from '../middlewares/authenticate'
 import { Role } from '@prisma/client';
 import * as userController from '../users/user.controller';
+import * as residentController from '../residents/resident.controller';
 
 const authRouter = express.Router();
 
@@ -42,7 +43,7 @@ authRouter.patch(
   '/residents/:residentId/status',
   authenticate,
   authorize(Role.ADMIN),
-  catchAsync(userController.updateUserStatus)
+  catchAsync(residentController.updateResidentStatus)
 );
 
 export default authRouter;
