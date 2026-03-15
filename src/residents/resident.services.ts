@@ -166,3 +166,15 @@ export async function updateResidentStatus(residentId: string, status: JoinStatu
 
   return await userRepository.updateUserStatus(prisma, resident.userId, status);
 }
+
+// 11. 입주민 (user) 상태 일괄 변경 (건순)
+export async function updateAllResidentStatus(apartmentId: string, status: JoinStatus) {
+  const result = await userRepository.updateAllUsers(prisma, {
+    apartmentId,
+    targetRole: Role.USER,
+    fromStatus: JoinStatus.PENDING,
+    toStatus: status,
+  });
+
+  return result;
+}

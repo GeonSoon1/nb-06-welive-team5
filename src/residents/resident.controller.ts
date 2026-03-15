@@ -161,3 +161,17 @@ export async function updateResidentStatus(req: ExpressRequest, res: ExpressResp
     message: '주민 가입 상태 변경이 완료되었습니다.' 
   });
 }
+
+// 11. 입주민 (user) 상태 일괄 변경 (건순)
+export async function updateAllResidentStatus(req: ExpressRequest, res: ExpressResponse) {
+  const { status } = s.create(req.body, UpdateStatusBodyStruct);
+  const { apartmentId } = req.user!;
+
+  const result = await residentService.updateAllResidentStatus(apartmentId!, status);
+
+  return res.status(200).json({
+    message: result.count > 0
+      ? '작업이 성공적으로 완료되었습니다.'
+      : '변경할 대기 상태의 관리자가 없습니다.'
+  });
+}

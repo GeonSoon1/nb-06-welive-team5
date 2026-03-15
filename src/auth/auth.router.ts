@@ -46,5 +46,15 @@ authRouter.patch(
   catchAsync(residentController.updateResidentStatus)
 );
 
+/**
+ * [ADMIN] 주민 가입 상태 일괄 변경
+ */
+authRouter.patch(
+  '/residents/status',
+  authenticate,
+  authorize(Role.ADMIN),
+  catchAsync(residentController.updateAllResidentStatus),
+);
+
 export default authRouter;
 
