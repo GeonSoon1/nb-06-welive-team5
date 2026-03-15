@@ -42,11 +42,32 @@ export async function createAdminUser(
   });
 }
 
-// super-admin이 admin의 상태를 approved로 승인
+// super-admin이 하나의 admin의 상태를 ex) PENDING -> APPROVED로 승인
 export async function updateAdminStatus(db: DbClient, adminId: string, status: JoinStatus) {
   return db.user.update({
     where: { id: adminId },
     data: { joinStatus: status },
+  });
+}
+
+/**
+ * super-admin이 모든 admin의 상태를 ex)PENDING -> APPROVED로 승인
+ */
+export async function updateAllAdmins(
+  db: DbClient,
+  params: { 
+    targetRole: Role; 
+    fromStatus: JoinStatus; 
+    toStatus: JoinStatus; },
+) {
+  return db.user.updateMany({
+    where: {
+      role: params.targetRole,
+      joinStatus: params.fromStatus,
+    },
+    data: {
+      joinStatus: params.toStatus,
+    },
   });
 }
 

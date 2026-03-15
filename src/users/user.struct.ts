@@ -49,7 +49,7 @@ export const JoinStatusStruct = s.enums(['PENDING', 'APPROVED', 'REJECTED', 'NEE
 // 승인 상태 변경
 // --------------------
 export const UpdateStatusBodyStruct = s.object({
-  status: s.enums(['APPROVED', 'REJECTED']),
+  status: s.enums(['APPROVED', 'REJECTED', 'PENDING']),
 });
 
 // --------------------

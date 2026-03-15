@@ -8,6 +8,8 @@ import { verifyPassword, hashPassword } from '../libs/auth/password';
 import { PasswordBody } from './user.struct';
 import NotFoundError from '../libs/errors/NotFoundError';
 import ValidationError from '../libs/errors/ValidationError';
+
+
 /**
  * [admin] 일반 주민(USER)의 가입 상태를 변경.
  */
@@ -30,6 +32,7 @@ export async function updateUserStatus(residentId: string, status: JoinStatus) {
   return await userRepository.updateUserStatus(prismaClient, residentId, status);
 }
 
+
 /**
  * [super-admin] 관리자(admin)의 가입 상태를 변경.
  */
@@ -46,6 +49,21 @@ export async function updateAdminStatus(adminId: string, status: JoinStatus) {
 
   return await userRepository.updateAdminStatus(prismaClient, adminId, status);
 }
+
+
+/**
+ * [super-admin] 관리자(admin)의 가입 상태를 일괄 변경.
+ */
+export async function updateAllAdminStatus(status: JoinStatus) {
+  const result = await userRepository.updateAllAdmins(prismaClient, {
+    targetRole: Role.ADMIN,
+    fromStatus: JoinStatus.PENDING,
+    toStatus: status,
+  });
+  
+  return result;
+}
+
 
 /**
  * 프로필 이미지 변경.
@@ -75,6 +93,7 @@ export async function updateProfileImage(userId: string, imagePath: string) {
 
   return await userRepository.updateImage(prismaClient, userId, imagePath);
 }
+
 
 /**
  * 비밀번호 변경.

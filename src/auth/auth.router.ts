@@ -24,6 +24,14 @@ authRouter.patch(
   catchAsync(userController.updateAdminStatus)
 );
 
+// [슈퍼관리자] 관리자 가입 상태 일괄 변경
+authRouter.patch(
+  '/admins/status',
+  authenticate,
+  authorize(Role.SUPER_ADMIN),
+  catchAsync(userController.updateAllAdminStatus),
+)
+
 /**
  * [ADMIN] 주민 가입 상태 변경 (단건)
  * 1. authenticate: 로그인 여부 및 토큰 검증
