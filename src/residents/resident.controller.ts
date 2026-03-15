@@ -6,10 +6,12 @@ import {
   UpdateResidentStruct,
   GetResidentsQueryStruct,
   GetResidentsQueryDto,
+  ResidentIdParamsStruct,
 } from './resident.struct';
 import { ResidentWithUser } from './resident.type';
 import BadRequestError from '../libs/errors/BadRequestError';
 import UnauthorizedError from '../libs/errors/UnauthorizedError';
+import { UpdateStatusBodyStruct } from '../users/user.struct';
 
 const mapToResidentResponse = (r: ResidentWithUser) => ({
   id: r.id,
@@ -142,4 +144,34 @@ export async function exportCsv(req: ExpressRequest, res: ExpressResponse) {
   res.setHeader('Content-disposition', 'attachment; filename="residents.csv"');
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   csvStream.pipe(res);
+}
+
+// 10. 입주민 (user) 상태 변경 (건순)
+export async function updateResidentStatus(req: ExpressRequest, res: ExpressResponse) {
+  // 1. URL 파라미터에서 대상 주민(USER) ID 추출
+  const { residentId } = s.create(req.params, ResidentIdParamsStruct);
+
+  // 2. 바디 데이터 검증
+  const { status } = s.create(req.body, UpdateStatusBodyStruct);
+
+  // 3. 서비스 호출
+  await residentService.updateResidentStatus(residentId, status);
+
+  return res.status(200).json({ 
+    message: '주민 가입 상태 변경이 완료되었습니다.' 
+  });
+}
+
+// 11. 입주민 (user) 상태 일괄 변경 (건순)
+export async function updateAllResidentStatus(req: ExpressRequest, res: ExpressResponse) {
+  const { status } = s.create(req.body, UpdateStatusBodyStruct);
+  const { apartmentId } = req.user!;
+
+  const result = await residentService.updateAllResidentStatus(apartmentId!, status);
+
+  return res.status(200).json({
+    message: result.count > 0
+      ? '작업이 성공적으로 완료되었습니다.'
+      : '변경할 대기 상태의 관리자가 없습니다.'
+  });
 }

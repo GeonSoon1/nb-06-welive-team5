@@ -3,8 +3,10 @@ import { Readable } from 'stream';
 import { prismaClient as prisma, Prisma } from '../libs/constants';
 import BadRequestError from '../libs/errors/BadRequestError';
 import * as residentRepository from './resident.repository';
+import * as userRepository from '../users/user.repository';
 import { CsvUploadResult } from './resident.type';
 import { CreateResidentDto, UpdateResidentDto, GetResidentsQueryDto } from './resident.struct';
+import { JoinStatus, Role } from '@prisma/client';
 
 // 1. 입주민 리소스 생성(개별 등록)
 export async function createResident(apartmentId: string, data: CreateResidentDto) {
@@ -136,4 +138,43 @@ export async function exportResidentsToCsv(apartmentId: string, query: GetReside
 
   csvStream.end();
   return csvStream;
+}
+
+// 10. 입주민 (user) 상태 변경 (건순)
+export async function updateResidentStatus(residentId: string, status: JoinStatus) {
+  
+  // 1. ResidentId를 통해 연결된 UserId와 현재 정보를 가져옴
+  const resident = await residentRepository.findResidentWithAuthInfo(prisma, residentId);
+  
+  if (!resident) {
+    throw new BadRequestError('해당 주민 정보를 찾을 수 없습니다.');
+  }
+
+  if (!resident.userId) {
+    throw new BadRequestError('해당 주민과 연결된 유저 계정이 존재하지 않습니다.');
+  }
+
+  // 2. 보안 검증: 대상이 일반 주민(USER)인지 확인
+  if (resident.user?.role !== Role.USER) {
+    throw new BadRequestError('일반 주민 권한을 가진 계정만 상태 변경이 가능합니다.');
+  }
+
+  // 3. 비즈니스 로직: 멱등성 체크 (이미 같은 상태면 업데이트 생략)
+  if (resident.user?.joinStatus === status) {
+    return;
+  }
+
+  return await userRepository.updateUserStatus(prisma, resident.userId, status);
+}
+
+// 11. 입주민 (user) 상태 일괄 변경 (건순)
+export async function updateAllResidentStatus(apartmentId: string, status: JoinStatus) {
+  const result = await userRepository.updateAllUsers(prisma, {
+    apartmentId,
+    targetRole: Role.USER,
+    fromStatus: JoinStatus.PENDING,
+    toStatus: status,
+  });
+
+  return result;
 }

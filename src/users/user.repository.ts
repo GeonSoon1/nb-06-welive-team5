@@ -16,37 +16,32 @@ export async function findUserIdByContact(db: DbClient, contact: string) {
   return db.user.findUnique({ where: { contact }, select: { id: true } });
 }
 
-// 관리자 유저 생성
-export async function createAdminUser(
-  db: DbClient,
-  params: {
-    username: string;
-    hashedPassword: string;
-    name: string;
-    email: string;
-    contact: string;
-    apartmentId: string;
-  },
-) {
-  return db.user.create({
-    data: {
-      username: params.username,
-      password: params.hashedPassword,
-      name: params.name,
-      email: params.email,
-      contact: params.contact,
-      role: Role.ADMIN,
-      joinStatus: JoinStatus.PENDING,
-      apartmentId: params.apartmentId,
-    },
-  });
-}
-
-// super-admin이 admin의 상태를 approved로 승인
+// super-admin이 하나의 admin의 상태를 ex) PENDING -> APPROVED로 승인
 export async function updateAdminStatus(db: DbClient, adminId: string, status: JoinStatus) {
   return db.user.update({
     where: { id: adminId },
     data: { joinStatus: status },
+  });
+}
+
+/**
+ * super-admin이 모든 admin의 상태를 ex)PENDING -> APPROVED로 승인
+ */
+export async function updateAllAdmins(
+  db: DbClient,
+  params: { 
+    targetRole: Role; 
+    fromStatus: JoinStatus; 
+    toStatus: JoinStatus; },
+) {
+  return db.user.updateMany({
+    where: {
+      role: params.targetRole,
+      joinStatus: params.fromStatus,
+    },
+    data: {
+      joinStatus: params.toStatus,
+    },
   });
 }
 
@@ -60,6 +55,31 @@ export async function updateUserStatus(db: DbClient, residentId: string, status:
     },
     data: {
       joinStatus: status,
+    },
+  });
+}
+
+/**
+ * [admin] 일반 유저(user)의 가입 상태를 일괄 변경.
+ */
+export async function updateAllUsers(
+  db: DbClient,
+  params: {
+    apartmentId: string;
+    targetRole: Role;
+    fromStatus: JoinStatus;
+    toStatus: JoinStatus; },
+) {
+  return db.user.updateMany({
+    where: {
+      role: params.targetRole,
+      joinStatus: params.fromStatus,
+      resident: { // user와 연결된 resident가 있으면 가서 resident 테이블에서 apartmentId를 가져온다.
+        apartmentId: params.apartmentId,
+      }
+    },
+    data: {
+      joinStatus: params.toStatus,
     },
   });
 }

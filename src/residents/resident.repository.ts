@@ -145,3 +145,19 @@ export async function linkResidentToUser(
     }, // ?? - 왼쪽 값이 없으면(null 또는 undefined), 오른쪽 값을 써라.
   });
 }
+
+// 입주민 (user) 상태 변경 (건순)
+export async function findResidentWithAuthInfo(db: DbClient, residentId: string) {
+  return await db.resident.findUnique({
+    where: { id: residentId },
+    select: {
+      userId: true,
+      user: { // DB에서 User 테이블이랑 JOIN 해서 그 안에 있는 구체적인 정보 가져오기.
+        select: {
+          role: true,
+          joinStatus: true, // User 테이블에 있는 상태값
+        }
+      }
+    }
+  }); 
+}

@@ -3,11 +3,11 @@ import { ExpressRequest, ExpressResponse } from '../libs/constants';
 import {
   UpdateStatusBodyStruct,
   AdminIdParamsStruct,
-  UserIdParamsStruct,
   PasswordBody,
   ChangePasswordBodyStruct,
 } from './user.struct';
 import * as userService from './user.services';
+
 
 /**
  * [슈퍼 관리자] 관리자 가입 상태 변경 (단건)
@@ -22,20 +22,22 @@ export async function updateAdminStatus(req: ExpressRequest, res: ExpressRespons
   return res.status(200).json({ message: '관라자 가입 상태 변경이 완료되었습니다.' });
 }
 
-/**
- * [Admin] 주민 가입 상태 변경 (단건)
- */
-export async function updateUserStatus(req: ExpressRequest, res: ExpressResponse) {
-  // 1. URL 파라미터에서 대상 주민(USER) ID 추출
-  const { residentId } = s.create(req.params, UserIdParamsStruct);
 
-  // 2. 바디 데이터 검증
+/**
+ * [슈퍼 관리자] 관리자 가입 상태 일괄 변경
+ * PATCH /api/auth/admins/status
+ */
+export async function updateAllAdminStatus(req: ExpressRequest, res: ExpressResponse) {
   const { status } = s.create(req.body, UpdateStatusBodyStruct);
 
-  // 3. 서비스 호출
-  await userService.updateUserStatus(residentId, status);
+  const result = await userService.updateAllAdminStatus(status);
 
-  return res.status(200).json({ message: '주민 가입 상태 변경이 완료되었습니다.' });
+  return res.status(200).json({
+    message:
+      result.count > 0
+        ? '작업이 성공적으로 완료되었습니다.'
+        : '변경할 대기 상태의 관리자가 없습니다.',
+  });
 }
 
 /**
@@ -61,6 +63,7 @@ export async function updateProfileImage(req: ExpressRequest, res: ExpressRespon
     imageUrl: imagePath,
   });
 }
+
 
 /**
  * 비밀번호 변경.
