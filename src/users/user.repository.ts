@@ -148,3 +148,27 @@ export async function updateAdminBasicInfo(
     },
   });
 }
+
+/**
+ * [Super-Admin/ Admin] Rejected된 관리자들 & 유저들 삭제
+ */
+export async function cleanupRejectedUsers(
+  db: DbClient,
+  params: {
+    targetRole: Role;
+    updatedBefore: Date;
+    apartmentId?: string;
+  }
+): Promise<Prisma.BatchPayload> {
+  return await db.user.deleteMany({ // deleteMany는 db 작업 진행하고 count를 return함.
+    where: {
+      role: params.targetRole,
+      joinStatus: JoinStatus.REJECTED,
+      updatedAt: {
+        lt: params.updatedBefore // '기준 날짜보다 이전' 조건
+      }, 
+      // apartmentId가 있으면 apartmentId는 params.apartmentId 넣기. (앞에 값이 undefined이면 falsy라서 undefiend 반환)
+      ...(params.apartmentId && { apartmentId: params.apartmentId }), 
+    },
+  });
+}

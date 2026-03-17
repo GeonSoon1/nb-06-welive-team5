@@ -66,5 +66,15 @@ authRouter.patch(
   catchAsync(userController.updateAdminInfo)
 )
 
+/**
+ * [Super-Admin/ Admin] Rejected된 관리자들 & 유저들 삭제
+ */
+authRouter.post(
+  '/cleanup',
+  authenticate,
+  authorize(Role.SUPER_ADMIN, Role.ADMIN),
+  catchAsync(userController.cleanupRejectedUsers)
+)
+
 export default authRouter;
 

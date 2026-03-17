@@ -1,5 +1,5 @@
 import * as s from 'superstruct';
-import { ExpressRequest, ExpressResponse } from '../libs/constants';
+import { ExpressRequest, ExpressResponse, CLEANUP_GRACE_PERIOD_DAYS } from '../libs/constants';
 import {
   UpdateStatusBodyStruct,
   AdminIdParamsStruct,
@@ -93,5 +93,24 @@ export async function updateAdminInfo(req: ExpressRequest, res: ExpressResponse)
 
   return res.status(200).json({
     message: '작업이 성공적으로 완료되었습니다.',
+  });
+}
+
+/**
+ * [Super-Admin/ Admin] Rejected된 관리자들 & 유저들 삭제
+ */
+export async function cleanupRejectedUsers(req: ExpressRequest, res: ExpressResponse) {
+  
+  const { role, apartmentId } = req.user!;
+
+  const result = await userService.cleanupRejectedUsers({
+    requestRole: role,
+    apartmentId: apartmentId ?? undefined, // ??(왼쪽 값이 null이나 undefined이면 오른쪽 값, 그외 값은 왼쪽 값)
+    days: CLEANUP_GRACE_PERIOD_DAYS 
+  });
+
+  return res.status(200).json({
+    message: '거절된 계정 정보 일괄 정리가 완료되었습니다.',
+    deletedCount: result.count,
   });
 }

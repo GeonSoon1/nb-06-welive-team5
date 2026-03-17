@@ -62,3 +62,8 @@ export const AWS_REGION = process.env.AWS_REGION!;
 export const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID!;
 export const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY!;
 export const S3_BUCKET_NAME = process.env.S3_BUCKET_NAME!;
+
+/**
+ * 5. [Super-Admin/ Admin] Rejected된 관리자들 & 유저들 삭제에 필요한 기간
+ */
+export const CLEANUP_GRACE_PERIOD_DAYS = 3;

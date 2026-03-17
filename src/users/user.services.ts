@@ -9,6 +9,8 @@ import { verifyPassword, hashPassword } from '../libs/auth/password';
 import { PasswordBody, UpdateAdminBody } from './user.struct';
 import NotFoundError from '../libs/errors/NotFoundError';
 import ValidationError from '../libs/errors/ValidationError';
+import { subDays } from 'date-fns';
+import ForbiddenError from '../libs/errors/ForbiddenError';
 
 /**
  * [super-admin] 관리자(admin)의 가입 상태를 변경.
@@ -131,4 +133,40 @@ export async function updateAdminInfo(adminId: string, input: UpdateAdminBody) {
       apartement: apartment
     };
   });
+} 
+
+/**
+ * [Super-Admin/ Admin] Rejected된 관리자들 & 유저들 삭제
+ */
+export async function cleanupRejectedUsers(params: {
+  requestRole: Role;
+  apartmentId?: string;
+  days: number;
+}) {
+  // 오늘 날짜 기준으로 3일 전 날짜 
+  const thresholdDate = subDays(new Date(), params.days);
+
+  // 1. 슈퍼 관리자 -> 모든 거절된 ADMIN 삭제
+  if (params.requestRole === Role.SUPER_ADMIN) {
+    return await userRepository.cleanupRejectedUsers(prismaClient, {
+      targetRole: Role.ADMIN,
+      updatedBefore: thresholdDate
+    });
+  }
+
+  // 2. 관리자 -> 자기 아파트의 거절된 USER(주민) 삭제
+  if (params.requestRole === Role.ADMIN) {
+    if (!params.apartmentId) {
+      throw new BadRequestError('관리자 계정에 연결된 아파트 정보가 없습니다.');
+    }
+
+    return await userRepository.cleanupRejectedUsers(prismaClient, {
+      targetRole: Role.USER,
+      updatedBefore: thresholdDate,
+      apartmentId: params.apartmentId,
+    });
+  }
+  
+  // 방어적 코드
+  throw new ForbiddenError('해당 작업을 수행할 권한이 없습니다.')
 } 
