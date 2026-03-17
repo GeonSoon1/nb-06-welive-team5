@@ -172,6 +172,6 @@ export async function updateAllResidentStatus(req: ExpressRequest, res: ExpressR
   return res.status(200).json({
     message: result.count > 0
       ? '작업이 성공적으로 완료되었습니다.'
-      : '변경할 대기 상태의 관리자가 없습니다.'
+      : '변경할 대기 상태의 입주민이 없습니다.'
   });
 }

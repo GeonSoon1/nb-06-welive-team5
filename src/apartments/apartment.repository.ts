@@ -235,3 +235,27 @@ export async function findPublicApartmentById(
     },
   });
 }
+
+/**
+ * [Super-Admin] 아파트 정보(관리자 정보) 수정
+ */
+export async function updateApartmentInfo(
+  db: DbClient,
+  apartmentId: string,
+  data: {
+    name: string;
+    address: string;
+    officeNumber: string;
+    description: string;
+  }
+): Promise<Apartment> {
+  return await db.apartment.update({
+    where: { id: apartmentId },
+    data: {
+      name: data.name,
+      address: data.address,
+      officeNumber: data.officeNumber,
+      description: data.description,
+    },
+  });
+}

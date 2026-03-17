@@ -56,5 +56,15 @@ authRouter.patch(
   catchAsync(residentController.updateAllResidentStatus),
 );
 
+/**
+ * [Super-Admin] 관리자 정보(아파트 정보) 수정
+ */
+authRouter.patch(
+  '/admins/:adminId',
+  authenticate,
+  authorize(Role.SUPER_ADMIN),
+  catchAsync(userController.updateAdminInfo)
+)
+
 export default authRouter;
 

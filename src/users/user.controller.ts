@@ -5,6 +5,7 @@ import {
   AdminIdParamsStruct,
   PasswordBody,
   ChangePasswordBodyStruct,
+  UpdateAdminBodyStruct,
 } from './user.struct';
 import * as userService from './user.services';
 
@@ -77,5 +78,20 @@ export async function updatePassword(req: ExpressRequest, res: ExpressResponse) 
 
   return res.status(200).json({
     message: '비밀번호 변경이 완료되었습니다. 다시 로그인해주세요.',
+  });
+}
+
+/**
+ * [Super-Admin] 관리자 정보(아파트 정보) 수정
+ */
+export async function updateAdminInfo(req: ExpressRequest, res: ExpressResponse) {
+  const { adminId } = s.create(req.params, AdminIdParamsStruct);
+  
+  const payload = s.create(req.body, UpdateAdminBodyStruct);
+
+  await userService.updateAdminInfo(adminId, payload);
+
+  return res.status(200).json({
+    message: '작업이 성공적으로 완료되었습니다.',
   });
 }

@@ -1,11 +1,12 @@
 import { Role, JoinStatus } from '@prisma/client';
 import * as userRepository from './user.repository';
+import * as apartmentRepository from '../apartments/apartment.repository';
 import BadRequestError from '../libs/errors/BadRequestError';
 import { prismaClient, S3_BUCKET_NAME } from '../libs/constants';
 import { DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { s3Client } from '../libs/s3Client';
 import { verifyPassword, hashPassword } from '../libs/auth/password';
-import { PasswordBody } from './user.struct';
+import { PasswordBody, UpdateAdminBody } from './user.struct';
 import NotFoundError from '../libs/errors/NotFoundError';
 import ValidationError from '../libs/errors/ValidationError';
 
@@ -98,3 +99,36 @@ export async function updatePassword(userId: string, data: PasswordBody) {
 
   await userRepository.updateUserPassword(prismaClient, userId, hashedNewPassword);
 }
+
+/**
+ * [Super-Admin] 관리자 정보(아파트 정보) 수정
+ */
+export async function updateAdminInfo(adminId: string, input: UpdateAdminBody) {
+  return await prismaClient.$transaction(async (tx) => {
+    const user = await userRepository.updateAdminBasicInfo(tx, adminId, {
+      name: input.name,
+      contact: input.contact,
+      email: input.email,
+    });
+
+    if (!user) {
+      throw new NotFoundError('해당 관리자 정보를 찾을 수 없습니다.');
+    }
+
+    if (!user.apartmentId) {
+      throw new BadRequestError('해당 관리자 계정에 연결된 아파트 정보가 존재하지 않습니다.');
+    }
+
+    const apartment = await apartmentRepository.updateApartmentInfo(tx, user.apartmentId, {
+      name: input.apartmentName,
+      address: input.apartmentAddress,
+      officeNumber: input.apartmentManagementNumber,
+      description: input.description,
+    });
+
+    return {
+      ...user,
+      apartement: apartment
+    };
+  });
+} 
