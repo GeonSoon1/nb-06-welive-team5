@@ -1,5 +1,5 @@
 // src/users/users.repository.ts
-import { Prisma, PrismaClient, JoinStatus, Role } from '@prisma/client';
+import { Prisma, PrismaClient, JoinStatus, Role, User } from '@prisma/client';
 
 // 일반 쿼리와 트랜잭션 쿼리 모두에 대응
 export type DbClient = Prisma.TransactionClient | PrismaClient;
@@ -32,7 +32,8 @@ export async function updateAllAdmins(
   params: { 
     targetRole: Role; 
     fromStatus: JoinStatus; 
-    toStatus: JoinStatus; },
+    toStatus: JoinStatus; 
+  },
 ) {
   return db.user.updateMany({
     where: {
@@ -68,13 +69,14 @@ export async function updateAllUsers(
     apartmentId: string;
     targetRole: Role;
     fromStatus: JoinStatus;
-    toStatus: JoinStatus; },
+    toStatus: JoinStatus; 
+  },
 ) {
   return db.user.updateMany({
     where: {
       role: params.targetRole,
       joinStatus: params.fromStatus,
-      resident: { // user와 연결된 resident가 있으면 가서 resident 테이블에서 apartmentId를 가져온다.
+      resident: { // user와 연결된 resident가 있으면 가서 resident 테이블과 관계를 맺고 resident 테이블의 apartmentId와 입력한 apartmentId가 같는 것을 조건으로 한다.
         apartmentId: params.apartmentId,
       }
     },
@@ -126,5 +128,47 @@ export async function updateUserPassword(db: DbClient, userId: string, password:
   return await db.user.update({
     where: { id: userId },
     data: { password },
+  });
+}
+
+/**
+ * [Super-Admin] 관리자 정보(아파트 정보) 수정
+ */
+export async function updateAdminBasicInfo(
+  db: DbClient,
+  adminId: string,
+  data: { name: string; contact: string; email: string; },
+): Promise<User> {
+  return await db.user.update({
+    where: { id: adminId },
+    data: {
+      name: data.name,
+      contact: data.contact,
+      email: data.email,
+    },
+  });
+}
+
+/**
+ * [Super-Admin/ Admin] Rejected된 관리자들 & 유저들 삭제
+ */
+export async function cleanupRejectedUsers(
+  db: DbClient,
+  params: {
+    targetRole: Role;
+    updatedBefore: Date;
+    apartmentId?: string;
+  }
+): Promise<Prisma.BatchPayload> {
+  return await db.user.deleteMany({ // deleteMany는 db 작업 진행하고 count를 return함.
+    where: {
+      role: params.targetRole,
+      joinStatus: JoinStatus.REJECTED,
+      updatedAt: {
+        lt: params.updatedBefore // '기준 날짜보다 이전' 조건
+      }, 
+      // apartmentId가 있으면 apartmentId는 params.apartmentId 넣기. (앞에 값이 undefined이면 falsy라서 undefiend 반환)
+      ...(params.apartmentId && { apartmentId: params.apartmentId }), 
+    },
   });
 }

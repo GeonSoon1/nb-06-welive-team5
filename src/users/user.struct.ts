@@ -64,17 +64,26 @@ export type PasswordBody = s.Infer<typeof ChangePasswordBodyStruct>;
 
 // 업데이트 dto는 partial로 (나중에 트랜젝션 해야한다.)
 // contact, name, email은 User테이블 / apartment테이블 섞여있어서.
-export const UpdateAdminBodyStruct = s.partial(
-  s.object({
-    contact: ContactStruct,
-    name: NameStruct,
-    email: EmailStruct,
-    description: s.nonempty(trimmed),
-    apartmentName: s.nonempty(trimmed),
-    apartmentAddress: s.nonempty(trimmed),
-    apartmentManagementNumber: s.nonempty(trimmed),
-  }),
-);
+
+// 수정 관련 원형(Base)
+export const AdminBodyFields = {
+  contact: ContactStruct,
+  name: NameStruct,
+  email: EmailStruct,
+  description: s.nonempty(trimmed),
+  apartmentName: s.nonempty(trimmed),
+  apartmentAddress: s.nonempty(trimmed),
+  apartmentManagementNumber: s.nonempty(trimmed),
+};
+
+// 전체 수정용
+export const UpdateAdminBodyStruct = s.object(AdminBodyFields);
+export type UpdateAdminBody = s.Infer<typeof UpdateAdminBodyStruct>;
+
+// ex) 부분 수정용
+export const PatchAdminBodyStruct = s.partial(s.object(AdminBodyFields));
+export type PatchAdminBody = s.Infer<typeof PatchAdminBodyStruct>;
+
 
 // 공통으로 쓸 ID 검증 로직
 const Id = s.nonempty(s.string());
