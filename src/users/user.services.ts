@@ -16,7 +16,7 @@ import ForbiddenError from '../libs/errors/ForbiddenError';
  * [super-admin] 관리자(admin)의 가입 상태를 변경.
  */
 export async function updateAdminStatus(adminId: string, status: JoinStatus) {
-  const targetUser = await userRepository.findUserRoleById(prismaClient, adminId);
+  const targetUser = await userRepository.findUserWithApartmentById(prismaClient, adminId);
 
   if (!targetUser) {
     throw new BadRequestError('해당 유저를 찾을 수 없습니다.');
@@ -26,7 +26,13 @@ export async function updateAdminStatus(adminId: string, status: JoinStatus) {
     throw new BadRequestError('관리자(ADMIN) 권한을 가진 유저만 승인 상태를 변경할 수 있습니다');
   }
 
-  return await userRepository.updateAdminStatus(prismaClient, adminId, status);
+  return await prismaClient.$transaction(async (tx) => {
+    await userRepository.updateAdminStatus(tx, adminId, status);
+
+    if (status === JoinStatus.APPROVED && targetUser.apartmentId) {
+      await apartmentRepository.activateApartment(tx, targetUser.apartmentId, adminId);
+    }
+  });
 }
 
 

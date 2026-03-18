@@ -24,6 +24,19 @@ export async function updateAdminStatus(db: DbClient, adminId: string, status: J
   });
 }
 
+export async function findUserWithApartmentById(
+  db: DbClient,
+  userId: string
+) {
+  return db.user.findUnique({
+    where: { id: userId },
+    select: {
+      role: true,
+      apartmentId: true,
+    },
+  });
+}
+
 /**
  * super-admin이 모든 admin의 상태를 ex)PENDING -> APPROVED로 승인
  */

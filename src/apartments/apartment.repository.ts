@@ -275,3 +275,16 @@ export async function removeApartment(db: DbClient, apartmentId: string) {
     where: { id: apartmentId },
   });
 }
+
+/**
+ * 아파트를 승인 상태로 변경하고, 관리자를 주인으로 등록한다.
+ */
+export async function activateApartment(db: DbClient, apartmentId: string, adminId: string) {
+  return db.apartment.update({
+    where: { id: apartmentId },
+    data: {
+      apartmentStatus: 'APPROVED',
+      adminId: adminId,
+    },
+  });
+}
