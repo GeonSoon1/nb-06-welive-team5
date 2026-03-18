@@ -15,7 +15,9 @@ export const findNotices = async (skip: number, take: number, where: Prisma.Noti
             take,
             orderBy: { createdAt: 'desc' },
             include: {
-                author: true,
+                author: {
+                    select: { id: true, name: true }
+                },
                 _count: {
                     select: { comments: true }
                 }
@@ -29,10 +31,14 @@ export const findNoticeById = async (noticeId: string) => {
     return prismaClient.notice.findUnique({
         where: { id: noticeId },
         include: {
-            author: true,
+            author: {
+                select: { id: true, name: true }
+            },
             comments: {
                 include: {
-                    author: true
+                    author: {
+                        select: { id: true, name: true }
+                    }
                 },
                 orderBy: { createdAt: 'asc' }
             },

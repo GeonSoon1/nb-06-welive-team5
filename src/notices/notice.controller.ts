@@ -7,8 +7,7 @@ import * as noticeService from './notice.service';
 export const createNotice: ExpressHandler = async (req, res, next) => {
     try {
         assert(req.body, CreateNoticeStruct);
-        const userId = req.user?.id;
-        if (!userId) throw new CustomError(401, '로그인이 필요합니다.');
+        const userId = req.user!.id;
 
         await noticeService.createNotice(userId, req.body);
         res.status(201).json({ message: '정상적으로 등록 처리되었습니다' });
@@ -46,10 +45,10 @@ export const updateNotice: ExpressHandler = async (req, res, next) => {
         if (typeof noticeId !== 'string' || !noticeId || !isUuid.v4(noticeId)) throw new CustomError(400, '잘못된 요청입니다. (noticeId)');
 
         assert(req.body, UpdateNoticeStruct);
-        const userId = req.user?.id;
-        if (!userId) throw new CustomError(401, '로그인이 필요합니다.');
+        const userId = req.user!.id;
+        const userRole = req.user!.role;
 
-        const result = await noticeService.updateNotice(noticeId, userId, req.body);
+        const result = await noticeService.updateNotice(noticeId, userId, userRole, req.body);
         res.status(200).json(result);
     } catch (error) {
         next(error);
@@ -61,10 +60,9 @@ export const deleteNotice: ExpressHandler = async (req, res, next) => {
         const { noticeId } = req.params;
         if (typeof noticeId !== 'string' || !noticeId || !isUuid.v4(noticeId)) throw new CustomError(400, '잘못된 요청입니다. (noticeId)');
 
-        const userId = req.user?.id;
-        if (!userId) throw new CustomError(401, '로그인이 필요합니다.');
-
-        await noticeService.deleteNotice(noticeId, userId);
+        const userId = req.user!.id;
+        const userRole = req.user!.role;
+        await noticeService.deleteNotice(noticeId, userId, userRole);
         res.status(200).json({ message: '정상적으로 삭제 처리되었습니다' });
     } catch (error) {
         next(error);

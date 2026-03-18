@@ -5,8 +5,8 @@ import * as notificationService from './notification.service';
 
 export const subscribeNotifications: ExpressHandler = async (req, res, next) => {
     try {
-        const userId = req.user?.id;
-        if (!userId) throw new CustomError(401, '로그인이 필요합니다.');
+        //! 를 통해 미들웨어가 사용자 정보를 주입하였음을 명시
+        const userId = req.user!.id;
 
         notificationService.streamNotifications(userId, res);
     } catch (error) {
@@ -22,8 +22,7 @@ export const readNotification: ExpressHandler = async (req, res, next) => {
             throw new CustomError(400, '잘못된 요청입니다. (notificationId)');
         }
 
-        const userId = req.user?.id;
-        if (!userId) throw new CustomError(401, '로그인이 필요합니다.');
+        const userId = req.user!.id;
 
         const result = await notificationService.markAsRead(userId, notificationId);
         res.status(200).json(result);

@@ -6,10 +6,7 @@ import * as pollsVoteService from './poll-vote.service';
 export const addVote: ExpressHandler = async (req: ExpressRequest, res: ExpressResponse, next: ExpressNextFunction) => {
     try {
         const { optionId } = req.params;
-        const userId = req.user?.id;
-        if (!userId) {
-            throw new CustomError(401, '로그인이 필요합니다.');
-        }
+        const userId = req.user!.id;
         if (typeof optionId !== 'string' || !isUuid.v4(optionId)) {
             throw new CustomError(400, '잘못된 요청입니다. (optionId)');
         }
@@ -24,10 +21,7 @@ export const addVote: ExpressHandler = async (req: ExpressRequest, res: ExpressR
 export const cancelVote: ExpressHandler = async (req: ExpressRequest, res: ExpressResponse, next: ExpressNextFunction) => {
     try {
         const { optionId } = req.params;
-        const userId = req.user?.id;
-        if (!userId) {
-            throw new CustomError(401, '로그인이 필요합니다.');
-        }
+        const userId = req.user!.id;
         if (typeof optionId !== 'string' || !isUuid.v4(optionId)) {
             throw new CustomError(400, '잘못된 요청입니다. (optionId)');
         }
