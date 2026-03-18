@@ -33,6 +33,32 @@ export async function createSuperAdmin(db: DbClient, params: CreateSuperAdminPar
   });
 }
 
+// 관리자 유저 생성
+export async function createAdminUser(
+  db: DbClient,
+  params: {
+    username: string;
+    hashedPassword: string;
+    name: string;
+    email: string;
+    contact: string;
+    apartmentId: string;
+  },
+) {
+  return db.user.create({
+    data: {
+      username: params.username,
+      password: params.hashedPassword,
+      name: params.name,
+      email: params.email,
+      contact: params.contact,
+      role: Role.ADMIN,
+      joinStatus: JoinStatus.PENDING,
+      apartmentId: params.apartmentId,
+    },
+  });
+}
+
 export async function createUserForSignupUser(
   db: DbClient,
   params: {

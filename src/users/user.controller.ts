@@ -1,66 +1,139 @@
 import * as s from 'superstruct';
-import { ExpressRequest, ExpressResponse } from '../libs/constants';
-import { 
+import { ExpressRequest, ExpressResponse, CLEANUP_GRACE_PERIOD_DAYS } from '../libs/constants';
+import {
   UpdateStatusBodyStruct,
   AdminIdParamsStruct,
-  UserIdParamsStruct,
+  PasswordBody,
+  ChangePasswordBodyStruct,
+  UpdateAdminBodyStruct,
 } from './user.struct';
-import * as userAuthService from './user.services';
+import * as userService from './user.services';
 import UnauthorizedError from '../libs/errors/UnauthorizedError';
-  
+
+
 /**
  * [슈퍼 관리자] 관리자 가입 상태 변경 (단건)
  * PATCH /api/auth/admins/:adminId/status
  */
 export async function updateAdminStatus(req: ExpressRequest, res: ExpressResponse) {
   const { adminId } = s.create(req.params, AdminIdParamsStruct);
-  const { status } = s.create(req.body, UpdateStatusBodyStruct)
+  const { status } = s.create(req.body, UpdateStatusBodyStruct);
 
-  await userAuthService.updateAdminStatus(adminId, status);
+  await userService.updateAdminStatus(adminId, status);
 
-  return res.status(200).json({ message: '관라자 가입 상태 변경이 완료되었습니다.' })
-
+  return res.status(200).json({ message: '관라자 가입 상태 변경이 완료되었습니다.' });
 }
 
+
 /**
- * [Admin] 주민 가입 상태 변경 (단건)
+ * [슈퍼 관리자] 관리자 가입 상태 일괄 변경
+ * PATCH /api/auth/admins/status
  */
-export async function updateUserStatus(req: ExpressRequest, res: ExpressResponse) {
-  // 1. URL 파라미터에서 대상 주민(USER) ID 추출
-  const { residentId } = s.create(req.params, UserIdParamsStruct);
+export async function updateAllAdminStatus(req: ExpressRequest, res: ExpressResponse) {
+  const { status } = s.create(req.body, UpdateStatusBodyStruct);
 
-  // 2. 바디 데이터 검증
-  const { status } = s.create(req.body, UpdateStatusBodyStruct) 
+  const result = await userService.updateAllAdminStatus(status);
 
-  // 3. 서비스 호출
-  await userAuthService.updateUserStatus(residentId, status);
-
-  return res.status(200).json({ message: '주민 가입 상태 변경이 완료되었습니다.'})
+  return res.status(200).json({
+    message:
+      result.count > 0
+        ? '작업이 성공적으로 완료되었습니다.'
+        : '변경할 대기 상태의 관리자가 없습니다.',
+  });
 }
 
 /**
  * 프로필 이미지 변경.
  */
 export async function updateProfileImage(req: ExpressRequest, res: ExpressResponse) {
-  // 1. 미들웨어가 넣어준 파일 정보 확인
-  const file = req.file;
+  const file = req.file as Express.MulterS3.File;
 
   if (!file) {
-    return res.status(400).json({ message: '업로드된 파일이 없습니다.'});
+    return res.status(400).json({ message: '업로드된 파일이 없습니다.' });
   }
 
-  // 2. 인증 미들웨어(authenticate)가 넣어준 현재 유저 ID (방어적 코드)
-  const userId = req.user?.id;
-  if (!userId) {
-    throw new UnauthorizedError('유저 정보를 찾을 수 없습니다.');
+  if (!req.user) {
+    throw new UnauthorizedError('인증 정보가 없습니다.')
   }
+  const userId = req.user.id;
 
-  // 2. 저장된 파일 경로(나중에 S3 URL로 바뀔 부분)
-  const imageUrl = `/public/uploads/profiles/${file.filename}`;
-  await userAuthService.updateProfileImage(userId, imageUrl);
+  // 저장된 파일 경로(s3 URL)
+  const imagePath = file.location;
+
+  await userService.updateProfileImage(userId, imagePath);
 
   return res.status(200).json({
     message: '프로필 이미지 수정이 완료되었습니다.',
-    imageUrl: imageUrl
-  })
+    imageUrl: imagePath,
+  });
+}
+
+
+/**
+ * 비밀번호 변경.
+ */
+export async function updatePassword(req: ExpressRequest, res: ExpressResponse) {
+  const data: PasswordBody = s.create(req.body, ChangePasswordBodyStruct);
+
+  if (!req.user) {
+    throw new UnauthorizedError('인증 정보가 없습니다.');
+  }
+  
+  const userId = req.user.id;
+
+  await userService.updatePassword(userId, data);
+
+  return res.status(200).json({
+    message: '비밀번호 변경이 완료되었습니다. 다시 로그인해주세요.',
+  });
+}
+
+/**
+ * [Super-Admin] 관리자 정보(아파트 정보) 수정
+ */
+export async function updateAdminInfo(req: ExpressRequest, res: ExpressResponse) {
+  const { adminId } = s.create(req.params, AdminIdParamsStruct);
+  
+  const payload = s.create(req.body, UpdateAdminBodyStruct);
+
+  await userService.updateAdminInfo(adminId, payload);
+
+  return res.status(200).json({
+    message: '작업이 성공적으로 완료되었습니다.',
+  });
+}
+
+/**
+ * [Super-Admin/ Admin] Rejected된 관리자들 & 유저들 삭제
+ */
+export async function cleanupRejectedUsers(req: ExpressRequest, res: ExpressResponse) {
+  
+  if (!req.user) {
+    throw new UnauthorizedError('인증 정보가 없습니다.');
+  }
+  const { role, apartmentId } = req.user;
+
+  const result = await userService.cleanupRejectedUsers({
+    requestRole: role,
+    apartmentId: apartmentId ?? undefined, // ??(왼쪽 값이 null이나 undefined이면 오른쪽 값, 그외 값은 왼쪽 값)
+    days: CLEANUP_GRACE_PERIOD_DAYS 
+  });
+
+  return res.status(200).json({
+    message: '거절된 계정 정보 일괄 정리가 완료되었습니다.',
+    deletedCount: result.count,
+  });
+}
+
+/**
+ * [Super-Admin] 관리자 정보(아파트 정보 포함) 삭제
+ */
+export async function deleteAdminAccount(req: ExpressRequest, res: ExpressResponse) {
+  const { adminId } = s.create(req.params, AdminIdParamsStruct);
+
+  await userService.removeAdminAndAssociatedData(adminId);
+
+  return res.status(200).json({
+    message: '관리자 정보(아파트 정보 포함) 삭제가 완료되었습니다'
+  });
 }

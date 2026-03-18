@@ -3,8 +3,8 @@ import {
   CreateComplaintDto,
   UpdateUserComplaintDto,
   UpdateComplaintStatusDto,
+  GetComplaintsQueryDto,
 } from './complaint.struct';
-import { GetComplaintsQuery } from './complaint.type';
 import BadRequestError from '../libs/errors/BadRequestError';
 import NotFoundError from '../libs/errors/NotFoundError';
 import ForbiddenError from '../libs/errors/ForbiddenError';
@@ -82,7 +82,7 @@ export async function getComplaints(
   apartmentId: string,
   userId: string,
   userRole: string,
-  query: GetComplaintsQuery,
+  query: GetComplaintsQueryDto,
 ) {
   const { complaints, totalCount } = await complaintRepository.getComplaints(apartmentId, query);
 

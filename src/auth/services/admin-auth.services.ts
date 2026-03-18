@@ -5,6 +5,7 @@ import { User, ApartmentStatus, Prisma } from '@prisma/client';
 import { SignupAdminBody } from '../auth.struct';
 import * as apartmentRepository from '../../apartments/apartment.repository';
 import * as userRepository from '../../users/user.repository';
+import * as authRepository from '../auth.repository';
 
 export async function signupAdmin(input: SignupAdminBody): Promise<User> {
   // 1. 유저 정보 중복 체크 (ID, Email, Contact)
@@ -79,7 +80,7 @@ export async function signupAdmin(input: SignupAdminBody): Promise<User> {
     await apartmentRepository.createManyUnits(tx, unitData);
 
     // D. 관리자 유저 생성
-    const user = await userRepository.createAdminUser(tx, {
+    const user = await authRepository.createAdminUser(tx, {
       username: input.username,
       hashedPassword,
       name: input.name,

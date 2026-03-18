@@ -1,7 +1,6 @@
 import { PrismaClient, ResidenceStatus } from '@prisma/client'; // 건순님
 import { prismaClient as prisma, Prisma } from '../libs/constants';
-import { CreateResidentDto, UpdateResidentDto } from './resident.struct';
-import { GetResidentsQuery } from './resident.type';
+import { CreateResidentDto, UpdateResidentDto, GetResidentsQueryDto } from './resident.struct';
 
 // 1. 입주민 리소스 생성(개별 등록)
 export async function createResident(apartmentId: string, data: CreateResidentDto) {
@@ -20,7 +19,10 @@ export async function createResident(apartmentId: string, data: CreateResidentDt
 }
 
 // 2. 조회
-export async function findResidentsByApartment(apartmentId: string, query: GetResidentsQuery = {}) {
+export async function findResidentsByApartment(
+  apartmentId: string,
+  query: GetResidentsQueryDto = {},
+) {
   const { page, limit, building, unitNumber, residenceStatus, keyword, isRegistered } = query;
 
   const take = Math.min(Number(limit || 20), 100);
@@ -142,4 +144,20 @@ export async function linkResidentToUser(
       residenceStatus: params.residenceStatus ?? ResidenceStatus.RESIDENCE, //기본값은 거주중
     }, // ?? - 왼쪽 값이 없으면(null 또는 undefined), 오른쪽 값을 써라.
   });
+}
+
+// 입주민 (user) 상태 변경 (건순)
+export async function findResidentWithAuthInfo(db: DbClient, residentId: string) {
+  return await db.resident.findUnique({
+    where: { id: residentId },
+    select: {
+      userId: true,
+      user: { // DB에서 User 테이블이랑 JOIN 해서 그 안에 있는 구체적인 정보 가져오기.
+        select: {
+          role: true,
+          joinStatus: true, // User 테이블에 있는 상태값
+        }
+      }
+    }
+  }); 
 }
