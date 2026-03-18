@@ -7,7 +7,7 @@ import noticeRouter from './notices/notice.router';
 import complaintRouter from './complaints/complaint.router';
 import pollRouter from './polls/poll.router';
 import residentRouter from './residents/resident.router';
-import commentRouter from './comments/commentrouter';
+import commentRouter from './comments/comment.router';
 import notificationRouter from './notifications/notification.router';
 import eventRouter from './events/event.router';
 import pollsVoteRouter from './pollsvote/poll-vote.router';
@@ -19,7 +19,7 @@ export const routerManager = EXPRESS.Router();
 //인증관리
 routerManager.use('/auth', authRouter);
 
-//사용자관리 
+//사용자관리
 routerManager.use('/users', userRouter);
 
 //아파트 관리
