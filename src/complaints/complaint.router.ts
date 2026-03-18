@@ -6,8 +6,8 @@ import { Role } from '@prisma/client';
 import * as complaintController from './complaint.controller';
 
 const complaintRouter = EXPRESS.Router();
-
 complaintRouter.use(authenticate);
+complaintRouter.use(authorize(Role.USER, Role.ADMIN, Role.SUPER_ADMIN));
 
 complaintRouter.post('/', catchAsync(complaintController.createComplaint));
 complaintRouter.get('/', catchAsync(complaintController.getComplaints));
