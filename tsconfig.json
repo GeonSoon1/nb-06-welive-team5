@@ -13,7 +13,7 @@
     "typeRoots": ["./types", "./node_modules/@types"],
     // For nodejs:
     "lib": ["esnext"], // [수정] 서버 환경이므로 DOM(브라우저) 라이브러리 제거, 최신 JS 문법 사용
-    "types": ["node", "express"], // [수정] process.env 등 Node.js 내장 타입 인식을 위해 필수 (npm i -D @types/node 필요)
+    "types": ["node", "express", "jest"], // [수정] process.env 등 Node.js 내장 타입 인식을 위해 필수 (npm i -D @types/node 필요)
     // and npm install -D @types/node
 
     // Other Outputs
@@ -46,5 +46,5 @@
     "noImplicitAny": true,
     "moduleResolution": "node"
   },
-  "include": ["src/**/*", "types/**/*"] // 수정
+  "include": ["src/**/*", "types/**/*"]
 }
