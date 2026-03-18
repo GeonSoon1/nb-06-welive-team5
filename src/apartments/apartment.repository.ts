@@ -128,11 +128,17 @@ export async function findUnitInfoById(
  */
 export async function findPublicApartments(
   db: DbClient,
-  where: Prisma.ApartmentWhereInput
+  where: Prisma.ApartmentWhereInput,
 ): Promise<[Pick<Apartment, 'id' | 'name' | 'address'>[], number]> {
+
+  const approvedWhere: Prisma.ApartmentWhereInput = {
+    ...where,
+    apartmentStatus: 'APPROVED', 
+  }
+
   return Promise.all([
     db.apartment.findMany({
-      where,
+      where: approvedWhere,
       select: {
         id: true,
         name: true,
@@ -140,7 +146,7 @@ export async function findPublicApartments(
       },
       orderBy: { name: 'asc' }, // 가나다순 정렬
     }),
-    db.apartment.count({ where }),
+    db.apartment.count({ where: approvedWhere }),
   ]);
 }
 
@@ -273,5 +279,18 @@ export async function findApartmentByAdminId(db: DbClient, adminId: string) {
 export async function removeApartment(db: DbClient, apartmentId: string) {
   return await db.apartment.delete({
     where: { id: apartmentId },
+  });
+}
+
+/**
+ * 아파트를 승인 상태로 변경하고, 관리자를 주인으로 등록한다.
+ */
+export async function activateApartment(db: DbClient, apartmentId: string, adminId: string) {
+  return db.apartment.update({
+    where: { id: apartmentId },
+    data: {
+      apartmentStatus: 'APPROVED',
+      adminId: adminId,
+    },
   });
 }
