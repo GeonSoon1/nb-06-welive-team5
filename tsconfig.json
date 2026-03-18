@@ -46,5 +46,5 @@
     "noImplicitAny": true,
     "moduleResolution": "node"
   },
-  "include": ["src/**/*", "types/**/*"] // 수정
+  "include": ["src/**/*", "types/**/*"]
 }
