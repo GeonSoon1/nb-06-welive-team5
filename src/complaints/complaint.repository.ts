@@ -1,6 +1,5 @@
 import { prismaClient as prisma, Prisma } from '../libs/constants';
-import { UpdateUserComplaintDto } from './complaint.struct';
-import { GetComplaintsQuery } from './complaint.type';
+import { UpdateUserComplaintDto, GetComplaintsQueryDto } from './complaint.struct';
 import { ComplaintStatus } from '@prisma/client';
 
 const authorSelectQuery = {
@@ -41,7 +40,7 @@ export async function createComplaint(
 }
 
 // 2. 전체 민원 목록 조회
-export async function getComplaints(apartmentId: string, query: GetComplaintsQuery) {
+export async function getComplaints(apartmentId: string, query: GetComplaintsQueryDto) {
   const { page, limit, status, isPublic, dong, ho, keyword } = query;
 
   const take = Math.min(Number(limit || 20), 100);
