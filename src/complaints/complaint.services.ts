@@ -95,12 +95,15 @@ const validateUserComplaintAccess = async (
 ): Promise<ComplaintWithAuthor> => {
   const complaint = await complaintRepository.getComplaintById(complaintId);
   if (!complaint) throw new NotFoundError('해당 민원을 찾을 수 없습니다.');
-  if (complaint.authorId !== userId)
+
+  const validComplaint = complaint as ComplaintWithAuthor;
+
+  if (validComplaint.authorId !== userId)
     throw new ForbiddenError('자신이 작성한 민원만 접근할 수 있습니다.');
-  if (complaint.status !== 'PENDING')
+  if (validComplaint.status !== 'PENDING')
     throw new BadRequestError('이미 처리가 시작되었거나 완료된 민원은 변경할 수 없습니다.');
 
-  return complaint as unknown as ComplaintWithAuthor;
+  return validComplaint;
 };
 
 export async function createComplaint(
@@ -114,7 +117,7 @@ export async function createComplaint(
   const newComplaint = await complaintRepository.createComplaint(authorId, boardId, data);
   if (!newComplaint) throw new BadRequestError('민원 등록에 실패했습니다.');
 
-  return formatComplaint(newComplaint as unknown as ComplaintWithAuthor);
+  return formatComplaint(newComplaint as ComplaintWithAuthor);
 }
 
 export async function getComplaints(
@@ -125,14 +128,12 @@ export async function getComplaints(
 ): Promise<{ complaints: ComplaintListResponse[]; totalCount: number }> {
   const { complaints, totalCount } = await complaintRepository.getComplaints(apartmentId, query);
 
-  const formattedComplaints = complaints.map((c) => {
+  const formattedComplaints = (complaints as ComplaintWithAuthor[]).map((c) => {
     const isAuthor = c.authorId === userId;
     const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
     const canView = c.isPublic || isAuthor || isAdmin;
 
-    return formatComplaint(c as unknown as ComplaintWithAuthor, {
-      isMasked: !canView,
-    });
+    return formatComplaint(c, { isMasked: !canView });
   });
 
   return { complaints: formattedComplaints, totalCount };
@@ -146,17 +147,19 @@ export async function getComplaintDetail(
   const complaint = await complaintRepository.getComplaintDetail(complaintId);
   if (!complaint) throw new NotFoundError('해당 민원을 찾을 수 없습니다.');
 
-  const isAuthor = complaint.authorId === userId;
+  const validComplaint = complaint as ComplaintWithAuthor;
+  const isAuthor = validComplaint.authorId === userId;
   const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
-  if (!complaint.isPublic && !isAuthor && !isAdmin) {
+
+  if (!validComplaint.isPublic && !isAuthor && !isAdmin) {
     throw new ForbiddenError('비공개 민원은 작성자와 관리자만 볼 수 있습니다.');
   }
 
   await complaintRepository.incrementComplaintViewCount(complaintId);
 
   const updatedData: ComplaintWithAuthor = {
-    ...(complaint as unknown as ComplaintWithAuthor),
-    viewCount: complaint.viewCount + 1,
+    ...validComplaint,
+    viewCount: validComplaint.viewCount + 1,
   };
 
   return formatComplaint(updatedData, { includeDetails: true });
@@ -169,7 +172,7 @@ export async function updateUserComplaint(
 ): Promise<ComplaintListResponse> {
   await validateUserComplaintAccess(complaintId, userId);
   const updatedComplaint = await complaintRepository.updateUserComplaint(complaintId, data);
-  return formatComplaint(updatedComplaint as unknown as ComplaintWithAuthor);
+  return formatComplaint(updatedComplaint as ComplaintWithAuthor);
 }
 
 export async function deleteUserComplaint(complaintId: string, userId: string): Promise<void> {
@@ -185,7 +188,7 @@ export async function updateComplaintStatus(
     complaintId,
     data.status,
   );
-  return formatComplaint(updatedComplaint as unknown as ComplaintWithAuthor, {
+  return formatComplaint(updatedComplaint as ComplaintWithAuthor, {
     includeDetails: true,
   });
 }
