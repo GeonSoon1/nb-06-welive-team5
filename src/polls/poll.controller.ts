@@ -8,10 +8,8 @@ export const CreatePolls: ExpressHandler = async (req: ExpressRequest, res: Expr
     try {
         assert(req.body, CreatePollStruct);
 
-        //  if (!req.body.userId) throw new CustomError(400, '로그인이 필요합니다.');
-
-        // const newPoll = await pollService.createPoll(req.body, String(req.user.userId));
-        const newPoll = await pollService.createPoll(req.body);
+        const userId = req.user!.id;
+        const newPoll = await pollService.createPoll(userId, req.body);
         res.status(201).json({ success: true, message: '투표가 성공적으로 생성되었습니다.', data: newPoll });
     } catch (error) {
         next(error);
@@ -29,7 +27,7 @@ export const GetAllPollList: ExpressHandler = async (req: ExpressRequest, res: E
     }
 };
 
-export const GetPollInfomation: ExpressHandler = async (req: ExpressRequest, res: ExpressResponse, next: ExpressNextFunction) => {
+export const GetPollInformation: ExpressHandler = async (req: ExpressRequest, res: ExpressResponse, next: ExpressNextFunction) => {
     try {
         const pollId = req.params.pollId;
         if (!pollId) throw new CustomError(400, "잘못된 요청입니다.(pollid 값 없음)");
@@ -53,7 +51,9 @@ export const UpdatePoll: ExpressHandler = async (req: ExpressRequest, res: Expre
         if (typeof pollId !== 'string' || !isUuid.v4(pollId)) throw new CustomError(400, "잘못된 요청입니다.(pollId)");
 
         assert(req.body, UpdatePollStruct);
-        const updatedPoll = await pollService.updatePoll(pollId, req.body);
+
+        const userId = req.user!.id;
+        const updatedPoll = await pollService.updatePoll(pollId, userId, req.user!.role, req.body);
         res.status(200).json({ success: true, message: '투표가 수정되었습니다.', data: updatedPoll });
     } catch (error) {
         next(error);
@@ -65,7 +65,8 @@ export const DeletePoll: ExpressHandler = async (req: ExpressRequest, res: Expre
         const pollId = req.params.pollId;
         if (typeof pollId !== 'string' || !isUuid.v4(pollId)) throw new CustomError(400, "잘못된 요청입니다.(pollId)");
 
-        await pollService.deletePoll(pollId);
+        const userId = req.user!.id;
+        await pollService.deletePoll(pollId, userId, req.user!.role);
         res.status(200).json({ success: true, message: '투표가 삭제되었습니다.' });
     } catch (error) {
         next(error);

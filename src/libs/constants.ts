@@ -45,12 +45,14 @@ export const assert: typeof superstruct.assert = superstruct.assert;
 export { superstruct };
 export { isUuid };
 
+export const PUBLIC_PATH = './public';
+export const STATIC_PATH = '/public';
 /**
  * 3. 설정값
  */
 export const NODE_ENV = process.env.NODE_ENV || "development";
 export const ACCESS_TOKEN_COOKIE_NAME = "accessToken";
-export const REFRESH_TOKEN_COOKIE_NAME = "refreshToken"
+export const REFRESH_TOKEN_COOKIE_NAME = "refreshToken";
 
 /**
  * 4. 검증된 환경 변수 Export
@@ -63,6 +65,7 @@ export const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID!;
 export const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY!;
 export const S3_BUCKET_NAME = process.env.S3_BUCKET_NAME!;
 
+export { Event as PrismaEvent, Notice, Vote, BoardType, NotificationType } from '@prisma/client';
 /**
  * 5. [Super-Admin/ Admin] Rejected된 관리자들 & 유저들 삭제에 필요한 기간
  */

@@ -1,4 +1,3 @@
-import { optional } from 'superstruct';
 import { superstruct, isUuid } from '../libs/constants';
 
 export enum VoteStatus {
@@ -45,6 +44,7 @@ export const UpdatePollStruct = superstruct.partial(superstruct.object({
     endDate: superstruct.coerce(superstruct.date(), superstruct.string(), (date) => new Date(date)),
     options: superstruct.array(
         superstruct.object({
+            id: superstruct.optional(superstruct.define('Uuid', (value) => typeof value === 'string' && isUuid.v4(value))),
             title: superstruct.string(),
         })
     ),

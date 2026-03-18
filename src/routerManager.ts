@@ -9,10 +9,10 @@ import pollRouter from './polls/poll.router';
 import residentRouter from './residents/resident.router';
 import commentRouter from './comments/commentrouter';
 import notificationRouter from './notifications/notification.router';
-import eventRouter from './events/eventrouter';
+import eventRouter from './events/event.router';
 import pollsVoteRouter from './pollsvote/poll-vote.router';
 import authRouter from './auth/auth.router';
-import pollSchedulerRouter from './pollScheduler/pollSchedulerrouter';
+import pollSchedulerRouter from './pollScheduler/poll-Scheduler.router';
 
 export const routerManager = EXPRESS.Router();
 

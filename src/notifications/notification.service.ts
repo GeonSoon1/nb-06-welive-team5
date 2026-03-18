@@ -1,6 +1,12 @@
 import { Response } from 'express';
+import { EventEmitter } from 'events';
 import * as notificationRepository from './notification.repository';
 import { CustomError } from '../libs/errors/errorHandler';
+
+// 전역 이벤트 에미터 생성 (알림 발생 시 이벤트 수신용)
+export const notificationEmitter = new EventEmitter();
+// 수많은 클라이언트 연결을 대비해 리스너 제한 해제
+notificationEmitter.setMaxListeners(0);
 
 export const streamNotifications = (userId: string, res: Response) => {
     // SSE Header 설정
@@ -8,6 +14,8 @@ export const streamNotifications = (userId: string, res: Response) => {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.flushHeaders();
+
+    let intervalId: NodeJS.Timeout;
 
     const sendNotifications = async () => {
         try {
@@ -35,7 +43,7 @@ export const streamNotifications = (userId: string, res: Response) => {
         } catch (error) {
             console.error('SSE Error:', error);
             // 에러 발생 시 연결 종료 및 인터벌 해제
-            clearInterval(intervalId);
+            if (intervalId) clearInterval(intervalId);
             res.end();
         }
     };
@@ -44,11 +52,11 @@ export const streamNotifications = (userId: string, res: Response) => {
     sendNotifications();
 
     // 30초마다 알림 전송
-    const intervalId = setInterval(sendNotifications, 30000);
+    intervalId = setInterval(sendNotifications, 30000);
 
     // 클라이언트 연결 종료 시 인터벌 해제
     res.on('close', () => {
-        clearInterval(intervalId);
+        if (intervalId) clearInterval(intervalId);
         res.end();
     });
 };

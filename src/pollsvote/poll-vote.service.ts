@@ -11,6 +11,10 @@ export const addVote = async (optionId: string, userId: string) => {
     const pollId = poll.id;
     const apartmentboardId = poll.apartmentboardId;
 
+    if (poll.endTime < new Date()) {
+        throw new CustomError(400, '투표 기간이 종료되었습니다.');
+    }
+
     if (poll.status !== 'IN_PROGRESS') {
         throw new CustomError(400, '투표가 진행중인 상태가 아닙니다.');
     }
