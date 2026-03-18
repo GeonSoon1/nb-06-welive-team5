@@ -124,3 +124,16 @@ export async function cleanupRejectedUsers(req: ExpressRequest, res: ExpressResp
     deletedCount: result.count,
   });
 }
+
+/**
+ * [Super-Admin] 관리자 정보(아파트 정보 포함) 삭제
+ */
+export async function deleteAdminAccount(req: ExpressRequest, res: ExpressResponse) {
+  const { adminId } = s.create(req.params, AdminIdParamsStruct);
+
+  await userService.removeAdminAndAssociatedData(adminId);
+
+  return res.status(200).json({
+    message: '관리자 정보(아파트 정보 포함) 삭제가 완료되었습니다'
+  });
+}

@@ -172,3 +172,12 @@ export async function cleanupRejectedUsers(
     },
   });
 }
+
+/**
+ * [Super-Admin] 관리자 정보(아파트 정보 포함) 삭제
+ */
+export async function deleteUser(db: DbClient, adminId: string) {
+  return await db.user.deleteMany({
+    where: { id: adminId },
+  });
+}

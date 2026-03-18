@@ -259,3 +259,19 @@ export async function updateApartmentInfo(
     },
   });
 }
+
+/**
+ * [Super-Admin] 관리자 정보(아파트 정보 포함) 삭제
+ */
+export async function findApartmentByAdminId(db: DbClient, adminId: string) {
+  return await db.apartment.findUnique({
+    where: { adminId },
+    select: { id: true },
+  });
+}
+
+export async function removeApartment(db: DbClient, apartmentId: string) {
+  return await db.apartment.delete({
+    where: { id: apartmentId },
+  });
+}
