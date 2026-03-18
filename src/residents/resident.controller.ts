@@ -165,7 +165,12 @@ export async function updateResidentStatus(req: ExpressRequest, res: ExpressResp
 // 11. 입주민 (user) 상태 일괄 변경 (건순)
 export async function updateAllResidentStatus(req: ExpressRequest, res: ExpressResponse) {
   const { status } = s.create(req.body, UpdateStatusBodyStruct);
-  const { apartmentId } = req.user!;
+  
+  if (!req.user) {
+    throw new UnauthorizedError('인증 정보가 없습니다.')
+  }
+
+  const { apartmentId } = req.user;
 
   const result = await residentService.updateAllResidentStatus(apartmentId!, status);
 

@@ -170,3 +170,18 @@ export async function cleanupRejectedUsers(params: {
   // 방어적 코드
   throw new ForbiddenError('해당 작업을 수행할 권한이 없습니다.')
 } 
+
+/**
+ * [Super-Admin] 관리자 정보(아파트 정보 포함) 삭제
+ */
+export async function removeAdminAndAssociatedData(adminId: string) {
+  return await prismaClient.$transaction(async (tx) => {
+    const apartment = await apartmentRepository.findApartmentByAdminId(tx, adminId);
+    
+    if (apartment) {
+      await apartmentRepository.removeApartment(tx, apartment.id);
+    }
+
+    await userRepository.deleteUser(tx, adminId);
+  });
+}

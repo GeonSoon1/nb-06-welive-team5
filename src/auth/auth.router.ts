@@ -76,5 +76,16 @@ authRouter.post(
   catchAsync(userController.cleanupRejectedUsers)
 )
 
+/**
+ * [Super-Admin] 관리자 정보(아파트 정보 포함) 삭제
+ */
+authRouter.delete(
+  '/admins/:adminId',
+  authenticate,
+  authorize(Role.SUPER_ADMIN),
+  catchAsync(userController.deleteAdminAccount)
+);
+
+
 export default authRouter;
 

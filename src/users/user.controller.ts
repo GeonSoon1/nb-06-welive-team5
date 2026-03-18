@@ -8,6 +8,7 @@ import {
   UpdateAdminBodyStruct,
 } from './user.struct';
 import * as userService from './user.services';
+import UnauthorizedError from '../libs/errors/UnauthorizedError';
 
 
 /**
@@ -51,8 +52,10 @@ export async function updateProfileImage(req: ExpressRequest, res: ExpressRespon
     return res.status(400).json({ message: '업로드된 파일이 없습니다.' });
   }
 
-  // authenticate를 통과했으니 강제로 req.user!.id 해도 괜찮은지
-  const userId = req.user!.id;
+  if (!req.user) {
+    throw new UnauthorizedError('인증 정보가 없습니다.')
+  }
+  const userId = req.user.id;
 
   // 저장된 파일 경로(s3 URL)
   const imagePath = file.location;
@@ -72,7 +75,11 @@ export async function updateProfileImage(req: ExpressRequest, res: ExpressRespon
 export async function updatePassword(req: ExpressRequest, res: ExpressResponse) {
   const data: PasswordBody = s.create(req.body, ChangePasswordBodyStruct);
 
-  const userId = req.user!.id;
+  if (!req.user) {
+    throw new UnauthorizedError('인증 정보가 없습니다.');
+  }
+  
+  const userId = req.user.id;
 
   await userService.updatePassword(userId, data);
 
@@ -101,7 +108,10 @@ export async function updateAdminInfo(req: ExpressRequest, res: ExpressResponse)
  */
 export async function cleanupRejectedUsers(req: ExpressRequest, res: ExpressResponse) {
   
-  const { role, apartmentId } = req.user!;
+  if (!req.user) {
+    throw new UnauthorizedError('인증 정보가 없습니다.');
+  }
+  const { role, apartmentId } = req.user;
 
   const result = await userService.cleanupRejectedUsers({
     requestRole: role,
@@ -112,5 +122,18 @@ export async function cleanupRejectedUsers(req: ExpressRequest, res: ExpressResp
   return res.status(200).json({
     message: '거절된 계정 정보 일괄 정리가 완료되었습니다.',
     deletedCount: result.count,
+  });
+}
+
+/**
+ * [Super-Admin] 관리자 정보(아파트 정보 포함) 삭제
+ */
+export async function deleteAdminAccount(req: ExpressRequest, res: ExpressResponse) {
+  const { adminId } = s.create(req.params, AdminIdParamsStruct);
+
+  await userService.removeAdminAndAssociatedData(adminId);
+
+  return res.status(200).json({
+    message: '관리자 정보(아파트 정보 포함) 삭제가 완료되었습니다'
   });
 }
