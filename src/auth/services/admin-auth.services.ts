@@ -6,6 +6,7 @@ import { SignupAdminBody } from '../auth.struct';
 import * as apartmentRepository from '../../apartments/apartment.repository';
 import * as userRepository from '../../users/user.repository';
 import * as authRepository from '../auth.repository';
+import { SignupAdminResponse } from '../auth.type';
 
 export async function signupAdmin(input: SignupAdminBody): Promise<User> {
   // 1. 유저 정보 중복 체크 (ID, Email, Contact)
@@ -91,10 +92,6 @@ export async function signupAdmin(input: SignupAdminBody): Promise<User> {
     return user;
   });
 }
-
-export type SignupAdminResponse = Pick<User, 'id' | 'name' | 'email' | 'role' | 'joinStatus'> & {
-  isActive: boolean;
-};
 
 export function formatAdminResponse(user: User): SignupAdminResponse {
   return {

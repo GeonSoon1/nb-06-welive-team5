@@ -5,6 +5,7 @@ import { User } from '@prisma/client';
 import { SignupSuperAdminBody } from '../auth.struct';
 import * as userRepository from '../../users/user.repository';
 import * as authRepository from '../auth.repository';
+import { SignupSuperAdminResponse } from '../auth.type';
 
 export async function signupSuperAdmin(input: SignupSuperAdminBody): Promise<User> {
   const [u1, u2, u3] = await Promise.all([
@@ -27,11 +28,6 @@ export async function signupSuperAdmin(input: SignupSuperAdminBody): Promise<Use
     contact: input.contact,
   })) as User;
 }
-
-export type SignupSuperAdminResponse = Pick<
-  User,
-  'id' | 'name' | 'email' | 'role' | 'joinStatus'
-> & { isActive: boolean };
 
 export function formatSuperAdminResponse(user: User): SignupSuperAdminResponse {
   return {

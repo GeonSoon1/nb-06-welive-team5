@@ -4,36 +4,8 @@ import { verifyPassword } from '../libs/auth/password';
 import { verifyRefreshToken, generateTokens } from '../libs/auth/token';
 import UnauthorizedError from '../libs/errors/UnauthorizedError';
 import ForbiddenError from '../libs/errors/ForbiddenError';
+import { LoginResponse, LoginInput, AuthTokens } from './auth.type';
 
-export type LoginResponse = {
-  id: string;
-  name: string;
-  email: string;
-  role: Role;
-  joinStatus: JoinStatus;
-  isActive: boolean;
-  username: string;
-  contact: string;
-  avatar: string | null;
-  apartmentId: string | null;
-  apartmentName: string | null;
-  residentDong: string | null;
-  boardIds: {
-    COMPLAINT?: string;
-    NOTICE?: string;
-    POLL?: string;
-  } | null;
-}
-
-export type LoginInput = {
-  username: string;
-  password: string;
-}
-
-export type AuthTokens = {
-  accessToken: string;
-  refreshToken: string;
-}
 
 export async function login(input: LoginInput): Promise<{user: LoginResponse; tokens: AuthTokens}> {
   // 1. 유저 조회

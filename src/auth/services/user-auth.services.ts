@@ -10,10 +10,7 @@ import * as apartmentRepository from '../../apartments/apartment.repository';
 import * as userRepository from '../../users/user.repository';
 import * as residentRepository from '../../residents/resident.repository';
 import * as authRepository from '../auth.repository';
-
-export type SignupUserResponse = Pick<User, 'id' | 'name' | 'email' | 'role' | 'joinStatus'> & {
-  isActive: boolean;
-};
+import { SignupUserResponse } from '../auth.type';
 
 export async function signupUser(input: SignupUserBody): Promise<SignupUserResponse> {
   // 1) 중복 체크
