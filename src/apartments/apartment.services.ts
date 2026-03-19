@@ -74,8 +74,8 @@ export async function getApartmentDetail(apartmentId: string) {
 /**
  * [4] 공개용 아파트 상세 조회
  */
-export async function getPublicApartmentDetail(id: string) {
-  const apartment = await apartmentRepository.findPublicApartmentById(prismaClient, id);
+export async function getPublicApartmentDetail(apartmentId: string) {
+  const apartment = await apartmentRepository.findPublicApartmentById(prismaClient, apartmentId);
 
   if (!apartment) {
     throw new NotFoundError('해당 아파트 정보를 찾을 수 없습니다.');

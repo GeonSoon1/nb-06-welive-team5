@@ -1,19 +1,18 @@
 import { Role, JoinStatus } from '@prisma/client';
 import * as userRepository from './user.repository';
-import * as apartmentRepository from '../apartments/apartment.repository';
 import BadRequestError from '../libs/errors/BadRequestError';
-import { prismaClient, S3_BUCKET_NAME } from '../libs/constants';
-import { DeleteObjectCommand } from '@aws-sdk/client-s3';
-import { s3Client } from '../libs/s3Client';
+import { prismaClient } from '../libs/constants';
 import { verifyPassword, hashPassword } from '../libs/auth/password';
 import { PasswordBody, UpdateAdminBody } from './user.struct';
 import NotFoundError from '../libs/errors/NotFoundError';
 import ValidationError from '../libs/errors/ValidationError';
+import * as apartmentRepository from '../apartments/apartment.repository';
 import { subDays } from 'date-fns';
 import ForbiddenError from '../libs/errors/ForbiddenError';
 
+
 /**
- * [super-admin] 관리자(admin)의 가입 상태를 변경.
+ * [super-admin] 특정 관리자(admin)의 가입 상태를 변경.
  */
 export async function updateAdminStatus(adminId: string, status: JoinStatus) {
   const targetUser = await userRepository.findUserWithApartmentById(prismaClient, adminId);
@@ -45,7 +44,7 @@ export async function updateAllAdminStatus(status: JoinStatus) {
     fromStatus: JoinStatus.PENDING,
     toStatus: status,
   });
-  
+
   return result;
 }
 
@@ -74,7 +73,7 @@ export async function updateProfileImage(userId: string, imagePath: string) {
         decodeURIComponent(fileKey),
         'USER_PROFILE_UPDATE'  
         );
-        console.log(`[CLEANUP] 삭제 예약 완료: , ${fileKey}`);
+        // console.log(`[CLEANUP] 삭제 예약 완료: , ${fileKey}`);
       }
     }
     
@@ -111,7 +110,9 @@ export async function updatePassword(userId: string, data: PasswordBody) {
 
   const hashedNewPassword = await hashPassword(newPassword);
 
-  await userRepository.updateUserPassword(prismaClient, userId, hashedNewPassword);
+  const updatedUser = await userRepository.updateUserPassword(prismaClient, userId, hashedNewPassword);
+
+  return updatedUser;
 }
 
 /**
@@ -142,10 +143,10 @@ export async function updateAdminInfo(adminId: string, input: UpdateAdminBody) {
 
     return {
       ...user,
-      apartment: apartment
+      apartment: apartment,
     };
   });
-} 
+}
 
 /**
  * [Super-Admin/ Admin] Rejected된 관리자들 & 유저들 삭제
@@ -155,14 +156,14 @@ export async function cleanupRejectedUsers(params: {
   apartmentId?: string;
   days: number;
 }) {
-  // 오늘 날짜 기준으로 3일 전 날짜 
+  // 오늘 날짜 기준으로 3일 전 날짜
   const thresholdDate = subDays(new Date(), params.days);
 
   // 1. 슈퍼 관리자 -> 모든 거절된 ADMIN 삭제
   if (params.requestRole === Role.SUPER_ADMIN) {
     return await userRepository.cleanupRejectedUsers(prismaClient, {
       targetRole: Role.ADMIN,
-      updatedBefore: thresholdDate
+      updatedBefore: thresholdDate,
     });
   }
 
@@ -178,10 +179,10 @@ export async function cleanupRejectedUsers(params: {
       apartmentId: params.apartmentId,
     });
   }
-  
+
   // 방어적 코드
-  throw new ForbiddenError('해당 작업을 수행할 권한이 없습니다.')
-} 
+  throw new ForbiddenError('해당 작업을 수행할 권한이 없습니다.');
+}
 
 /**
  * [Super-Admin] 관리자 정보(아파트 정보 포함) 삭제

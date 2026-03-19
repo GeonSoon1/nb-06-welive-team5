@@ -6,52 +6,9 @@ import {
   ApartmentUnit,
   ApartmentStructureGroup,
 } from '@prisma/client';
+import { FlatApartmentResponse, PublicApartmentDetail } from './apartment.type';
 
 export type DbClient = Prisma.TransactionClient | PrismaClient;
-
-/**
- * 1. [관리자용] 상세 정보 타입 정의
- */
-export type ApartmentWithRelations = Prisma.ApartmentGetPayload<{
-  include: {
-    structureGroups: {
-      select: {
-        id: true,
-        dongList: true,
-        startFloor: true,
-        maxFloor: true,
-        unitsPerFloor: true
-      };
-    };
-    admin: {
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        contact: true,
-      };
-    };
-  };
-}>;
-
-/**
- * 2. [공개용] 상세 정보 타입 정의
- */
-export type PublicApartmentDetail = Prisma.ApartmentGetPayload<{
-  select: {
-    id: true,
-    name: true,
-    address: true,
-    structureGroups: {
-      select: {
-        dongList: true,
-        startFloor: true,
-        maxFloor: true,
-        unitsPerFloor: true
-      };
-    };
-  };
-}>;
 
 /**
  * [1] 아파트 기본 정보 생성
@@ -189,32 +146,44 @@ export async function findAdminApartments(
 /**
  * [관리자용] apartmentId로 아파트 상세 정보 조회
  */
+// Apartment 기본 필드에 우리가 추가할 admin 필드들을 결합.
 export async function findApartmentById(
   db: DbClient,
-  id: string
-): Promise<ApartmentWithRelations | null> {
-  return db.apartment.findUnique({
+  id: string,
+): Promise<FlatApartmentResponse | null> {
+  
+  const apartment = await db.apartment.findUnique({
     where: { id },
     include: {
-      structureGroups: {
-        select: {
-          id: true,
-          dongList: true,
-          startFloor: true,
-          maxFloor: true,
-          unitsPerFloor: true
-        },
-      },
-      admin: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          contact: true,
-        }
-      },
+      structureGroups: true,
+      admin: true,
     },
   });
+
+  if (!apartment) return null;
+
+  const { admin, ...rest } = apartment;
+
+  // 원하는 순서대로 객체를 재조립
+  return {
+    id: rest.id,
+    name: rest.name,
+    address: rest.address,
+    officeNumber: rest.officeNumber,
+    description: rest.description,
+    createdAt: rest.createdAt,
+    updatedAt: rest.updatedAt,
+    apartmentStatus: rest.apartmentStatus,
+    ApartmentboardId: rest.ApartmentboardId,
+    
+    // [관리자 정보] 
+    adminId: rest.adminId, 
+    adminName: admin?.name ?? null,
+    adminContact: admin?.contact ?? null,
+    adminEmail: admin?.email ?? null,
+
+    structureGroups: rest.structureGroups,
+  };
 }
 
 /**
