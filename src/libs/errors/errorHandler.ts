@@ -71,6 +71,8 @@ export const globalErrorHandler = (
             message = '파일 크기가 너무 큽니다.';
         } else if (err.code === 'LIMIT_FILE_COUNT') {
             message = '파일 개수가 너무 많습니다.';
+        } else if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+          message = '허용하지 않은 파일 형식 혹은 요청입니다.'
         } else {
             message = '파일 업로드 중 오류가 발생했습니다.';
         }

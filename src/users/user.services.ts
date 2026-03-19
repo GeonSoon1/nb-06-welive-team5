@@ -54,8 +54,8 @@ export async function updateAllAdminStatus(status: JoinStatus) {
  * 프로필 이미지 변경.
  */
 export async function updateProfileImage(userId: string, imagePath: string) {
-  return await prismaClient.$transaction(async (tx) => {
-    
+  // 트랜젝션 작업중 발생한 오류는 500 Server Error로 분류.
+  return await prismaClient.$transaction(async (tx) => {  
     const user = await userRepository.findUserRoleById(tx, userId);
     
     // 1. DB에 저장된 값이 있고, 그게 '/public'으로 시작한다면
