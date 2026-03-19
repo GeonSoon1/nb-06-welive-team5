@@ -46,25 +46,31 @@ export async function updateAllAdminStatus(req: ExpressRequest, res: ExpressResp
  * 프로필 이미지 변경.
  */
 export async function updateProfileImage(req: ExpressRequest, res: ExpressResponse) {
+  // 1. 미들웨어가 넣어준 파일 정보 확인
   const file = req.file as Express.MulterS3.File;
+  //location은 multer-s3라는 별도의 확장 도구를 썼을 때만 생기는 특수한 정보
+  //그래서 TypeScript에게 '이 파일은 S3가 준 거니까 location이라는 정보가 들어있어'라고 알려주는 과정(as any 또는 as Express.MulterS3.File)이 필요하다.
 
-  if (!file) {
-    return res.status(400).json({ message: '업로드된 파일이 없습니다.' });
+  // ex) file.location: htts://bucket.s3.ap-northeast-2.amazonaws.com/profiles/user-123.png
+  if (!file || !file.location) {
+    return res.status(400).json({ message: '이미지 업로드에 실패했습니다. 다시 시도해주세요.' });
   }
 
+  // 2. 인증 미들웨어(authenticate)가 넣어준 현재 유저 ID
   if (!req.user) {
-    throw new UnauthorizedError('인증 정보가 없습니다.')
+    throw new UnauthorizedError('인증 정보가 없습니다.');
   }
+
   const userId = req.user.id;
 
-  // 저장된 파일 경로(s3 URL)
+  // 2. 저장된 파일 경로(S3 URL)
   const imagePath = file.location;
 
-  await userService.updateProfileImage(userId, imagePath);
+  const updatedUser = await userService.updateProfileImage(userId, imagePath);
 
   return res.status(200).json({
     message: '프로필 이미지 수정이 완료되었습니다.',
-    imageUrl: imagePath,
+    imageUrl: updatedUser.image,
   });
 }
 

@@ -54,29 +54,35 @@ export async function updateAllAdminStatus(status: JoinStatus) {
  * 프로필 이미지 변경.
  */
 export async function updateProfileImage(userId: string, imagePath: string) {
-  const user = await userRepository.findUserRoleById(prismaClient, userId);
-
-  // 1. DB에 저장된 값이 있고, 그게 '/public'으로 시작한다면
-  if (user?.image && user.image.includes('amazonaws.com')) {
-    try {
+  // 트랜젝션 작업중 발생한 오류는 500 Server Error로 분류.
+  return await prismaClient.$transaction(async (tx) => {  
+    const user = await userRepository.findUserRoleById(tx, userId);
+    
+    // 1. DB에 저장된 값이 있고, 그게 '/public'으로 시작한다면
+    if (user?.image && user.image.includes('amazonaws.com')) {
+      
+      // htts://bucket.s3.ap-northeast-2.amazonaws.com/1773897003165-169871444.jpg
       // .com/ 뒤쪽만 짤라냄/ fileKey는 파일 이름
+      
       const fileKey = user.image.split('.com/')[1];
+      // fileKey = 1773897003165-169871444.jpg
 
+      // 2. 삭제할 파일 deletedFile 테이블에 저장.
       if (fileKey) {
-        await s3Client.send(
-          new DeleteObjectCommand({
-            Bucket: S3_BUCKET_NAME,
-            Key: decodeURIComponent(fileKey),
-          }),
+        await userRepository.reserveFileDeletion(
+        tx,
+        decodeURIComponent(fileKey),
+        'USER_PROFILE_UPDATE'  
         );
-        console.log('기존 S3 파일 삭제 완료:', fileKey);
+        console.log(`[CLEANUP] 삭제 예약 완료: , ${fileKey}`);
       }
-    } catch (err) {
-      console.error('기존 S3 파일 삭제 중 오류 발생:', err);
     }
-  }
-
-  return await userRepository.updateImage(prismaClient, userId, imagePath);
+    
+    // 3. User테이블에 새 이미지 업데이트
+    const updatedUser = await userRepository.updateImage(tx, userId, imagePath);
+    
+    return updatedUser;
+  });
 }
 
 
@@ -136,7 +142,7 @@ export async function updateAdminInfo(adminId: string, input: UpdateAdminBody) {
 
     return {
       ...user,
-      apartement: apartment
+      apartment: apartment
     };
   });
 } 

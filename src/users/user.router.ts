@@ -6,7 +6,15 @@ import { catchAsync } from '../libs/catchAsync';
 
 const userRouter = Router();
 
-userRouter.patch('/me', authenticate, upload.single('file'), catchAsync(userController.updateProfileImage));
-userRouter.patch('/password', authenticate, catchAsync(userController.updatePassword));
+userRouter.patch(
+  '/me', 
+  authenticate, 
+  upload.single('file'), // <- 여기서 S3 업로드가 발생 
+  catchAsync(userController.updateProfileImage));
+
+userRouter.patch(
+  '/password', 
+  authenticate, 
+  catchAsync(userController.updatePassword));
 
 export default userRouter;

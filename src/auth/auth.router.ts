@@ -17,6 +17,15 @@ authRouter.post('/login', catchAsync(authController.login));
 authRouter.post('/logout', catchAsync(authController.logout));
 authRouter.post('/refresh', catchAsync(authController.refresh));
 
+
+// [슈퍼관리자] 관리자 가입 상태 일괄 변경
+authRouter.patch(
+  '/admins/status',
+  authenticate,
+  authorize(Role.SUPER_ADMIN),
+  catchAsync(userController.updateAllAdminStatus),
+)
+
 // [슈퍼관리자] 관리자 가입 상태 변경 (단건)
 authRouter.patch(
   '/admins/:adminId/status', 
@@ -25,12 +34,14 @@ authRouter.patch(
   catchAsync(userController.updateAdminStatus)
 );
 
-// [슈퍼관리자] 관리자 가입 상태 일괄 변경
+/**
+ * [Super-Admin] 관리자 정보(아파트 정보) 수정
+ */
 authRouter.patch(
-  '/admins/status',
+  '/admins/:adminId',
   authenticate,
   authorize(Role.SUPER_ADMIN),
-  catchAsync(userController.updateAllAdminStatus),
+  catchAsync(userController.updateAdminInfo)
 )
 
 /**
@@ -57,16 +68,6 @@ authRouter.patch(
 );
 
 /**
- * [Super-Admin] 관리자 정보(아파트 정보) 수정
- */
-authRouter.patch(
-  '/admins/:adminId',
-  authenticate,
-  authorize(Role.SUPER_ADMIN),
-  catchAsync(userController.updateAdminInfo)
-)
-
-/**
  * [Super-Admin/ Admin] Rejected된 관리자들 & 유저들 삭제
  */
 authRouter.post(
@@ -85,7 +86,6 @@ authRouter.delete(
   authorize(Role.SUPER_ADMIN),
   catchAsync(userController.deleteAdminAccount)
 );
-
 
 export default authRouter;
 

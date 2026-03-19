@@ -118,6 +118,21 @@ export async function updateImage(db: DbClient, userId: string, imagePath: strin
   return await db.user.update({
     where: { id: userId },
     data: { image: imagePath },
+    select: {
+      image: true,
+    }
+  });
+}
+
+/**
+ * 삭제할 파일 정보를 기록 (트랜잭션 지원)
+ */
+export async function reserveFileDeletion(db: DbClient, fileKey: string, reason: string) {
+  return await db.deletedFile.create({
+    data: {
+      fileKey,
+      reason,
+    },
   });
 }
 
