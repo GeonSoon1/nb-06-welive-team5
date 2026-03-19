@@ -4,41 +4,16 @@ import {
   UpdateUserComplaintDto,
   UpdateComplaintStatusDto,
   GetComplaintsQueryDto,
+} from './complaint.struct';
+import {
+  ComplaintWithAuthor,
   ComplaintListResponse,
   ComplaintDetailResponse,
-} from './complaint.struct';
+} from './complaint.type';
+import { Role } from '@prisma/client';
 import BadRequestError from '../libs/errors/BadRequestError';
 import NotFoundError from '../libs/errors/NotFoundError';
 import ForbiddenError from '../libs/errors/ForbiddenError';
-import { ComplaintStatus } from '@prisma/client';
-
-interface ComplaintWithAuthor {
-  id: string;
-  authorId: string | null;
-  title: string;
-  content: string;
-  isPublic: boolean;
-  viewCount: number;
-  commentsCount: number;
-  status: ComplaintStatus;
-  createdAt: Date;
-  updatedAt: Date;
-  author?: {
-    name: string;
-    apartmentUnit?: {
-      dong: string;
-      ho: string;
-    } | null;
-  } | null;
-  comments?: {
-    id: string;
-    authorId: string | null;
-    content: string;
-    createdAt: Date;
-    updatedAt: Date;
-    author?: { name: string } | null;
-  }[];
-}
 
 function formatComplaint(
   c: ComplaintWithAuthor,
@@ -130,7 +105,7 @@ export async function getComplaints(
 
   const formattedComplaints = (complaints as ComplaintWithAuthor[]).map((c) => {
     const isAuthor = c.authorId === userId;
-    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
+    const isAdmin = userRole === Role.ADMIN || userRole === Role.SUPER_ADMIN;
     const canView = c.isPublic || isAuthor || isAdmin;
 
     return formatComplaint(c, { isMasked: !canView });
@@ -143,13 +118,17 @@ export async function getComplaintDetail(
   complaintId: string,
   userId: string,
   userRole: string,
+  apartmentId: string,
 ): Promise<ComplaintDetailResponse> {
+  const isOwner = await complaintRepository.validateComplaintOwnership(complaintId, apartmentId);
+  if (!isOwner) throw new ForbiddenError('해당 민원에 접근 권한이 없습니다.');
+
   const complaint = await complaintRepository.getComplaintDetail(complaintId);
   if (!complaint) throw new NotFoundError('해당 민원을 찾을 수 없습니다.');
 
   const validComplaint = complaint as ComplaintWithAuthor;
   const isAuthor = validComplaint.authorId === userId;
-  const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
+  const isAdmin = userRole === Role.ADMIN || userRole === Role.SUPER_ADMIN;
 
   if (!validComplaint.isPublic && !isAuthor && !isAdmin) {
     throw new ForbiddenError('비공개 민원은 작성자와 관리자만 볼 수 있습니다.');
@@ -157,26 +136,34 @@ export async function getComplaintDetail(
 
   await complaintRepository.incrementComplaintViewCount(complaintId);
 
-  const updatedData: ComplaintWithAuthor = {
-    ...validComplaint,
-    viewCount: validComplaint.viewCount + 1,
-  };
-
-  return formatComplaint(updatedData, { includeDetails: true });
+  return formatComplaint(validComplaint, { includeDetails: true });
 }
 
 export async function updateUserComplaint(
   complaintId: string,
   userId: string,
+  apartmentId: string,
   data: UpdateUserComplaintDto,
 ): Promise<ComplaintListResponse> {
   await validateUserComplaintAccess(complaintId, userId);
+
+  const isOwner = await complaintRepository.validateComplaintOwnership(complaintId, apartmentId);
+  if (!isOwner) throw new ForbiddenError('해당 민원에 접근 권한이 없습니다.');
   const updatedComplaint = await complaintRepository.updateUserComplaint(complaintId, data);
+
   return formatComplaint(updatedComplaint as ComplaintWithAuthor);
 }
 
-export async function deleteUserComplaint(complaintId: string, userId: string): Promise<void> {
+export async function deleteUserComplaint(
+  complaintId: string,
+  userId: string,
+  apartmentId: string,
+): Promise<void> {
   await validateUserComplaintAccess(complaintId, userId);
+
+  const isOwner = await complaintRepository.validateComplaintOwnership(complaintId, apartmentId);
+  if (!isOwner) throw new ForbiddenError('해당 민원을 삭제할 권한이 없습니다.');
+
   await complaintRepository.deleteUserComplaint(complaintId);
 }
 

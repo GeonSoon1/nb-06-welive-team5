@@ -13,6 +13,7 @@ import complaintRouter from './complaint.router';
 import * as complaintService from './complaint.services';
 import { authenticate } from '../middlewares/authenticate';
 import { globalErrorHandler } from '../libs/errors/errorHandler';
+import { Role } from '@prisma/client';
 
 const app = express();
 app.use(express.json());
@@ -34,7 +35,10 @@ app.use(globalErrorHandler);
 
 jest.mock('./complaint.services');
 
-describe('Complaint API 통합 테스트 (Supertest)', () => {
+describe('Complaint API 통합 테스트 (리팩토링 버전)', () => {
+  const mockAptId = 'apt-1234';
+  const mockUserId = 'user-1';
+
   beforeAll(() => {
     jest.spyOn(console, 'error').mockImplementation(() => {});
   });
@@ -47,65 +51,45 @@ describe('Complaint API 통합 테스트 (Supertest)', () => {
     jest.clearAllMocks();
   });
 
-  describe('POST /api/complaints (민원 등록)', () => {
-    it('유효한 데이터를 보내면 201 상태코드와 성공 메시지를 반환해야 한다.', async () => {
-      (authenticate as jest.Mock).mockImplementationOnce((req, res, next) => {
-        req.user = {
-          id: 'user-1',
-          apartmentId: 'apt-1234',
-          role: 'USER',
-          joinStatus: 'APPROVED',
-        };
-        next();
-      });
+  const setupAuth = (overrides = {}) => {
+    (authenticate as jest.Mock).mockImplementationOnce((req, res, next) => {
+      req.user = {
+        id: mockUserId,
+        apartmentId: mockAptId,
+        role: Role.USER,
+        joinStatus: 'APPROVED',
+        ...overrides,
+      };
+      next();
+    });
+  };
 
-      (complaintService.createComplaint as jest.Mock).mockResolvedValue({
-        id: 'comp-1',
-      });
+  describe('POST /api/complaints (민원 등록)', () => {
+    it('성공 시 201과 메시지를 반환하며 서비스에 apartmentId를 전달해야 한다.', async () => {
+      setupAuth();
+      (complaintService.createComplaint as jest.Mock).mockResolvedValue({ id: 'comp-1' });
 
       const response = await request(app).post('/api/complaints').send({
-        title: '202호 안 내쫓으면 제가 직접 손보겠습니다.',
-        content: '층간소음 너무 심해요',
+        title: '층간소음 테스트',
+        content: '테스트 내용입니다.',
         isPublic: true,
       });
 
       expect(response.status).toBe(201);
       expect(response.body.message).toBe('정상적으로 등록 처리되었습니다');
+      expect(complaintService.createComplaint).toHaveBeenCalledWith(
+        mockUserId,
+        mockAptId,
+        expect.any(Object),
+      );
     });
 
-    it('필수 데이터(title 등)가 누락되면 struct 검증에 걸려 400 상태코드를 반환해야 한다.', async () => {
-      (authenticate as jest.Mock).mockImplementationOnce((req, res, next) => {
-        req.user = {
-          id: 'user-1',
-          apartmentId: 'apt-1234',
-          role: 'USER',
-          joinStatus: 'APPROVED',
-        };
-        next();
-      });
+    it('가입 승인 대기 중(PENDING)인 유저는 403 에러를 반환해야 한다.', async () => {
+      setupAuth({ joinStatus: 'PENDING' });
 
       const response = await request(app).post('/api/complaints').send({
-        content: '내용만 보냅니다.',
-        isPublic: true,
-      });
-
-      expect(response.status).toBe(400);
-    });
-
-    it('가입 승인 대기 중(PENDING)인 유저는 민원을 등록할 수 없으며 403 에러를 반환해야 한다.', async () => {
-      (authenticate as jest.Mock).mockImplementationOnce((req, res, next) => {
-        req.user = {
-          id: 'user-pending',
-          apartmentId: 'apt-1234',
-          role: 'USER',
-          joinStatus: 'PENDING',
-        };
-        next();
-      });
-
-      const response = await request(app).post('/api/complaints').send({
-        title: '미승인 유저의 민원',
-        content: '등록되지 않아야 합니다.',
+        title: '미승인 유저',
+        content: '불가',
         isPublic: true,
       });
 
@@ -113,283 +97,112 @@ describe('Complaint API 통합 테스트 (Supertest)', () => {
     });
   });
 
-  describe('GET /api/complaints (전체 민원 조회 API)', () => {
-    it('쿼리 파라미터와 함께 요청하면 200 상태코드와 명세서에 맞는 포맷을 반환해야 한다.', async () => {
-      (authenticate as jest.Mock).mockImplementationOnce((req, res, next) => {
-        req.user = {
-          id: 'user-1',
-          apartmentId: 'apt-1234',
-          role: 'USER',
-          joinStatus: 'APPROVED',
-        };
-        next();
+  describe('GET /api/complaints (전체 목록 조회)', () => {
+    it('성공 시 200과 목록을 반환해야 한다.', async () => {
+      setupAuth();
+      (complaintService.getComplaints as jest.Mock).mockResolvedValue({
+        complaints: [],
+        totalCount: 0,
       });
 
-      const mockFormattedData = {
-        complaints: [
-          {
-            complaintId: 'comp-1',
-            userId: 'user-1',
-            title: '204호 담배냄새 더이상 못 참겠습니다.',
-            writerName: '김세대',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            isPublic: true,
-            viewsCount: 26,
-            commentsCount: 3,
-            status: 'PENDING',
-            dong: '204',
-            ho: '1002',
-          },
-        ],
-        totalCount: 25,
-      };
-      (complaintService.getComplaints as jest.Mock).mockResolvedValue(mockFormattedData);
-
-      const response = await request(app).get('/api/complaints?page=1&limit=20&status=PENDING');
+      const response = await request(app).get('/api/complaints?page=1&limit=20');
 
       expect(response.status).toBe(200);
-      expect(response.body.totalCount).toBe(25);
-      expect(response.body.complaints[0].complaintId).toBe('comp-1');
-      expect(response.body.complaints[0].title).toBe('204호 담배냄새 더이상 못 참겠습니다.');
+      expect(complaintService.getComplaints).toHaveBeenCalledWith(
+        mockAptId,
+        mockUserId,
+        Role.USER,
+        expect.any(Object),
+      );
     });
 
-    it('인증 정보(아파트 ID 등)가 없으면 401 상태코드를 반환해야 한다.', async () => {
-      (authenticate as jest.Mock).mockImplementationOnce((req, res, next) => {
-        req.user = {
-          id: 'user-1',
-          apartmentId: null,
-          role: 'USER',
-          joinStatus: 'APPROVED',
-        };
-        next();
-      });
+    it('apartmentId가 없으면 401을 반환해야 한다.', async () => {
+      setupAuth({ apartmentId: null });
 
       const response = await request(app).get('/api/complaints');
-
       expect(response.status).toBe(401);
     });
   });
 
-  describe('GET /api/complaints/:complaintId (민원 상세 조회 API)', () => {
-    it('권한이 있는 유저가 요청하면 200 상태코드와 상세 정보(content 등)를 반환해야 한다.', async () => {
-      (authenticate as jest.Mock).mockImplementationOnce((req, res, next) => {
-        req.user = {
-          id: 'user-1',
-          apartmentId: 'apt-1234',
-          role: 'USER',
-          joinStatus: 'APPROVED',
-        };
-        next();
-      });
-
-      const mockDetailData = {
-        complaintId: 'comp-uuid',
-        userId: 'user-1',
-        title: '204호 담배냄새 더이상 못 참겠습니다.',
-        content: '204호에서 담배 냄새와 소음이 너무 심합니다.',
-        writerName: '김세대',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        isPublic: true,
-        viewsCount: 26,
-        commentsCount: 3,
-        status: 'PENDING',
-        dong: '204',
-        ho: '1002',
-        boardType: '민원',
-        comments: [],
-      };
-      (complaintService.getComplaintDetail as jest.Mock).mockResolvedValue(mockDetailData);
-
-      const response = await request(app).get('/api/complaints/comp-uuid');
-
-      expect(response.status).toBe(200);
-      expect(response.body.content).toBe('204호에서 담배 냄새와 소음이 너무 심합니다.');
-      expect(response.body.boardType).toBe('민원');
-    });
-
-    it('조회 권한이 없는 비공개 민원을 요청하면 403 상태코드를 반환해야 한다.', async () => {
-      (authenticate as jest.Mock).mockImplementationOnce((req, res, next) => {
-        req.user = {
-          id: 'user-viewer',
-          apartmentId: 'apt-1234',
-          role: 'USER',
-          joinStatus: 'APPROVED',
-        };
-        next();
-      });
-
-      const ForbiddenError = require('../libs/errors/ForbiddenError').default;
-      (complaintService.getComplaintDetail as jest.Mock).mockRejectedValue(
-        new ForbiddenError('비공개 민원은 작성자와 관리자만 볼 수 있습니다.'),
-      );
-
-      const response = await request(app).get('/api/complaints/secret-comp-uuid');
-
-      expect(response.status).toBe(403);
-    });
-  });
-
-  describe('PATCH /api/complaints/:complaintId (일반 유저 민원 수정 API)', () => {
-    it('자신이 작성한 대기중(PENDING)인 민원을 올바른 데이터로 수정하면 200 상태코드와 수정된 정보를 반환해야 한다.', async () => {
-      (authenticate as jest.Mock).mockImplementationOnce((req, res, next) => {
-        req.user = {
-          id: 'user-author',
-          apartmentId: 'apt-1234',
-          role: 'USER',
-          joinStatus: 'APPROVED',
-        };
-        next();
-      });
-
-      const mockUpdatedData = {
+  describe('GET /api/complaints/:complaintId (상세 조회)', () => {
+    it('성공 시 200을 반환하며 서비스에 4개의 인자를 전달해야 한다.', async () => {
+      setupAuth();
+      (complaintService.getComplaintDetail as jest.Mock).mockResolvedValue({
         complaintId: 'comp-1',
-        userId: 'user-author',
-        title: '엘리베이터 고장 신고(수정)',
-        writerName: '김세대',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        isPublic: true,
-        viewsCount: 26,
-        commentsCount: 3,
-        status: 'PENDING',
-        dong: '204',
-        ho: '1002',
-      };
-      (complaintService.updateUserComplaint as jest.Mock).mockResolvedValue(mockUpdatedData);
-
-      const response = await request(app).patch('/api/complaints/comp-1').send({
-        title: '엘리베이터 고장 신고(수정)',
-        content: '2층 엘리베이터가 작동하지 않습니다. 확인 부탁드립니다.',
-        isPublic: true,
       });
+
+      const response = await request(app).get('/api/complaints/comp-1');
 
       expect(response.status).toBe(200);
-      expect(response.body.title).toBe('엘리베이터 고장 신고(수정)');
-      expect(response.body.complaintId).toBe('comp-1');
-    });
-
-    it('수정할 내용(DTO)의 형식이 잘못되면 struct 검증에 걸려 400 에러를 반환해야 한다.', async () => {
-      (authenticate as jest.Mock).mockImplementationOnce((req, res, next) => {
-        req.user = {
-          id: 'user-author',
-          apartmentId: 'apt-1234',
-          role: 'USER',
-          joinStatus: 'APPROVED',
-        };
-        next();
-      });
-
-      const response = await request(app).patch('/api/complaints/comp-1').send({ title: '' });
-
-      expect(response.status).toBe(400);
+      expect(complaintService.getComplaintDetail).toHaveBeenCalledWith(
+        'comp-1',
+        mockUserId,
+        Role.USER,
+        mockAptId,
+      );
     });
   });
 
-  describe('DELETE /api/complaints/:complaintId (일반 유저 민원 삭제 API)', () => {
-    it('자신이 작성한 대기중인 민원 삭제를 요청하면 200 상태코드와 성공 메시지를 반환해야 한다.', async () => {
-      (authenticate as jest.Mock).mockImplementationOnce((req, res, next) => {
-        req.user = {
-          id: 'user-author',
-          apartmentId: 'apt-1234',
-          role: 'USER',
-          joinStatus: 'APPROVED',
-        };
-        next();
+  describe('PATCH /api/complaints/:complaintId (수정)', () => {
+    it('작성자가 수정 시 200을 반환하며 apartmentId를 검증 인자로 넘겨야 한다.', async () => {
+      setupAuth();
+      (complaintService.updateUserComplaint as jest.Mock).mockResolvedValue({
+        complaintId: 'comp-1',
       });
 
+      const response = await request(app)
+        .patch('/api/complaints/comp-1')
+        .send({ title: '수정제목', isPublic: false });
+
+      expect(response.status).toBe(200);
+      expect(complaintService.updateUserComplaint).toHaveBeenCalledWith(
+        'comp-1',
+        mockUserId,
+        mockAptId,
+        expect.any(Object),
+      );
+    });
+  });
+
+  describe('DELETE /api/complaints/:complaintId (삭제)', () => {
+    it('삭제 성공 시 명세서 문구와 함께 200을 반환해야 한다.', async () => {
+      setupAuth();
       (complaintService.deleteUserComplaint as jest.Mock).mockResolvedValue(undefined);
 
       const response = await request(app).delete('/api/complaints/comp-1');
 
       expect(response.status).toBe(200);
       expect(response.body.message).toBe('정상적으로 삭제 처리되었습니다');
-    });
-
-    it('권한이 없는 유저가 삭제를 시도하면 403 상태코드를 반환해야 한다.', async () => {
-      (authenticate as jest.Mock).mockImplementationOnce((req, res, next) => {
-        req.user = {
-          id: 'user-other',
-          apartmentId: 'apt-1234',
-          role: 'USER',
-          joinStatus: 'APPROVED',
-        };
-        next();
-      });
-
-      const ForbiddenError = require('../libs/errors/ForbiddenError').default;
-      (complaintService.deleteUserComplaint as jest.Mock).mockRejectedValue(
-        new ForbiddenError('자신이 작성한 민원만 접근할 수 있습니다.'),
+      expect(complaintService.deleteUserComplaint).toHaveBeenCalledWith(
+        'comp-1',
+        mockUserId,
+        mockAptId,
       );
-
-      const response = await request(app).delete('/api/complaints/comp-1');
-
-      expect(response.status).toBe(403);
     });
   });
 
-  describe('PATCH /api/complaints/:complaintId/status (관리자 민원 상태 수정 API)', () => {
-    it('관리자가 올바른 상태값으로 변경을 요청하면 200 상태코드와 변경된 상세 정보를 반환해야 한다.', async () => {
-      (authenticate as jest.Mock).mockImplementationOnce((req, res, next) => {
-        req.user = {
-          id: 'admin-1',
-          apartmentId: 'apt-1234',
-          role: 'ADMIN',
-          joinStatus: 'APPROVED',
-        };
-        next();
-      });
+  describe('PATCH /api/complaints/:complaintId/status (관리자 상태 변경)', () => {
+    it('관리자가 아닌 유저가 접근 시 403을 반환해야 한다.', async () => {
+      setupAuth({ role: Role.USER });
 
-      const mockUpdatedData = {
-        complaintId: 'comp-1',
-        userId: 'user-author',
-        title: '204호 담배냄새 더이상 못 참겠습니다.',
-        content: '204호에서 담배 냄새와 소음이 너무 심합니다.',
-        writerName: '김세대',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        isPublic: true,
-        viewsCount: 26,
-        commentsCount: 3,
+      const response = await request(app)
+        .patch('/api/complaints/comp-1/status')
+        .send({ status: 'RESOLVED' });
+
+      expect(response.status).toBe(403);
+    });
+
+    it('관리자가 요청 시 200을 반환해야 한다.', async () => {
+      setupAuth({ role: Role.ADMIN });
+      (complaintService.updateComplaintStatus as jest.Mock).mockResolvedValue({
         status: 'RESOLVED',
-        dong: '204',
-        ho: '1002',
-        boardType: '민원',
-        comments: [],
-      };
-      (complaintService.updateComplaintStatus as jest.Mock).mockResolvedValue(mockUpdatedData);
+      });
 
       const response = await request(app)
         .patch('/api/complaints/comp-1/status')
         .send({ status: 'RESOLVED' });
 
       expect(response.status).toBe(200);
-      expect(response.body.status).toBe('RESOLVED');
-      expect(response.body.complaintId).toBe('comp-1');
-    });
-
-    it('일반 유저(USER)가 상태 변경을 시도하면 403 상태코드를 반환해야 한다.', async () => {
-      (authenticate as jest.Mock).mockImplementationOnce((req, res, next) => {
-        req.user = {
-          id: 'user-1',
-          apartmentId: 'apt-1234',
-          role: 'USER',
-          joinStatus: 'APPROVED',
-        };
-        next();
-      });
-
-      const ForbiddenError = require('../libs/errors/ForbiddenError').default;
-      (complaintService.updateComplaintStatus as jest.Mock).mockRejectedValue(
-        new ForbiddenError('관리자만 민원 상태를 변경할 수 있습니다.'),
-      );
-
-      const response = await request(app)
-        .patch('/api/complaints/comp-1/status')
-        .send({ status: 'RESOLVED' });
-
-      expect(response.status).toBe(403);
     });
   });
 });

@@ -1,68 +1,59 @@
-import { Prisma } from '@prisma/client';
+import { BoardType } from '@prisma/client';
 import { prismaClient as prisma } from '../libs/constants';
 import { CreateCommentDto } from './comment.struct';
 
-export async function createComment(authorId: string, data: CreateCommentDto) {
-  return await prisma.$transaction(async (tx) => {
-    const commentData: Prisma.CommentUncheckedCreateInput = {
-      content: data.content,
-      authorId: authorId,
-    };
+export async function validateBoardOwnership(
+  boardId: string,
+  boardType: BoardType,
+  apartmentId: string,
+): Promise<boolean> {
+  const whereClause = {
+    id: boardId,
+    apartmentboard: { apartment: { id: apartmentId } },
+  };
 
-    if (data.boardType === 'COMPLAINT') {
-      commentData.complaintId = data.boardId;
-      await tx.complaint.update({
-        where: { id: data.boardId },
-        data: { commentsCount: { increment: 1 } },
-      });
-    } else if (data.boardType === 'NOTICE') {
-      commentData.noticeId = data.boardId;
-      await tx.notice.update({
-        where: { id: data.boardId },
-        data: { commentsCount: { increment: 1 } },
-      });
-    } else if (data.boardType === 'VOTE') {
-      commentData.voteId = data.boardId;
-    }
+  let board;
+  if (boardType === BoardType.COMPLAINT)
+    board = await prisma.complaint.findFirst({ where: whereClause });
+  else if (boardType === BoardType.NOTICE)
+    board = await prisma.notice.findFirst({ where: whereClause });
+  else if (boardType === BoardType.VOTE)
+    board = await prisma.vote.findFirst({ where: whereClause });
 
-    return await tx.comment.create({
-      data: commentData,
-      include: { author: { select: { name: true } } },
-    });
-  });
+  return !!board;
 }
 
+export async function createComment(authorId: string, data: CreateCommentDto) {
+  const { content, boardType, boardId } = data;
+
+  return prisma.comment.create({
+    data: {
+      content,
+      authorId,
+      ...(boardType === BoardType.COMPLAINT && { complaintId: boardId }),
+      ...(boardType === BoardType.NOTICE && { noticeId: boardId }),
+      ...(boardType === BoardType.VOTE && { voteId: boardId }),
+    },
+    include: {
+      author: { select: { name: true } },
+    },
+  });
+}
 export async function getCommentById(id: string) {
-  return await prisma.comment.findUnique({
+  return prisma.comment.findUnique({
     where: { id },
-    include: { author: { select: { id: true, name: true } } },
+    include: { author: { select: { name: true } } },
   });
 }
 
 export async function updateComment(id: string, content: string) {
-  return await prisma.comment.update({
+  return prisma.comment.update({
     where: { id },
     data: { content },
     include: { author: { select: { name: true } } },
   });
 }
 
-export async function deleteComment(commentId: string, boardType: string, boardId: string) {
-  return await prisma.$transaction(async (tx) => {
-    await tx.comment.delete({
-      where: { id: commentId },
-    });
-
-    if (boardType === 'COMPLAINT') {
-      await tx.complaint.update({
-        where: { id: boardId },
-        data: { commentsCount: { decrement: 1 } },
-      });
-    } else if (boardType === 'NOTICE') {
-      await tx.notice.update({
-        where: { id: boardId },
-        data: { commentsCount: { decrement: 1 } },
-      });
-    }
-  });
+export async function deleteComment(id: string) {
+  await prisma.comment.delete({ where: { id } });
 }
