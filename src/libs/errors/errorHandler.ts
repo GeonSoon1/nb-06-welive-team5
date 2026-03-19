@@ -93,7 +93,7 @@ export const globalErrorHandler = (
         statusCode = 409;
         message = err.message;
     } else if (err instanceof ValidationError) {
-        statusCode = 409;
+        statusCode = 400;
         message = err.message;
     }
 
