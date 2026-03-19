@@ -99,10 +99,12 @@ export async function updateAllUsers(
   });
 }
 
-// 특정 유저의 Role만 뽑아오는 함수
-export async function findUserRoleById(db: DbClient, id: string) {
+/**
+ * 특정 유저의 Role만 뽑아오는 함수
+ */
+export async function findUserRoleById(db: DbClient, userId: string) {
   return db.user.findUnique({
-    where: { id },
+    where: { id: userId },
     select: {
       role: true,
       joinStatus: true,
@@ -120,6 +122,7 @@ export async function updateImage(db: DbClient, userId: string, imagePath: strin
     data: { image: imagePath },
     select: {
       image: true,
+      name: true,
     }
   });
 }
@@ -156,6 +159,10 @@ export async function updateUserPassword(db: DbClient, userId: string, password:
   return await db.user.update({
     where: { id: userId },
     data: { password },
+    select: {
+      id : true,
+      name: true
+    }
   });
 }
 

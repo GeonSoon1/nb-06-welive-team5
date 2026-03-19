@@ -146,7 +146,7 @@ export async function exportCsv(req: ExpressRequest, res: ExpressResponse) {
   csvStream.pipe(res);
 }
 
-// 10. 입주민 (user) 상태 변경 (건순)
+// 10. [admin] 입주민 (user) 상태 변경 (단건) (건순)
 export async function updateResidentStatus(req: ExpressRequest, res: ExpressResponse) {
   // 1. URL 파라미터에서 대상 주민(USER) ID 추출
   const { residentId } = s.create(req.params, ResidentIdParamsStruct);
@@ -158,25 +158,22 @@ export async function updateResidentStatus(req: ExpressRequest, res: ExpressResp
   await residentService.updateResidentStatus(residentId, status);
 
   return res.status(200).json({ 
-    message: '주민 가입 상태 변경이 완료되었습니다.' 
+    message: '작업이 성공적으로 완료되었습니다' 
   });
 }
 
-// 11. 입주민 (user) 상태 일괄 변경 (건순)
+// 11. [admin] 입주민 (user) 상태 일괄 변경 (건순)
 export async function updateAllResidentStatus(req: ExpressRequest, res: ExpressResponse) {
   const { status } = s.create(req.body, UpdateStatusBodyStruct);
-  
+
   if (!req.user) {
     throw new UnauthorizedError('인증 정보가 없습니다.')
   }
-
   const { apartmentId } = req.user;
 
-  const result = await residentService.updateAllResidentStatus(apartmentId!, status);
+  await residentService.updateAllResidentStatus(apartmentId!, status);
 
   return res.status(200).json({
-    message: result.count > 0
-      ? '작업이 성공적으로 완료되었습니다.'
-      : '변경할 대기 상태의 입주민이 없습니다.'
+    message: '작업이 성공적으로 완료되었습니다'
   });
 }

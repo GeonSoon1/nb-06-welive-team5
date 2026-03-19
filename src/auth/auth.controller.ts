@@ -19,10 +19,7 @@ import UnauthorizedError from '../libs/errors/UnauthorizedError';
 export async function signupUser(req: ExpressRequest, res: ExpressResponse) {
   const data = s.create(req.body, SignupUserBodyStruct);
   const user = await userAuthService.signupUser(data);
-  return res.status(201).json({
-    message: '회원가입이 완료되었습니다.',
-    user,
-  });
+  return res.status(201).json(user);
 }
 
 export async function signupSuperAdmin(req: ExpressRequest, res: ExpressResponse) {
@@ -30,10 +27,7 @@ export async function signupSuperAdmin(req: ExpressRequest, res: ExpressResponse
   const rawUser = await superAdminAuthService.signupSuperAdmin(data);
 
   const user = superAdminAuthService.formatSuperAdminResponse(rawUser);
-  return res.status(201).json({
-    message: '회원가입이 완료되었습니다',
-    user,
-  });
+  return res.status(201).json(user);
 }
 
 export async function signupAdmin(req: ExpressRequest, res: ExpressResponse) {
@@ -42,29 +36,23 @@ export async function signupAdmin(req: ExpressRequest, res: ExpressResponse) {
 
   const user = adminAuthService.formatAdminResponse(rawUser);
 
-  return res.status(201).json({
-    message: '회원가입이 완료되었습니다.',
-    user,
-  });
+  return res.status(201).json(user);
 }
 
 export async function login(req: ExpressRequest, res: ExpressResponse) {
   const data = s.create(req.body, LoginBodyStruct);
   const { user, tokens } = await authService.login(data);
   setTokenCookies(res, tokens.accessToken, tokens.refreshToken);
-  return res.status(200).json({
-    message: '로그인이 완료되었습니다.',
-    user,
-  });
+  return res.status(200).json(user);
 }
 
 export async function logout(req: ExpressRequest, res: ExpressResponse) {
   try {
     // 로그아웃 관련 코드는 try,catch 안써도 된다(오류가 잘 안남)
     clearTokenCookies(res);
-    return res.status(200).send({ message: '로그아웃이 완료되었습니다.' });
+    return res.sendStatus(204)
   } catch (err) {
-    return res.status(401).json({ message: '로그아웃 중 오류가 발생했습니다.' });
+    return res.sendStatus(401)
   }
 }
 
@@ -79,7 +67,7 @@ export async function refresh(req: ExpressRequest, res: ExpressResponse) {
   // 새로운 토큰 세트를 쿠키에 갱신 (기존 쿠키 덮어쓰기)
   setTokenCookies(res, tokens.accessToken, tokens.refreshToken);
 
-  return res.status(200).json({ message: '작업이 성공적으로 완료되었습니다.' });
+  return res.status(200).json({ message: '작업이 성공적으로 완료되었습니다' });
 }
 
 // app.use(cookieParser())의 역할로 들어오는 쿠키가 밑에처럼 된다.

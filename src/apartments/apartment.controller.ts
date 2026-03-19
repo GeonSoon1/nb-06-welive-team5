@@ -15,7 +15,6 @@ export async function getPublicApartments(req: ExpressRequest, res: ExpressRespo
   const { apartments, count } = await apartmentService.getPublicApartments(query);
 
   return res.status(200).json({
-    message: '아파트 목록 조회 성공(공개)',
     apartments,
     count,
   });
@@ -29,14 +28,11 @@ export async function getAdminApartments(req: ExpressRequest, res: ExpressRespon
   // 쿼리 스트링 유효성 검사 (page, limit 등 숫자 변환 포함)
   const query = s.create(req.query, AdminApartmentQueryStruct);
 
-  const { apartments, totalCount, page, limit } = await apartmentService.getAdminApartments(query);
+  const { apartments, totalCount } = await apartmentService.getAdminApartments(query);
 
   return res.status(200).json({
-    message: '아파트 목록 조회 성공(관리자)',
     apartments,
     totalCount,
-    page,
-    limit,
   });
 }
 
@@ -49,10 +45,7 @@ export async function getApartmentDetail(req: ExpressRequest, res: ExpressRespon
 
   const apartment = await apartmentService.getApartmentDetail(id);
 
-  res.status(200).json({
-    message: '아파트 상세 조회 성공',
-    apartment,
-  });
+  res.status(200).json(apartment);
 }
 
 // /**
@@ -64,8 +57,5 @@ export async function getPublicApartmentDetail(req: ExpressRequest, res: Express
 
   const apartment = await apartmentService.getPublicApartmentDetail(id);
 
-  res.status(200).json({
-    message: '공개용 아파트 상세 조회 성공',
-    apartment,
-  })
+  res.status(200).json(apartment)
 }
