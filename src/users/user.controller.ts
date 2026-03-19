@@ -46,7 +46,7 @@ export async function updateProfileImage(req: ExpressRequest, res: ExpressRespon
   //location은 multer-s3라는 별도의 확장 도구를 썼을 때만 생기는 특수한 정보
   //그래서 TypeScript에게 '이 파일은 S3가 준 거니까 location이라는 정보가 들어있어'라고 알려주는 과정(as any 또는 as Express.MulterS3.File)이 필요하다.
 
-  // ex) file.location: htts://bucket.s3.ap-northeast-2.amazonaws.com/profiles/user-123.png
+  // ex) file.location: htts://my-bucket.s3.ap-northeast-2.amazonaws.com/profiles/user-123.png
   if (!file || !file.location) {
     return res.status(400).json({ message: '이미지 업로드에 실패했습니다. 다시 시도해주세요.' });
   }
@@ -64,8 +64,7 @@ export async function updateProfileImage(req: ExpressRequest, res: ExpressRespon
   const updatedUser = await userService.updateProfileImage(userId, imagePath);
 
   return res.status(200).json({
-    message: '프로필 이미지 수정이 완료되었습니다.',
-    imageUrl: updatedUser.image,
+    message: `${updatedUser.name}님의 정보가 성공적으로 업데이트되었습니다. 다시 로그인해주세요.`
   });
 }
 
@@ -114,7 +113,7 @@ export async function cleanupRejectedUsers(req: ExpressRequest, res: ExpressResp
 
   const { role, apartmentId } = req.user;
 
-  const result = await userService.cleanupRejectedUsers({
+  await userService.cleanupRejectedUsers({
     requestRole: role,
     apartmentId: apartmentId ?? undefined, // ??(왼쪽 값이 null이나 undefined이면 오른쪽 값, 그외 값은 왼쪽 값)
     days: CLEANUP_GRACE_PERIOD_DAYS,

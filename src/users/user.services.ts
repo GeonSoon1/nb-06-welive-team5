@@ -73,7 +73,7 @@ export async function updateProfileImage(userId: string, imagePath: string) {
         decodeURIComponent(fileKey),
         'USER_PROFILE_UPDATE'  
         );
-        console.log(`[CLEANUP] 삭제 예약 완료: , ${fileKey}`);
+        // console.log(`[CLEANUP] 삭제 예약 완료: , ${fileKey}`);
       }
     }
     
