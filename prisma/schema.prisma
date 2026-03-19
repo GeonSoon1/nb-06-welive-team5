@@ -76,17 +76,17 @@ model ApartmentBoard {
 }
 
 model User {
-  id              String   @id @default(uuid())
-  username        String   @unique
+  id              String    @id @default(uuid())
+  username        String    @unique
   password        String
-  contact         String   @unique
+  contact         String    @unique
   name            String
-  email           String   @unique
+  email           String    @unique
   image           String?
   role            Role
   apartmentId     String?
   apartmentUnitId String?
-  createdAt       DateTime @default(now()) // 생성 시 자동 기록 (updatedAt에도 같은 날짜가 들어간다.)
+  createdAt       DateTime  @default(now()) // 생성 시 자동 기록 (updatedAt에도 같은 날짜가 들어간다.)
   updatedAt       DateTime @updatedAt // 수정 시 자동으로 현재 시간 갱신
 
   joinStatus JoinStatus @default(PENDING)
@@ -305,6 +305,15 @@ model Event {
 
   @@index([apartmentId])
   @@index([startDate, endDate])
+}
+
+model DeletedFile {
+  id        String   @id @default(uuid())
+  fileKey   String // s3에서 삭제해야 할 파일의 경로(Key)
+  reason    String? // 삭제 사유
+  createdAt DateTime @default(now())
+
+  @@map("deleted_files")
 }
 
 enum Role {

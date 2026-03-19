@@ -6,6 +6,7 @@ import { getCorsOrigin } from './libs/corsSetup';
 import { routerManager } from './routerManager';
 import { globalErrorHandler, defaultNotFoundHandler } from './libs/errors/errorHandler';
 import cookieParser from 'cookie-parser';
+import { initScheduler } from './jobs';
 
 const app = EXPRESS();
 
@@ -29,5 +30,6 @@ app.use(globalErrorHandler);
 
 
 app.listen(PORT, () => {
+  initScheduler(); // 서버 시작시 크론도 실
   console.log(`Server started on port ${PORT}`);
 });
