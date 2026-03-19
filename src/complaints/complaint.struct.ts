@@ -39,34 +39,6 @@ export const GetComplaintsQueryStruct = s.type({
   keyword: s.optional(s.string()),
 });
 
-export interface ComplaintListResponse {
-  complaintId: string;
-  userId: string | null;
-  title: string;
-  writerName: string;
-  createdAt: Date;
-  updatedAt: Date;
-  isPublic: boolean;
-  viewsCount: number;
-  commentsCount: number;
-  status: ComplaintStatus;
-  dong: string;
-  ho: string;
-}
-
-export interface ComplaintDetailResponse extends ComplaintListResponse {
-  content: string;
-  boardType: string;
-  comments: {
-    id: string;
-    userId: string | null;
-    content: string;
-    createdAt: Date;
-    updatedAt: Date;
-    writerName: string;
-  }[];
-}
-
 export type CreateComplaintDto = s.Infer<typeof CreateComplaintStruct>;
 export type UpdateUserComplaintDto = s.Infer<typeof UpdateUserComplaintStruct>;
 export type UpdateComplaintStatusDto = s.Infer<typeof UpdateComplaintStatusStruct>;
