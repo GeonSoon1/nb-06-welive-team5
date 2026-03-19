@@ -136,7 +136,7 @@ export async function updateAdminInfo(adminId: string, input: UpdateAdminBody) {
 
     return {
       ...user,
-      apartement: apartment
+      apartment: apartment
     };
   });
 } 
