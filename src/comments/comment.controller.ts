@@ -13,29 +13,30 @@ const getValidCommentId = (req: ExpressRequest): string => {
 };
 
 export async function createComment(req: ExpressRequest, res: ExpressResponse) {
-  const authorId = req.user!.id;
+  const { id: authorId, apartmentId } = req.user!;
 
   const data = s.create(req.body, CreateCommentStruct);
-  const result = await commentService.createComment(authorId, data);
+
+  const result = await commentService.createComment(authorId, apartmentId!, data);
 
   return res.status(201).json(result);
 }
 
 export async function updateComment(req: ExpressRequest, res: ExpressResponse) {
-  const authorId = req.user!.id;
+  const { id: authorId, apartmentId } = req.user!;
   const commentId = getValidCommentId(req);
 
   const data = s.create(req.body, UpdateCommentStruct);
-  const result = await commentService.updateComment(commentId, authorId, data);
+  const result = await commentService.updateComment(commentId, authorId, apartmentId!, data);
 
   return res.status(200).json(result);
 }
 
 export async function deleteComment(req: ExpressRequest, res: ExpressResponse) {
-  const userId = req.user!.id;
-  const userRole = req.user!.role;
+  const { id: userId, role: userRole } = req.user!;
 
   const commentId = getValidCommentId(req);
+
   await commentService.deleteComment(commentId, userId, userRole);
 
   return res.status(200).json({ message: '정상적으로 삭제 처리되었습니다' });
