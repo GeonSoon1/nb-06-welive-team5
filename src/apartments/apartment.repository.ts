@@ -6,7 +6,8 @@ import {
   ApartmentUnit,
   ApartmentStructureGroup,
 } from '@prisma/client';
-import { FlatApartmentResponse, PublicApartmentDetail } from './apartment.type';
+
+import { AdminApartmentWithRelations, PublicApartmentDetail, ApartmentWithRelations } from './apartment.type'; 
 
 export type DbClient = Prisma.TransactionClient | PrismaClient;
 
@@ -80,8 +81,7 @@ export async function findUnitInfoById(
 }
 
 /**
- * [공개용] 아파트 목록 및 전체 개수 조회
- * 트랜잭션이 필요 없는 단순 조회이므로 prismaClient를 직접 사용.
+ * [공개용/회원가입] 아파트 목록 조회
  */
 export async function findPublicApartments(
   db: DbClient,
@@ -108,25 +108,19 @@ export async function findPublicApartments(
 }
 
 /**
- * [관리자용] 페이징이 포함된 상세 목록 조회
+ * [슈퍼관리자/관리자] 아파트 목록 조회
  */
 export async function findAdminApartments(
   db: DbClient,
   where: Prisma.ApartmentWhereInput,
   skip: number,
   take: number,
-): Promise<[
-  (Apartment & { 
-    structureGroups: Pick<ApartmentStructureGroup, 'dongList' | 'startFloor' | 'maxFloor' | 'unitsPerFloor'>[] 
-  })[], 
-  number
-]> {
+): Promise<[AdminApartmentWithRelations[], number]> { // any 대신 정의한 타입 사용
   return Promise.all([
     db.apartment.findMany({
       where,
       skip,
-      take, 
-      // 필요한 관계 모델을 명시적으로 포함(include)
+      take,
       include: {
         structureGroups: {
           select: {
@@ -136,62 +130,57 @@ export async function findAdminApartments(
             unitsPerFloor: true,
           },
         },
+        admin: {
+          select: {
+            name: true,
+            contact: true,
+            email: true,
+          }
+        }
       },
-      orderBy: { createdAt: 'desc' }, // 최신 등록순
+      orderBy: { createdAt: 'desc' },
     }),
     db.apartment.count({ where }),
   ]);
 }
 
 /**
- * [관리자용] apartmentId로 아파트 상세 정보 조회
+ * [슈퍼관리자/관리자] 아파트 상세 조회 
  */
-// Apartment 기본 필드에 우리가 추가할 admin 필드들을 결합.
 export async function findApartmentById(
   db: DbClient,
   id: string,
-): Promise<FlatApartmentResponse | null> {
-  
-  const apartment = await db.apartment.findUnique({
+): Promise<ApartmentWithRelations | null> {
+  return db.apartment.findUnique({
     where: { id },
     include: {
-      structureGroups: true,
-      admin: true,
+      structureGroups: {
+        select: {
+          id: true,
+          dongList: true,
+          startFloor: true,
+          maxFloor: true,
+          unitsPerFloor: true,
+        },
+      },
+      admin: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          contact: true,
+        },
+      },
     },
   });
-
-  if (!apartment) return null;
-
-  const { admin, ...rest } = apartment;
-
-  // 원하는 순서대로 객체를 재조립
-  return {
-    id: rest.id,
-    name: rest.name,
-    address: rest.address,
-    officeNumber: rest.officeNumber,
-    description: rest.description,
-    createdAt: rest.createdAt,
-    updatedAt: rest.updatedAt,
-    apartmentStatus: rest.apartmentStatus,
-    ApartmentboardId: rest.ApartmentboardId,
-    
-    // [관리자 정보] 
-    adminId: rest.adminId, 
-    adminName: admin?.name ?? null,
-    adminContact: admin?.contact ?? null,
-    adminEmail: admin?.email ?? null,
-
-    structureGroups: rest.structureGroups,
-  };
 }
 
 /**
- * [공개용] apartmentId로 아파트 상세 정보 조회
+ * [공개용/회원가입] 아파트 기본 정보 상세 조회
  */
 export async function findPublicApartmentById(
   db: DbClient,
-  id: string
+  id: string,
 ): Promise<PublicApartmentDetail | null> {
   return db.apartment.findUnique({
     where: { id },
@@ -222,7 +211,7 @@ export async function updateApartmentInfo(
     address: string;
     officeNumber: string;
     description: string;
-  }
+  },
 ): Promise<Apartment> {
   return await db.apartment.update({
     where: { id: apartmentId },

@@ -5,4 +5,5 @@ dist/
 /generated/prisma
 /upload
 
+coverage/
 public/uploads/profiles/*
