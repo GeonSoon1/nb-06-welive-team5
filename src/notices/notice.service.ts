@@ -96,8 +96,8 @@ export const updateNotice = async (noticeId: string, userId: string, userRole: R
     const updateData: Prisma.NoticeUpdateInput = {
         ...rest,
         ...(boardId && { apartmentboard: { connect: { id: boardId } } }),
-        ...(startDate && { startTime: startDate }),
-        ...(endDate && { endTime: endDate }),
+        ...(startDate && { startDate }),
+        ...(endDate && { endDate }),
     };
 
     const updated = await noticeRepository.updateNotice(noticeId, updateData);

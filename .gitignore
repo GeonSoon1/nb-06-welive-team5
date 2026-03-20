@@ -6,3 +6,4 @@ dist/
 /upload
 
 public/uploads/profiles/*
+/coverage
