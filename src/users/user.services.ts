@@ -158,30 +158,39 @@ export async function cleanupRejectedUsers(params: {
 }) {
   // 오늘 날짜 기준으로 3일 전 날짜
   // const thresholdDate = subDays(new Date(), params.days);
-
-  // 1. 슈퍼 관리자 -> 모든 거절된 ADMIN 삭제
-  if (params.requestRole === Role.SUPER_ADMIN) {
-    return await userRepository.cleanupRejectedUsers(prismaClient, {
-      targetRole: Role.ADMIN,
-      // updatedBefore: thresholdDate,
-    });
+  
+  const targetRole = params.requestRole === Role.SUPER_ADMIN ? Role.ADMIN : Role.USER;
+  
+  if (params.requestRole === Role.ADMIN && !params.apartmentId) {
+    throw new BadRequestError('아파트 정보가 없습니다.');
   }
 
-  // 2. 관리자 -> 자기 아파트의 거절된 USER(주민) 삭제
-  if (params.requestRole === Role.ADMIN) {
-    if (!params.apartmentId) {
-      throw new BadRequestError('관리자 계정에 연결된 아파트 정보가 없습니다.');
+  // 2. 트랜잭션 시작 
+  return await prismaClient.$transaction(async (tx) => {
+    
+    // A. 삭제 대상 조회 (Repository 활용)
+    const targetUsers = await userRepository.findUsersForCleanup(tx, {
+      role: targetRole,
+      joinStatus: JoinStatus.REJECTED,
+      ...(params.apartmentId && { apartmentId: params.apartmentId }),
+    });
+
+    if (targetUsers.length === 0) return { count: 0 };
+
+    const userIds = targetUsers.map((u) => u.id);
+    const aptIds = targetUsers
+      .map((u) => u.apartmentId)
+      .filter((id): id is string => !!id);
+
+    // B. 비즈니스 로직: 관리자 삭제 시 아파트도 삭제
+    if (targetRole === Role.ADMIN && aptIds.length > 0) {
+      await userRepository.deleteManyApartmentsByIds(tx, aptIds);
     }
 
-    return await userRepository.cleanupRejectedUsers(prismaClient, {
-      targetRole: Role.USER,
-      // updatedBefore: thresholdDate,
-      apartmentId: params.apartmentId,
-    });
-  }
-
-  // 방어적 코드
-  throw new ForbiddenError('해당 작업을 수행할 권한이 없습니다.');
+    // C. 최종 유저 삭제 (Repository 활용)
+    return await userRepository.deleteManyUsersByIds(tx, userIds);
+  });
+  
 }
 
 /**

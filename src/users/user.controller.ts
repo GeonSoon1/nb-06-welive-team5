@@ -111,10 +111,11 @@ export async function cleanupRejectedUsers(req: ExpressRequest, res: ExpressResp
     throw new UnauthorizedError('인증 정보가 없습니다');
   }
 
+  // super-admin은 apartmentId = null일듯
   const { role, apartmentId } = req.user;
 
   await userService.cleanupRejectedUsers({
-    requestRole: role,
+    requestRole: role, // 요청자
     apartmentId: apartmentId ?? undefined, // ??(왼쪽 값이 null이나 undefined이면 오른쪽 값, 그외 값은 왼쪽 값)
     // days: CLEANUP_GRACE_PERIOD_DAYS,
   });
