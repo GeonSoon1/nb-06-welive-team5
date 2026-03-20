@@ -84,9 +84,12 @@ export async function deleteUserComplaint(req: ExpressRequest, res: ExpressRespo
 }
 
 export async function updateComplaintStatus(req: ExpressRequest, res: ExpressResponse) {
+  const { apartmentId } = req.user!;
   const complaintId = getValidComplaintId(req);
   const data = s.create(req.body, UpdateComplaintStatusStruct);
-  const result = await complaintService.updateComplaintStatus(complaintId, data);
+
+  // 2. 서비스 호출 시 apartmentId 추가 전달
+  const result = await complaintService.updateComplaintStatus(complaintId, apartmentId!, data);
 
   return res.status(200).json(result);
 }
