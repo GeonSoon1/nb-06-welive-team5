@@ -6,7 +6,7 @@ import NotFoundError from '../libs/errors/NotFoundError';
 
 
 /**
- * [1] 공개용 아파트 목록 조회 
+ * [공개용/회원가입] 아파트 목록 조회
  */
 //ApartmentWhereInput타입 - 아파트 테이블에서 검색할 때 쓸 수 있는 모든 조건 규격
 export async function getPublicApartments(filters: PublicApartmentQuery) {
@@ -30,7 +30,7 @@ export async function getPublicApartments(filters: PublicApartmentQuery) {
 }
 
 /**
- * [2] 관리자용 아파트 목록 조회
+ * [슈퍼관리자/관리자] 아파트 목록 조회
  */
 export async function getAdminApartments(filters: AdminApartmentQuery) {
   const { searchKeyword, name, address, apartmentStatus, page = 1, limit = 10 } = filters;
@@ -44,35 +44,61 @@ export async function getAdminApartments(filters: AdminApartmentQuery) {
     }),
     name: name ? { contains: name, mode: 'insensitive' } : undefined,
     address: address ? { contains: address, mode: 'insensitive' } : undefined,
-    apartmentStatus: apartmentStatus || undefined, //엄격한 분류
+    apartmentStatus: apartmentStatus || undefined,
   };
 
   const skip = (page - 1) * limit;
 
-  const [apartments, totalCount] = await apartmentRepository.findAdminApartments(
+  const [rawApartments, totalCount] = await apartmentRepository.findAdminApartments(
     prismaClient,
     where,
     skip,
     limit,
   );
-  return { apartments, totalCount, page, limit };
+
+  // 2. 평탄화(Flattening)
+  const apartments = rawApartments.map((apt) => {
+    
+    const { admin, ...rest } = apt;
+
+    return {
+      ...rest,
+      adminName: admin?.name ?? null,
+      adminContact: admin?.contact ?? null,
+      adminEmail: admin?.email ?? null,
+    };
+  });
+
+  return { apartments, totalCount };
 }
 
 /**
- * [3] 관리자용 아파트 상세 조회
+ * [슈퍼관리자/관리자] 아파트 상세 조회 
  */
 export async function getApartmentDetail(apartmentId: string) {
-  const apartment = await apartmentRepository.findApartmentById(prismaClient, apartmentId);
 
-  if (!apartment) {
-    throw new NotFoundError('존재하지 않는 아파트 입니다.')
+  const rawApartment = await apartmentRepository.findApartmentById(prismaClient, apartmentId);
+
+  if (!rawApartment) {
+    throw new NotFoundError('존재하지 않는 아파트 입니다.');
   }
+
+  // admin 객체를 꺼내고 나머지를 rest로 분리
+  const { admin, ...rest } = rawApartment;
+
+  const apartment = {
+    ...rest,
+    adminName: admin?.name ?? null,
+    adminContact: admin?.contact ?? null,
+    adminEmail: admin?.email ?? null,
+    // 필요하다면 기존 admin 객체는 제외
+  };
 
   return apartment;
 }
 
 /**
- * [4] 공개용 아파트 상세 조회
+ * [공개용/회원가입] 아파트 기본 정보 상세 조회
  */
 export async function getPublicApartmentDetail(id: string) {
   const apartment = await apartmentRepository.findPublicApartmentById(prismaClient, id);

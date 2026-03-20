@@ -7,51 +7,9 @@ import {
   ApartmentStructureGroup,
 } from '@prisma/client';
 
+import { AdminApartmentWithRelations, PublicApartmentDetail, ApartmentWithRelations } from './apartment.type'; 
+
 export type DbClient = Prisma.TransactionClient | PrismaClient;
-
-/**
- * 1. [관리자용] 상세 정보 타입 정의
- */
-export type ApartmentWithRelations = Prisma.ApartmentGetPayload<{
-  include: {
-    structureGroups: {
-      select: {
-        id: true,
-        dongList: true,
-        startFloor: true,
-        maxFloor: true,
-        unitsPerFloor: true
-      };
-    };
-    admin: {
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        contact: true,
-      };
-    };
-  };
-}>;
-
-/**
- * 2. [공개용] 상세 정보 타입 정의
- */
-export type PublicApartmentDetail = Prisma.ApartmentGetPayload<{
-  select: {
-    id: true,
-    name: true,
-    address: true,
-    structureGroups: {
-      select: {
-        dongList: true,
-        startFloor: true,
-        maxFloor: true,
-        unitsPerFloor: true
-      };
-    };
-  };
-}>;
 
 /**
  * [1] 아파트 기본 정보 생성
@@ -123,16 +81,21 @@ export async function findUnitInfoById(
 }
 
 /**
- * [공개용] 아파트 목록 및 전체 개수 조회
- * 트랜잭션이 필요 없는 단순 조회이므로 prismaClient를 직접 사용.
+ * [공개용/회원가입] 아파트 목록 조회
  */
 export async function findPublicApartments(
   db: DbClient,
-  where: Prisma.ApartmentWhereInput
+  where: Prisma.ApartmentWhereInput,
 ): Promise<[Pick<Apartment, 'id' | 'name' | 'address'>[], number]> {
+
+  const approvedWhere: Prisma.ApartmentWhereInput = {
+    ...where,
+    apartmentStatus: 'APPROVED', 
+  }
+
   return Promise.all([
     db.apartment.findMany({
-      where,
+      where: approvedWhere,
       select: {
         id: true,
         name: true,
@@ -140,30 +103,24 @@ export async function findPublicApartments(
       },
       orderBy: { name: 'asc' }, // 가나다순 정렬
     }),
-    db.apartment.count({ where }),
+    db.apartment.count({ where: approvedWhere }),
   ]);
 }
 
 /**
- * [관리자용] 페이징이 포함된 상세 목록 조회
+ * [슈퍼관리자/관리자] 아파트 목록 조회
  */
 export async function findAdminApartments(
   db: DbClient,
   where: Prisma.ApartmentWhereInput,
   skip: number,
   take: number,
-): Promise<[
-  (Apartment & { 
-    structureGroups: Pick<ApartmentStructureGroup, 'dongList' | 'startFloor' | 'maxFloor' | 'unitsPerFloor'>[] 
-  })[], 
-  number
-]> {
+): Promise<[AdminApartmentWithRelations[], number]> { // any 대신 정의한 타입 사용
   return Promise.all([
     db.apartment.findMany({
       where,
       skip,
-      take, 
-      // 필요한 관계 모델을 명시적으로 포함(include)
+      take,
       include: {
         structureGroups: {
           select: {
@@ -173,19 +130,26 @@ export async function findAdminApartments(
             unitsPerFloor: true,
           },
         },
+        admin: {
+          select: {
+            name: true,
+            contact: true,
+            email: true,
+          }
+        }
       },
-      orderBy: { createdAt: 'desc' }, // 최신 등록순
+      orderBy: { createdAt: 'desc' },
     }),
     db.apartment.count({ where }),
   ]);
 }
 
 /**
- * [관리자용] apartmentId로 아파트 상세 정보 조회
+ * [슈퍼관리자/관리자] 아파트 상세 조회 
  */
 export async function findApartmentById(
   db: DbClient,
-  id: string
+  id: string,
 ): Promise<ApartmentWithRelations | null> {
   return db.apartment.findUnique({
     where: { id },
@@ -196,7 +160,7 @@ export async function findApartmentById(
           dongList: true,
           startFloor: true,
           maxFloor: true,
-          unitsPerFloor: true
+          unitsPerFloor: true,
         },
       },
       admin: {
@@ -205,18 +169,18 @@ export async function findApartmentById(
           name: true,
           email: true,
           contact: true,
-        }
+        },
       },
     },
   });
 }
 
 /**
- * [공개용] apartmentId로 아파트 상세 정보 조회
+ * [공개용/회원가입] 아파트 기본 정보 상세 조회
  */
 export async function findPublicApartmentById(
   db: DbClient,
-  id: string
+  id: string,
 ): Promise<PublicApartmentDetail | null> {
   return db.apartment.findUnique({
     where: { id },
@@ -232,6 +196,59 @@ export async function findPublicApartmentById(
           unitsPerFloor: true,
         },
       },
+    },
+  });
+}
+
+/**
+ * [Super-Admin] 아파트 정보(관리자 정보) 수정
+ */
+export async function updateApartmentInfo(
+  db: DbClient,
+  apartmentId: string,
+  data: {
+    name: string;
+    address: string;
+    officeNumber: string;
+    description: string;
+  },
+): Promise<Apartment> {
+  return await db.apartment.update({
+    where: { id: apartmentId },
+    data: {
+      name: data.name,
+      address: data.address,
+      officeNumber: data.officeNumber,
+      description: data.description,
+    },
+  });
+}
+
+/**
+ * [Super-Admin] 관리자 정보(아파트 정보 포함) 삭제
+ */
+export async function findApartmentByAdminId(db: DbClient, adminId: string) {
+  return await db.apartment.findUnique({
+    where: { adminId },
+    select: { id: true },
+  });
+}
+
+export async function removeApartment(db: DbClient, apartmentId: string) {
+  return await db.apartment.delete({
+    where: { id: apartmentId },
+  });
+}
+
+/**
+ * 아파트를 승인 상태로 변경하고, 관리자를 주인으로 등록한다.
+ */
+export async function activateApartment(db: DbClient, apartmentId: string, adminId: string) {
+  return db.apartment.update({
+    where: { id: apartmentId },
+    data: {
+      apartmentStatus: 'APPROVED',
+      adminId: adminId,
     },
   });
 }

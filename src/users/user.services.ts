@@ -2,36 +2,20 @@ import { Role, JoinStatus } from '@prisma/client';
 import * as userRepository from './user.repository';
 import BadRequestError from '../libs/errors/BadRequestError';
 import { prismaClient } from '../libs/constants';
-import path from 'path';
-import fs from 'fs';
+import { verifyPassword, hashPassword } from '../libs/auth/password';
+import { PasswordBody, UpdateAdminBody } from './user.struct';
+import NotFoundError from '../libs/errors/NotFoundError';
+import ValidationError from '../libs/errors/ValidationError';
+import * as apartmentRepository from '../apartments/apartment.repository';
+import { subDays } from 'date-fns';
+import ForbiddenError from '../libs/errors/ForbiddenError';
+
 
 /**
- * [admin] 일반 주민(USER)의 가입 상태를 변경.
- */
-export async function updateUserStatus(residentId: string, status: JoinStatus) {
-  //1. 대상 유저의 역할 확인
-  const targetUser = await userRepository.findUserRoleById(prismaClient, residentId);
-
-  if (!targetUser) {
-    throw new BadRequestError('해당 유저를 찾을 수 없습니다.');
-  }
-
-  // 2.대상이 반드시 일반 주민(USER)이어야 한다.
-  // 관리자가 다른 관리자나 최고 관리자의 상태를 여기서 바꾸면 보안 사고
-  if (targetUser.role !== Role.USER) {
-    throw new BadRequestError(
-      '일반 주민(USER) 권한을 가진 유저만 승인 상태로 변경할 수 있습니다. ',
-    );
-  }
-  // 3. 상태 업데이트 실행
-  return await userRepository.updateUserStatus(prismaClient, residentId, status);
-}
-
-/**
- * [super-admin] 관리자(admin)의 가입 상태를 변경.
+ * [super-admin] 특정 관리자(admin)의 가입 상태를 변경.
  */
 export async function updateAdminStatus(adminId: string, status: JoinStatus) {
-  const targetUser = await userRepository.findUserRoleById(prismaClient, adminId);
+  const targetUser = await userRepository.findUserWithApartmentById(prismaClient, adminId);
 
   if (!targetUser) {
     throw new BadRequestError('해당 유저를 찾을 수 없습니다.');
@@ -41,22 +25,176 @@ export async function updateAdminStatus(adminId: string, status: JoinStatus) {
     throw new BadRequestError('관리자(ADMIN) 권한을 가진 유저만 승인 상태를 변경할 수 있습니다');
   }
 
-  return await userRepository.updateAdminStatus(prismaClient, adminId, status);
+  return await prismaClient.$transaction(async (tx) => {
+    await userRepository.updateAdminStatus(tx, adminId, status);
+
+    if (status === JoinStatus.APPROVED && targetUser.apartmentId) {
+      await apartmentRepository.activateApartment(tx, targetUser.apartmentId, adminId);
+    }
+  });
 }
+
+
+/**
+ * [super-admin] 관리자(admin)의 가입 상태를 일괄 변경.
+ */
+export async function updateAllAdminStatus(status: JoinStatus) {
+  const result = await userRepository.updateAllAdmins(prismaClient, {
+    targetRole: Role.ADMIN,
+    fromStatus: JoinStatus.PENDING,
+    toStatus: status,
+  });
+
+  return result;
+}
+
 
 /**
  * 프로필 이미지 변경.
  */
 export async function updateProfileImage(userId: string, imagePath: string) {
-  const user = await userRepository.findUserRoleById(prismaClient, userId);
+  // 트랜젝션 작업중 발생한 오류는 500 Server Error로 분류.
+  return await prismaClient.$transaction(async (tx) => {  
+    const user = await userRepository.findUserRoleById(tx, userId);
+    
+    // 1. DB에 저장된 값이 있고, 그게 '/public'으로 시작한다면
+    if (user?.image && user.image.includes('amazonaws.com')) {
+      
+      // htts://bucket.s3.ap-northeast-2.amazonaws.com/1773897003165-169871444.jpg
+      // .com/ 뒤쪽만 짤라냄/ fileKey는 파일 이름
+      
+      const fileKey = user.image.split('.com/')[1];
+      // fileKey = 1773897003165-169871444.jpg
 
-  // 1. DB에 저장된 값이 있고, 그게 '/public'으로 시작한다면
-  if (user?.image && user.image.startsWith('/public')) {
-    const oldPath = path.join(process.cwd(), user.image);
-    if (fs.existsSync(oldPath)) {
-      fs.unlinkSync(oldPath); // 이전 파일 삭제
+      // 2. 삭제할 파일 deletedFile 테이블에 저장.
+      if (fileKey) {
+        await userRepository.reserveFileDeletion(
+        tx,
+        decodeURIComponent(fileKey),
+        'USER_PROFILE_UPDATE'  
+        );
+        // console.log(`[CLEANUP] 삭제 예약 완료: , ${fileKey}`);
+      }
     }
+    
+    // 3. User테이블에 새 이미지 업데이트
+    const updatedUser = await userRepository.updateImage(tx, userId, imagePath);
+    
+    return updatedUser;
+  });
+}
+
+
+/**
+ * 비밀번호 변경.
+ */
+export async function updatePassword(userId: string, data: PasswordBody) {
+  const { currentPassword, newPassword } = data;
+
+  // DB에서 유저와 기존 해시된 비밀번호를 가져온다.
+  const user = await userRepository.findUserPasswordById(prismaClient, userId);
+
+  // 토큰은 살아있지만 관리자에 의해 탈퇴당한 경우 대비 방어적 코드
+  if (!user) {
+    throw new NotFoundError('사용자를 찾을 수 없습니다.');
   }
 
-  return await userRepository.updateImage(prismaClient, userId, imagePath);
+  const isMatch = await verifyPassword(currentPassword, user.password);
+  if (!isMatch) {
+    throw new ValidationError('비밀번호가 일치하지 않습니다.');
+  }
+
+  if (currentPassword === newPassword) {
+    throw new ValidationError('새 비밀번호는 현재 비밀번호와 동일할 수 없습니다.');
+  }
+
+  const hashedNewPassword = await hashPassword(newPassword);
+
+  const updatedUser = await userRepository.updateUserPassword(prismaClient, userId, hashedNewPassword);
+
+  return updatedUser;
+}
+
+/**
+ * [Super-Admin] 관리자 정보(아파트 정보) 수정
+ */
+export async function updateAdminInfo(adminId: string, input: UpdateAdminBody) {
+  return await prismaClient.$transaction(async (tx) => {
+    const user = await userRepository.updateAdminBasicInfo(tx, adminId, {
+      name: input.name,
+      contact: input.contact,
+      email: input.email,
+    });
+
+    if (!user) {
+      throw new NotFoundError('해당 관리자 정보를 찾을 수 없습니다.');
+    }
+
+    if (!user.apartmentId) {
+      throw new BadRequestError('해당 관리자 계정에 연결된 아파트 정보가 존재하지 않습니다.');
+    }
+
+    const apartment = await apartmentRepository.updateApartmentInfo(tx, user.apartmentId, {
+      name: input.apartmentName,
+      address: input.apartmentAddress,
+      officeNumber: input.apartmentManagementNumber,
+      description: input.description,
+    });
+
+    return {
+      ...user,
+      apartment: apartment,
+    };
+  });
+}
+
+/**
+ * [Super-Admin/ Admin] Rejected된 관리자들 & 유저들 삭제
+ */
+export async function cleanupRejectedUsers(params: {
+  requestRole: Role;
+  apartmentId?: string;
+  // days: number;
+}) {
+  // 오늘 날짜 기준으로 3일 전 날짜
+  // const thresholdDate = subDays(new Date(), params.days);
+
+  // 1. 슈퍼 관리자 -> 모든 거절된 ADMIN 삭제
+  if (params.requestRole === Role.SUPER_ADMIN) {
+    return await userRepository.cleanupRejectedUsers(prismaClient, {
+      targetRole: Role.ADMIN,
+      // updatedBefore: thresholdDate,
+    });
+  }
+
+  // 2. 관리자 -> 자기 아파트의 거절된 USER(주민) 삭제
+  if (params.requestRole === Role.ADMIN) {
+    if (!params.apartmentId) {
+      throw new BadRequestError('관리자 계정에 연결된 아파트 정보가 없습니다.');
+    }
+
+    return await userRepository.cleanupRejectedUsers(prismaClient, {
+      targetRole: Role.USER,
+      // updatedBefore: thresholdDate,
+      apartmentId: params.apartmentId,
+    });
+  }
+
+  // 방어적 코드
+  throw new ForbiddenError('해당 작업을 수행할 권한이 없습니다.');
+}
+
+/**
+ * [Super-Admin] 관리자 정보(아파트 정보 포함) 삭제
+ */
+export async function removeAdminAndAssociatedData(adminId: string) {
+  return await prismaClient.$transaction(async (tx) => {
+    const apartment = await apartmentRepository.findApartmentByAdminId(tx, adminId);
+    
+    if (apartment) {
+      await apartmentRepository.removeApartment(tx, apartment.id);
+    }
+
+    await userRepository.deleteUser(tx, adminId);
+  });
 }

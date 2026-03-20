@@ -1,16 +1,9 @@
 // src/auth/auth.repository.ts
 import { prismaClient } from '../libs/constants';
 import { Prisma, PrismaClient, JoinStatus, Role, User } from '@prisma/client';
+import { CreateSuperAdminParams, UserWIthApartment } from './auth.type';
 
 export type DbClient = Prisma.TransactionClient | PrismaClient;
-
-export type CreateSuperAdminParams = {
-  username: string;
-  hashedPassword: string;
-  contact: string;
-  name: string;
-  email: string;
-};
 
 export async function createSuperAdmin(db: DbClient, params: CreateSuperAdminParams) {
   return db.user.create({
@@ -29,6 +22,32 @@ export async function createSuperAdmin(db: DbClient, params: CreateSuperAdminPar
       email: true,
       joinStatus: true,
       role: true,
+    },
+  });
+}
+
+// 관리자 유저 생성
+export async function createAdminUser(
+  db: DbClient,
+  params: {
+    username: string;
+    hashedPassword: string;
+    name: string;
+    email: string;
+    contact: string;
+    apartmentId: string;
+  },
+) {
+  return db.user.create({
+    data: {
+      username: params.username,
+      password: params.hashedPassword,
+      name: params.name,
+      email: params.email,
+      contact: params.contact,
+      role: Role.ADMIN,
+      joinStatus: JoinStatus.PENDING,
+      apartmentId: params.apartmentId,
     },
   });
 }
@@ -68,24 +87,6 @@ export async function createUserForSignupUser(
     },
   });
 }
-
-// User 타입 + Apartment 타입 + ApartmentUnit 타입
-export type UserWIthApartment = Prisma.UserGetPayload<{
-  include: {
-    apartment: {
-      include: {
-        apartmentboard: {
-          include: {
-            notices: true;
-            complaints: true;
-            votes: true;
-          };
-        };
-      };
-    };
-    apartmentUnit: true;
-  };
-}>;
 
 // "단순 조회"가 아니라 "인증 전용 특수 조회"라서 auth.repository.ts에 있어도 됨.
 export async function findUserForAuth(username: string): Promise<UserWIthApartment | null> {

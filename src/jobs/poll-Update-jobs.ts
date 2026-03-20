@@ -10,7 +10,7 @@ export const startPollScheduler = () => {
         try {
             await pollRepository.updatePollStatuses();
         } catch (error) {
-            console.error('투표 상태 스케줄러 실행 중 오류 발생:', error);
+            console.log('[CRON_ERROR]투표 상태 스케줄러 실행 중 오류 발생:', error);
         }
     });
 };

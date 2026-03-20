@@ -1,36 +1,28 @@
+import { s3Client } from '../libs/s3Client';
 import multer, { FileFilterCallback } from 'multer';
+import multerS3 from 'multer-s3';
 import path from 'path';
-import fs from 'fs';
-import { ExpressRequest } from './constants';
+import { ExpressRequest, S3_BUCKET_NAME } from './constants';
 
-// 1. 저장 경로 설정 (process.cwd() = 루트 폴더)
-const uploadPath = path.join(process.cwd(), 'public/uploads/profiles');
 
-// 폴더가 없으면 생성
-if (!fs.existsSync(uploadPath)) {
-  fs.mkdirSync(uploadPath, { recursive: true });
-}
-
-// 2. 로컬 저장소 엔진 설정
-// 파일이 들어왔을 때, Multer가 어떻게 행동해야 하는지 적어둔 매뉴얼
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadPath);
-  },
-  filename: (req, file, cb) => {
-    // 파일명 중복 방지를 위해 [타임스탬프-이름] 조합
+// 1. S3 저장소 설정 (기존 multer.diskStorage 대신 multerS3를 쓴 것 뿐)
+const storage = multerS3({
+  s3: s3Client, 
+  bucket: S3_BUCKET_NAME, 
+  // multerS3가 업로드할 때 파일의 확장자를 보고 **"이건 image/jpeg야!"**라고 S3에 미리 꼬리표를 붙여줌.
+  contentType: multerS3.AUTO_CONTENT_TYPE,
+  key: (req, file, cb) => { // 가서 이 이름으로 저장해라.
     const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    cb(null, `${uniqueSuffix}${path.extname(file.originalname)}`);
+    cb(null, `${uniqueSuffix}${path.extname(file.originalname)}`)
   },
 });
 
-// 3. 필터링 (이미지만)
-// 브라우저가 파일을 보낼 때, "이 파일은 어떤 종류입니다"라고 꼬리표를 붙여 보내는데 그걸 MIME Type
+// 2. 필터링 
 const fileFilter = (
   req: ExpressRequest,
-  file: Express.Multer.File, //file안에 들어있는 정보 타입
-  cb: FileFilterCallback // 정해진 규칙대로 응답
-) => {
+  file: Express.Multer.File,
+  cb: FileFilterCallback
+) => { // 앞글자가 image/로 시작하는 진짜 사진들만 통과시켜
   if (file.mimetype.startsWith('image/')) {
     cb(null, true);
   } else {
@@ -38,9 +30,11 @@ const fileFilter = (
   }
 };
 
-// upload라는 미들웨어 생성 (파일 생성(이전 작업) -> fileFilter -> storage)
+// 3. 미들웨어 생성 
+// multer는 파일 업로드 전체 과정을 총괄하는 시스템
 export const upload = multer({
-  storage,
+  storage, // 위에서 만든 S3 storage
   fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 }, //5MB 제한
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB 제한
 });
+

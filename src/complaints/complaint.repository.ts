@@ -1,6 +1,5 @@
 import { prismaClient as prisma, Prisma } from '../libs/constants';
-import { UpdateUserComplaintDto } from './complaint.struct';
-import { GetComplaintsQuery } from './complaint.type';
+import { UpdateUserComplaintDto, GetComplaintsQueryDto } from './complaint.struct';
 import { ComplaintStatus } from '@prisma/client';
 
 const authorSelectQuery = {
@@ -13,13 +12,26 @@ const authorSelectQuery = {
   },
 };
 
+export async function validateComplaintOwnership(
+  complaintId: string,
+  apartmentId: string,
+): Promise<boolean> {
+  const complaint = await prisma.complaint.findFirst({
+    where: {
+      id: complaintId,
+      apartmentboard: { apartment: { id: apartmentId } },
+    },
+  });
+  return !!complaint;
+}
+
 // 아파트 ID로 게시판 ID만 빼오는 조회 함수
 export async function getBoardIdByApartment(apartmentId: string) {
   const apartment = await prisma.apartment.findUnique({
     where: { id: apartmentId },
-    select: { ApartmentboardId: true },
+    select: { apartmentboardId: true },
   });
-  return apartment?.ApartmentboardId;
+  return apartment?.apartmentboardId;
 }
 
 // 1. 민원 등록
@@ -41,7 +53,7 @@ export async function createComplaint(
 }
 
 // 2. 전체 민원 목록 조회
-export async function getComplaints(apartmentId: string, query: GetComplaintsQuery) {
+export async function getComplaints(apartmentId: string, query: GetComplaintsQueryDto) {
   const { page, limit, status, isPublic, dong, ho, keyword } = query;
 
   const take = Math.min(Number(limit || 20), 100);

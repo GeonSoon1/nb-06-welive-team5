@@ -1,9 +1,8 @@
 // src/users/users.repository.ts
-import { Prisma, PrismaClient, JoinStatus, Role } from '@prisma/client';
+import { Prisma, PrismaClient, JoinStatus, Role, User } from '@prisma/client';
 
 // 일반 쿼리와 트랜잭션 쿼리 모두에 대응
 export type DbClient = Prisma.TransactionClient | PrismaClient;
-
 
 export async function findUserIdByUsername(db: DbClient, username: string) {
   return db.user.findUnique({ where: { username }, select: { id: true } });
@@ -17,37 +16,46 @@ export async function findUserIdByContact(db: DbClient, contact: string) {
   return db.user.findUnique({ where: { contact }, select: { id: true } });
 }
 
-// 관리자 유저 생성
-export async function createAdminUser(
-  db: DbClient, 
-  params: {
-    username: string;
-    hashedPassword: string;
-    name: string;
-    email: string;
-    contact: string;
-    apartmentId: string;
-  }
-) {
-  return db.user.create({
-    data: {
-      username: params.username,
-      password: params.hashedPassword,
-      name: params.name,
-      email: params.email,
-      contact: params.contact,
-      role: Role.ADMIN,
-      joinStatus: JoinStatus.PENDING,
-      apartmentId: params.apartmentId,
-    },
-  });
-}
-
-// super-admin이 admin의 상태를 approved로 승인
+// super-admin이 하나의 admin의 상태를 ex) PENDING -> APPROVED로 승인
 export async function updateAdminStatus(db: DbClient, adminId: string, status: JoinStatus) {
   return db.user.update({
     where: { id: adminId },
     data: { joinStatus: status },
+  });
+}
+
+export async function findUserWithApartmentById(
+  db: DbClient,
+  userId: string
+) {
+  return db.user.findUnique({
+    where: { id: userId },
+    select: {
+      role: true,
+      apartmentId: true,
+    },
+  });
+}
+
+/**
+ * super-admin이 모든 admin의 상태를 ex)PENDING -> APPROVED로 승인
+ */
+export async function updateAllAdmins(
+  db: DbClient,
+  params: { 
+    targetRole: Role; 
+    fromStatus: JoinStatus; 
+    toStatus: JoinStatus; 
+  },
+) {
+  return db.user.updateMany({
+    where: {
+      role: params.targetRole,
+      joinStatus: params.fromStatus,
+    },
+    data: {
+      joinStatus: params.toStatus,
+    },
   });
 }
 
@@ -65,28 +73,169 @@ export async function updateUserStatus(db: DbClient, residentId: string, status:
   });
 }
 
-// 특정 유저의 Role만 뽑아오는 함수
-export async function findUserRoleById(db: DbClient, id: string) {
+/**
+ * [admin] 일반 유저(user)의 가입 상태를 일괄 변경.
+ */
+export async function updateAllUsers(
+  db: DbClient,
+  params: {
+    apartmentId: string;
+    targetRole: Role;
+    fromStatus: JoinStatus;
+    toStatus: JoinStatus; 
+  },
+) {
+  return db.user.updateMany({
+    where: {
+      role: params.targetRole,
+      joinStatus: params.fromStatus,
+      resident: { // user와 연결된 resident가 있으면 가서 resident 테이블과 관계를 맺고 resident 테이블의 apartmentId와 입력한 apartmentId가 같는 것을 조건으로 한다.
+        apartmentId: params.apartmentId,
+      }
+    },
+    data: {
+      joinStatus: params.toStatus,
+    },
+  });
+}
+
+/**
+ * 특정 유저의 Role만 뽑아오는 함수
+ */
+export async function findUserRoleById(db: DbClient, userId: string) {
   return db.user.findUnique({
-    where: { id },
-    select: { 
+    where: { id: userId },
+    select: {
       role: true,
       joinStatus: true,
       image: true,
-     },
+    },
   });
 }
 
 /**
  * 프로필 이미지 변경.
  */
-export async function updateImage(
-  db: DbClient, 
-  userId: string, 
-  imagePath: string
-) {
+export async function updateImage(db: DbClient, userId: string, imagePath: string) {
   return await db.user.update({
     where: { id: userId },
     data: { image: imagePath },
+    select: {
+      image: true,
+      name: true,
+    }
+  });
+}
+
+/**
+ * 삭제할 파일 정보를 기록 (트랜잭션 지원)
+ */
+export async function reserveFileDeletion(db: DbClient, fileKey: string, reason: string) {
+  return await db.deletedFile.create({
+    data: {
+      fileKey,
+      reason,
+    },
+  });
+}
+
+/**
+ * 비밀번호 변경을 위해 현재 비밀번호를 추출하는 로직
+ */
+export async function findUserPasswordById(db: DbClient, userId: string) {
+  return await db.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      password: true,
+    },
+  });
+}
+
+/**
+ * 새로운 비밀번호를 DB에 넣어주는 로직
+ */
+export async function updateUserPassword(db: DbClient, userId: string, password: string) {
+  return await db.user.update({
+    where: { id: userId },
+    data: { password },
+    select: {
+      id : true,
+      name: true
+    }
+  });
+}
+
+/**
+ * [Super-Admin] 관리자 정보(아파트 정보) 수정
+ */
+export async function updateAdminBasicInfo(
+  db: DbClient,
+  adminId: string,
+  data: { name: string; contact: string; email: string; },
+): Promise<User> {
+  return await db.user.update({
+    where: { id: adminId },
+    data: {
+      name: data.name,
+      contact: data.contact,
+      email: data.email,
+    },
+  });
+}
+
+/**
+ * [Super-Admin/ Admin] Rejected된 관리자들 & 유저들 삭제
+ */
+export async function cleanupRejectedUsers(
+  db: DbClient,
+  params: {
+    targetRole: Role;
+    // updatedBefore: Date;
+    apartmentId?: string;
+  },
+): Promise<Prisma.BatchPayload> {
+  const client = db as PrismaClient;
+
+  return await client.$transaction(async (tx) => {
+    // 1. 삭제 대상 유저 및 아파트 ID 추출
+    const targetUsers = await tx.user.findMany({
+      where: {
+        role: params.targetRole,
+        joinStatus: JoinStatus.REJECTED,
+        // updatedAt: { lt: params.updatedBefore },
+        ...(params.apartmentId && { apartmentId: params.apartmentId }),
+      },// 앞에 값이 참이면 && 뒤에 값을 반환.(false면 아무것도 반환 X)
+      select: { id: true, apartmentId: true },
+    });
+    
+    const userIds = targetUsers.map((u) => u.id);
+    const aptIds = targetUsers
+      .map((u) => u.apartmentId)
+      .filter((id): id is string => !!id);
+      //이 필터를 통과하면 100% string
+    
+    // 2. 관리자 삭제 시 아파트도 수동 연쇄 삭제
+    if (params.targetRole === Role.ADMIN && aptIds.length > 0) {
+      await tx.apartment.deleteMany({
+        where: { id: { in: aptIds } },
+      });
+    }
+
+    // 3. 최종 유저 삭제
+    return await tx.user.deleteMany({
+      where: {
+        id: { in: userIds },
+      },
+    });
+  });
+}
+
+/**
+ * [Super-Admin] 관리자 정보(아파트 정보 포함) 삭제
+ */
+export async function deleteUser(db: DbClient, adminId: string) {
+  return await db.user.deleteMany({
+    where: { id: adminId },
   });
 }
