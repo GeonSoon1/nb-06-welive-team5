@@ -65,9 +65,12 @@ describe('Complaint API 통합 테스트 (리팩토링 버전)', () => {
   };
 
   describe('POST /api/complaints (민원 등록)', () => {
-    it('성공 시 201과 메시지를 반환하며 서비스에 apartmentId를 전달해야 한다.', async () => {
+    it('성공 시 201과 명세서 메시지, 그리고 생성된 데이터 정보를 반환해야 한다.', async () => {
       setupAuth();
-      (complaintService.createComplaint as jest.Mock).mockResolvedValue({ id: 'comp-1' });
+      (complaintService.createComplaint as jest.Mock).mockResolvedValue({
+        complaintId: 'comp-1',
+        writerName: '홍길동',
+      });
 
       const response = await request(app).post('/api/complaints').send({
         title: '층간소음 테스트',
@@ -77,10 +80,11 @@ describe('Complaint API 통합 테스트 (리팩토링 버전)', () => {
 
       expect(response.status).toBe(201);
       expect(response.body.message).toBe('정상적으로 등록 처리되었습니다');
+      expect(response.body.data.complaintId).toBe('comp-1');
       expect(complaintService.createComplaint).toHaveBeenCalledWith(
         mockUserId,
         mockAptId,
-        expect.any(Object),
+        expect.objectContaining({ title: '층간소음 테스트' }),
       );
     });
 
@@ -95,10 +99,22 @@ describe('Complaint API 통합 테스트 (리팩토링 버전)', () => {
 
       expect(response.status).toBe(403);
     });
+
+    it('필수 데이터(title)가 누락되면 서비스 호출 없이 400 에러를 반환해야 한다.', async () => {
+      setupAuth();
+
+      const response = await request(app).post('/api/complaints').send({
+        content: '제목이 없는 잘못된 요청입니다.',
+        isPublic: true,
+      });
+
+      expect(response.status).toBe(400);
+      expect(complaintService.createComplaint).not.toHaveBeenCalled();
+    });
   });
 
   describe('GET /api/complaints (전체 목록 조회)', () => {
-    it('성공 시 200과 목록을 반환해야 한다.', async () => {
+    it('성공 시 200과 pagination이 적용된 목록을 반환해야 한다.', async () => {
       setupAuth();
       (complaintService.getComplaints as jest.Mock).mockResolvedValue({
         complaints: [],
@@ -108,11 +124,13 @@ describe('Complaint API 통합 테스트 (리팩토링 버전)', () => {
       const response = await request(app).get('/api/complaints?page=1&limit=20');
 
       expect(response.status).toBe(200);
+      expect(response.body.data).toHaveProperty('complaints');
+      expect(response.body.data).toHaveProperty('totalCount');
       expect(complaintService.getComplaints).toHaveBeenCalledWith(
         mockAptId,
         mockUserId,
         Role.USER,
-        expect.any(Object),
+        expect.objectContaining({ page: '1', limit: '20' }),
       );
     });
 
@@ -125,15 +143,18 @@ describe('Complaint API 통합 테스트 (리팩토링 버전)', () => {
   });
 
   describe('GET /api/complaints/:complaintId (상세 조회)', () => {
-    it('성공 시 200을 반환하며 서비스에 4개의 인자를 전달해야 한다.', async () => {
+    it('성공 시 200을 반환하며 서비스에 모든 보안 인자를 전달해야 한다.', async () => {
       setupAuth();
       (complaintService.getComplaintDetail as jest.Mock).mockResolvedValue({
         complaintId: 'comp-1',
+        title: '상세내용',
+        content: '상세본문',
       });
 
       const response = await request(app).get('/api/complaints/comp-1');
 
       expect(response.status).toBe(200);
+      expect(response.body.data.complaintId).toBe('comp-1');
       expect(complaintService.getComplaintDetail).toHaveBeenCalledWith(
         'comp-1',
         mockUserId,
@@ -144,28 +165,30 @@ describe('Complaint API 통합 테스트 (리팩토링 버전)', () => {
   });
 
   describe('PATCH /api/complaints/:complaintId (수정)', () => {
-    it('작성자가 수정 시 200을 반환하며 apartmentId를 검증 인자로 넘겨야 한다.', async () => {
+    it('작성자가 수정 시 200을 반환하며 수정된 정보를 응답해야 한다.', async () => {
       setupAuth();
       (complaintService.updateUserComplaint as jest.Mock).mockResolvedValue({
         complaintId: 'comp-1',
+        title: '수정된 제목',
       });
 
       const response = await request(app)
         .patch('/api/complaints/comp-1')
-        .send({ title: '수정제목', isPublic: false });
+        .send({ title: '수정된 제목' });
 
       expect(response.status).toBe(200);
+      expect(response.body.data.title).toBe('수정된 제목');
       expect(complaintService.updateUserComplaint).toHaveBeenCalledWith(
         'comp-1',
         mockUserId,
         mockAptId,
-        expect.any(Object),
+        expect.objectContaining({ title: '수정된 제목' }),
       );
     });
   });
 
   describe('DELETE /api/complaints/:complaintId (삭제)', () => {
-    it('삭제 성공 시 명세서 문구와 함께 200을 반환해야 한다.', async () => {
+    it('삭제 성공 시 200과 성공 메시지를 반환해야 한다.', async () => {
       setupAuth();
       (complaintService.deleteUserComplaint as jest.Mock).mockResolvedValue(undefined);
 
@@ -182,17 +205,7 @@ describe('Complaint API 통합 테스트 (리팩토링 버전)', () => {
   });
 
   describe('PATCH /api/complaints/:complaintId/status (관리자 상태 변경)', () => {
-    it('관리자가 아닌 유저가 접근 시 403을 반환해야 한다.', async () => {
-      setupAuth({ role: Role.USER });
-
-      const response = await request(app)
-        .patch('/api/complaints/comp-1/status')
-        .send({ status: 'RESOLVED' });
-
-      expect(response.status).toBe(403);
-    });
-
-    it('관리자가 요청 시 200을 반환해야 한다.', async () => {
+    it('관리자가 요청 시 200과 변경된 상태를 반환해야 한다.', async () => {
       setupAuth({ role: Role.ADMIN });
       (complaintService.updateComplaintStatus as jest.Mock).mockResolvedValue({
         status: 'RESOLVED',
@@ -203,6 +216,31 @@ describe('Complaint API 통합 테스트 (리팩토링 버전)', () => {
         .send({ status: 'RESOLVED' });
 
       expect(response.status).toBe(200);
+      expect(response.body.data.status).toBe('RESOLVED');
+      expect(complaintService.updateComplaintStatus).toHaveBeenCalledWith('comp-1', mockAptId, {
+        status: 'RESOLVED',
+      });
+    });
+
+    it('관리자가 아닌 유저가 접근 시 403을 반환해야 한다.', async () => {
+      setupAuth({ role: Role.USER });
+
+      const response = await request(app)
+        .patch('/api/complaints/comp-1/status')
+        .send({ status: 'RESOLVED' });
+
+      expect(response.status).toBe(403);
+    });
+
+    it('유효하지 않은 status 값을 보내면 400 에러를 반환해야 한다.', async () => {
+      setupAuth({ role: Role.ADMIN });
+
+      const response = await request(app)
+        .patch('/api/complaints/comp-1/status')
+        .send({ status: 'INVALID_STATUS' });
+
+      expect(response.status).toBe(400);
+      expect(complaintService.updateComplaintStatus).not.toHaveBeenCalled();
     });
   });
 });
