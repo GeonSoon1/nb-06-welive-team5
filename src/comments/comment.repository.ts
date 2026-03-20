@@ -39,10 +39,13 @@ export async function createComment(authorId: string, data: CreateCommentDto) {
     },
   });
 }
+
 export async function getCommentById(id: string) {
   return prisma.comment.findUnique({
     where: { id },
-    include: { author: { select: { name: true } } },
+    include: {
+      author: { select: { name: true } },
+    },
   });
 }
 
