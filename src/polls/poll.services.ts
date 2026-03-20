@@ -42,9 +42,6 @@ export const getPollList = async (query: GetPollListDto) => {
     const { page, limit, buildingPermission, status, keyword } = query;
     const skip = (page - 1) * limit;
 
-    // 목록 조회 전, 기간이 지났거나 시작된 투표의 상태를 데이터베이스에서 최신화
-    await pollRepository.updatePollStatuses();
-
     const where: Prisma.VoteWhereInput = {};
 
     if (status) where.status = status;
@@ -78,9 +75,6 @@ export const getPollList = async (query: GetPollListDto) => {
  * 투표 상세 조회
  */
 export const getPollById = async (pollId: string) => {
-    // 상세 조회 전 투표 상태 최신화
-    await pollRepository.updatePollStatuses();
-
     const poll = await pollRepository.findPollById(pollId);
 
     if (!poll) throw new CustomError(404, '투표 글을 찾을 수 없습니다.');
