@@ -1,3 +1,12 @@
+// constants.ts의 필수 환경 변수 검증을 통과하기 위한 가짜 값 설정
+process.env.JWT_ACCESS_TOKEN_SECRET = 'test-secret';
+process.env.JWT_REFRESH_TOKEN_SECRET = 'test-refresh-secret';
+process.env.AWS_REGION = 'ap-northeast-2';
+process.env.AWS_ACCESS_KEY_ID = 'test-key';
+process.env.AWS_SECRET_ACCESS_KEY = 'test-secret-key';
+process.env.S3_BUCKET_NAME = 'test-bucket';
+process.env.DATABASE_URL = 'postgresql://fake:fake@localhost:5432/fake';
+
 import request from 'supertest';
 import express from 'express';
 import residentRouter from './resident.router';
