@@ -29,11 +29,11 @@ jest.mock('../libs/storage', () => ({
   upload: {
     single: () => (req: any, res: any, next: any) => {
       req.file = {
-        location: 'https://s3.amazonaws.com/bucket/profiles/test-image.png'
+        location: 'https://s3.amazonaws.com/bucket/profiles/test-image.png',
       };
       next();
-    }
-  }
+    },
+  },
 }));
 
 app.use('/api/users', userRouter);
@@ -52,17 +52,15 @@ describe('User Profile API 테스트 (user.api.test.ts)', () => {
     it('성공: 현재 비밀번호가 일치하면 200을 반환한다', async () => {
       const payload = {
         currentPassword: 'OldPassword123!',
-        newPassword: 'NewPassword123!'
+        newPassword: 'NewPassword123!',
       };
 
-      (userService.updatePassword as jest.Mock).mockResolvedValue({ 
-        id: 'test-user-id', 
-        name: '에딘트' 
+      (userService.updatePassword as jest.Mock).mockResolvedValue({
+        id: 'test-user-id',
+        name: '에딘트',
       });
 
-      const res = await request(app)
-        .patch('/api/users/password')
-        .send(payload);
+      const res = await request(app).patch('/api/users/password').send(payload);
 
       expect(res.status).toBe(200);
       expect(res.body.message).toContain('비밀번호가 변경되었습니다');
@@ -80,19 +78,18 @@ describe('User Profile API 테스트 (user.api.test.ts)', () => {
   // 2. 프로필 이미지 변경 테스트 (S3 연동)
   describe('PATCH /api/users/me (이미지 업로드)', () => {
     it('성공: 이미지 파일이 업로드되면 200과 성공 메시지를 반환한다', async () => {
-      (userService.updateProfileImage as jest.Mock).mockResolvedValue({ 
-        name: '에딘트' 
+      (userService.updateProfileImage as jest.Mock).mockResolvedValue({
+        name: '에딘트',
       });
 
-      // supertest의 .attach를 쓰면 멀티파트 요청을 보낼 수 있지만, 
+      // supertest의 .attach를 쓰면 멀티파트 요청을 보낼 수 있지만,
       // 우리는 이미 multer를 모킹했으므로 일반 요청처럼 보내도 결과는 동일하다.
-      const res = await request(app)
-        .patch('/api/users/me');
+      const res = await request(app).patch('/api/users/me');
 
       expect(res.status).toBe(200);
       expect(userService.updateProfileImage).toHaveBeenCalledWith(
-        'test-user-id', 
-        'https://s3.amazonaws.com/bucket/profiles/test-image.png'
+        'test-user-id',
+        'https://s3.amazonaws.com/bucket/profiles/test-image.png',
       );
     });
   });
