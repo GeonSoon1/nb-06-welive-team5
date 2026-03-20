@@ -191,20 +191,43 @@ export async function cleanupRejectedUsers(
   db: DbClient,
   params: {
     targetRole: Role;
-    updatedBefore: Date;
+    // updatedBefore: Date;
     apartmentId?: string;
-  }
+  },
 ): Promise<Prisma.BatchPayload> {
-  return await db.user.deleteMany({ // deleteMany는 db 작업 진행하고 count를 return함.
-    where: {
-      role: params.targetRole,
-      joinStatus: JoinStatus.REJECTED,
-      updatedAt: {
-        lt: params.updatedBefore // '기준 날짜보다 이전' 조건
-      }, 
-      // apartmentId가 있으면 apartmentId는 params.apartmentId 넣기. (앞에 값이 undefined이면 falsy라서 undefiend 반환)
-      ...(params.apartmentId && { apartmentId: params.apartmentId }), 
-    },
+  const client = db as PrismaClient;
+
+  return await client.$transaction(async (tx) => {
+    // 1. 삭제 대상 유저 및 아파트 ID 추출
+    const targetUsers = await tx.user.findMany({
+      where: {
+        role: params.targetRole,
+        joinStatus: JoinStatus.REJECTED,
+        // updatedAt: { lt: params.updatedBefore },
+        ...(params.apartmentId && { apartmentId: params.apartmentId }),
+      },// 앞에 값이 참이면 && 뒤에 값을 반환.(false면 아무것도 반환 X)
+      select: { id: true, apartmentId: true },
+    });
+    
+    const userIds = targetUsers.map((u) => u.id);
+    const aptIds = targetUsers
+      .map((u) => u.apartmentId)
+      .filter((id): id is string => !!id);
+      //이 필터를 통과하면 100% string
+    
+    // 2. 관리자 삭제 시 아파트도 수동 연쇄 삭제
+    if (params.targetRole === Role.ADMIN && aptIds.length > 0) {
+      await tx.apartment.deleteMany({
+        where: { id: { in: aptIds } },
+      });
+    }
+
+    // 3. 최종 유저 삭제
+    return await tx.user.deleteMany({
+      where: {
+        id: { in: userIds },
+      },
+    });
   });
 }
 

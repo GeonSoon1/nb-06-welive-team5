@@ -116,7 +116,7 @@ export async function cleanupRejectedUsers(req: ExpressRequest, res: ExpressResp
   await userService.cleanupRejectedUsers({
     requestRole: role,
     apartmentId: apartmentId ?? undefined, // ??(왼쪽 값이 null이나 undefined이면 오른쪽 값, 그외 값은 왼쪽 값)
-    days: CLEANUP_GRACE_PERIOD_DAYS,
+    // days: CLEANUP_GRACE_PERIOD_DAYS,
   });
 
   return res.status(200).json({

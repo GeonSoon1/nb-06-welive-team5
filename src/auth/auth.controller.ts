@@ -9,9 +9,9 @@ import {
 } from './auth.struct';
 
 import * as authService from './auth.service';
-import * as userAuthService from './services/user-auth.services';
-import * as superAdminAuthService from './services/super-admin-auth.services';
-import * as adminAuthService from './services/admin-auth.services';
+import * as userAuthService from './services/user-auth.service';
+import * as superAdminAuthService from './services/super-admin-auth.service';
+import * as adminAuthService from './services/admin-auth.service';
 
 import { clearTokenCookies, setTokenCookies } from '../libs/auth/cookies';
 import UnauthorizedError from '../libs/errors/UnauthorizedError';
@@ -50,9 +50,9 @@ export async function logout(req: ExpressRequest, res: ExpressResponse) {
   try {
     // 로그아웃 관련 코드는 try,catch 안써도 된다(오류가 잘 안남)
     clearTokenCookies(res);
-    return res.sendStatus(204)
+    return res.sendStatus(204);
   } catch (err) {
-    return res.sendStatus(401)
+    return res.sendStatus(401);
   }
 }
 

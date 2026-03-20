@@ -154,16 +154,16 @@ export async function updateAdminInfo(adminId: string, input: UpdateAdminBody) {
 export async function cleanupRejectedUsers(params: {
   requestRole: Role;
   apartmentId?: string;
-  days: number;
+  // days: number;
 }) {
   // 오늘 날짜 기준으로 3일 전 날짜
-  const thresholdDate = subDays(new Date(), params.days);
+  // const thresholdDate = subDays(new Date(), params.days);
 
   // 1. 슈퍼 관리자 -> 모든 거절된 ADMIN 삭제
   if (params.requestRole === Role.SUPER_ADMIN) {
     return await userRepository.cleanupRejectedUsers(prismaClient, {
       targetRole: Role.ADMIN,
-      updatedBefore: thresholdDate,
+      // updatedBefore: thresholdDate,
     });
   }
 
@@ -175,7 +175,7 @@ export async function cleanupRejectedUsers(params: {
 
     return await userRepository.cleanupRejectedUsers(prismaClient, {
       targetRole: Role.USER,
-      updatedBefore: thresholdDate,
+      // updatedBefore: thresholdDate,
       apartmentId: params.apartmentId,
     });
   }

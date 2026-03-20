@@ -1,6 +1,5 @@
-import {
-  Prisma,
-} from '@prisma/client';
+
+import { Prisma, Apartment, ApartmentStructureGroup, User } from '@prisma/client';
 
 /**
  * 1. [관리자용] 상세 정보 타입 정의
@@ -52,3 +51,10 @@ export type PublicApartmentDetail = Prisma.ApartmentGetPayload<{
     };
   };
 }>;
+
+
+// 1. 조회할 데이터의 '형태'를 타입
+export type AdminApartmentWithRelations = Apartment & {
+  admin: Pick<User, 'name' | 'contact' | 'email'> | null;
+  structureGroups: Pick<ApartmentStructureGroup, 'dongList' | 'startFloor' | 'maxFloor' | 'unitsPerFloor'>[];
+};
