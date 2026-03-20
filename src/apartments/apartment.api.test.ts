@@ -24,9 +24,11 @@ jest.mock('../middlewares/authenticate', () => ({
 }));
 
 jest.mock('../middlewares/authorize', () => ({
-  authorize: jest.fn(() => (req: ExpressRequest, res: ExpressResponse, next: ExpressNextFunction) => {
-    next(); // 권한 체크는 통과시키고 서비스 모킹에 집중
-  }),
+  authorize: jest.fn(
+    () => (req: ExpressRequest, res: ExpressResponse, next: ExpressNextFunction) => {
+      next(); // 권한 체크는 통과시키고 서비스 모킹에 집중
+    },
+  ),
 }));
 
 app.use('/api/apartments', apartmentRouter);
@@ -36,7 +38,6 @@ app.use(globalErrorHandler);
 jest.mock('./apartment.services');
 
 describe('Apartment API 통합 테스트', () => {
-  
   beforeEach(() => {
     jest.clearAllMocks();
     mockUser = null; // 기본은 비로그인 상태
@@ -45,9 +46,9 @@ describe('Apartment API 통합 테스트', () => {
   // --- [공개용 API 테스트] ---
   describe('Public API (누구나 접근 가능)', () => {
     it('GET /api/apartments/public - 성공: 승인된 아파트 목록을 반환한다', async () => {
-      const mockResult = { 
-        apartments: [{ id: 'apt-1', name: '에딘트 아파트', address: '서울' }], 
-        count: 1 
+      const mockResult = {
+        apartments: [{ id: 'apt-1', name: '에딘트 아파트', address: '서울' }],
+        count: 1,
       };
       (apartmentService.getPublicApartments as jest.Mock).mockResolvedValue(mockResult);
 
@@ -77,13 +78,15 @@ describe('Apartment API 통합 테스트', () => {
 
     it('GET /api/apartments - 성공: 평탄화된 관리자용 아파트 목록을 반환한다', async () => {
       const mockAdminList = {
-        apartments: [{ 
-          id: 'apt-1', 
-          name: '강남 아파트', 
-          adminName: '김관리', 
-          adminContact: '010-1234' 
-        }],
-        totalCount: 1
+        apartments: [
+          {
+            id: 'apt-1',
+            name: '강남 아파트',
+            adminName: '김관리',
+            adminContact: '010-1234',
+          },
+        ],
+        totalCount: 1,
       };
       (apartmentService.getAdminApartments as jest.Mock).mockResolvedValue(mockAdminList);
 
@@ -95,11 +98,11 @@ describe('Apartment API 통합 테스트', () => {
     });
 
     it('GET /api/apartments/:id - 성공: 상세 정보와 함께 평탄화된 관리자 데이터를 반환한다', async () => {
-      const mockDetail = { 
-        id: 'apt-1', 
-        name: '강남 아파트', 
-        adminName: '김관리', 
-        structureGroups: [] 
+      const mockDetail = {
+        id: 'apt-1',
+        name: '강남 아파트',
+        adminName: '김관리',
+        structureGroups: [],
       };
       (apartmentService.getApartmentDetail as jest.Mock).mockResolvedValue(mockDetail);
 

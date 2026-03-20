@@ -35,7 +35,7 @@ export async function getAdminApartments(req: ExpressRequest, res: ExpressRespon
 }
 
 /**
- * [슈퍼관리자/관리자] 아파트 상세 조회 
+ * [슈퍼관리자/관리자] 아파트 상세 조회
  */
 export async function getApartmentDetail(req: ExpressRequest, res: ExpressResponse) {
   const { id } = s.create(req.params, ApartmentIdParamsStruct);
@@ -53,5 +53,5 @@ export async function getPublicApartmentDetail(req: ExpressRequest, res: Express
 
   const apartment = await apartmentService.getPublicApartmentDetail(id);
 
-  res.status(200).json(apartment)
+  res.status(200).json(apartment);
 }

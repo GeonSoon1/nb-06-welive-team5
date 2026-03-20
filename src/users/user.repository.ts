@@ -187,47 +187,31 @@ export async function updateAdminBasicInfo(
 /**
  * [Super-Admin/ Admin] Rejected된 관리자들 & 유저들 삭제
  */
-export async function cleanupRejectedUsers(
+export async function findUsersForCleanup(
   db: DbClient,
-  params: {
-    targetRole: Role;
-    // updatedBefore: Date;
-    apartmentId?: string;
-  },
-): Promise<Prisma.BatchPayload> {
-  const client = db as PrismaClient;
+  where: Prisma.UserWhereInput
+) {
+  return await db.user.findMany({
+    where,
+    select: { id: true, apartmentId: true },
+  });
+}
 
-  return await client.$transaction(async (tx) => {
-    // 1. 삭제 대상 유저 및 아파트 ID 추출
-    const targetUsers = await tx.user.findMany({
-      where: {
-        role: params.targetRole,
-        joinStatus: JoinStatus.REJECTED,
-        // updatedAt: { lt: params.updatedBefore },
-        ...(params.apartmentId && { apartmentId: params.apartmentId }),
-      },// 앞에 값이 참이면 && 뒤에 값을 반환.(false면 아무것도 반환 X)
-      select: { id: true, apartmentId: true },
-    });
-    
-    const userIds = targetUsers.map((u) => u.id);
-    const aptIds = targetUsers
-      .map((u) => u.apartmentId)
-      .filter((id): id is string => !!id);
-      //이 필터를 통과하면 100% string
-    
-    // 2. 관리자 삭제 시 아파트도 수동 연쇄 삭제
-    if (params.targetRole === Role.ADMIN && aptIds.length > 0) {
-      await tx.apartment.deleteMany({
-        where: { id: { in: aptIds } },
-      });
-    }
+/**
+ * [Repository] 유저 ID 목록으로 일괄 삭제
+ */
+export async function deleteManyUsersByIds(db: DbClient, userIds: string[]) {
+  return await db.user.deleteMany({
+    where: { id: { in: userIds } },
+  });
+}
 
-    // 3. 최종 유저 삭제
-    return await tx.user.deleteMany({
-      where: {
-        id: { in: userIds },
-      },
-    });
+/**
+ * [Repository] 아파트 ID 목록으로 일괄 삭제
+ */
+export async function deleteManyApartmentsByIds(db: DbClient, aptIds: string[]) {
+  return await db.apartment.deleteMany({
+    where: { id: { in: aptIds } },
   });
 }
 

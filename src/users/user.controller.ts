@@ -10,7 +10,6 @@ import {
 import * as userService from './user.services';
 import UnauthorizedError from '../libs/errors/UnauthorizedError';
 
-
 /**
  * [슈퍼 관리자] 관리자 가입 상태 변경 (단건)
  * PATCH /api/auth/admins/:adminId/status
@@ -24,7 +23,6 @@ export async function updateAdminStatus(req: ExpressRequest, res: ExpressRespons
   return res.status(200).json({ message: '작업이 성공적으로 완료되었습니다' });
 }
 
-
 /**
  * [슈퍼 관리자] 관리자 가입 상태 일괄 변경
  * PATCH /api/auth/admins/status
@@ -34,7 +32,7 @@ export async function updateAllAdminStatus(req: ExpressRequest, res: ExpressResp
 
   await userService.updateAllAdminStatus(status);
 
-  return res.status(200).json({ message: '작업이 성공적으로 완료되었습니다'});
+  return res.status(200).json({ message: '작업이 성공적으로 완료되었습니다' });
 }
 
 /**
@@ -64,10 +62,9 @@ export async function updateProfileImage(req: ExpressRequest, res: ExpressRespon
   const updatedUser = await userService.updateProfileImage(userId, imagePath);
 
   return res.status(200).json({
-    message: `${updatedUser.name}님의 정보가 성공적으로 업데이트되었습니다. 다시 로그인해주세요.`
+    message: `${updatedUser.name}님의 정보가 성공적으로 업데이트되었습니다. 다시 로그인해주세요.`,
   });
 }
-
 
 /**
  * 비밀번호 변경.
@@ -111,16 +108,17 @@ export async function cleanupRejectedUsers(req: ExpressRequest, res: ExpressResp
     throw new UnauthorizedError('인증 정보가 없습니다');
   }
 
+  // super-admin은 apartmentId = null일듯
   const { role, apartmentId } = req.user;
 
   await userService.cleanupRejectedUsers({
-    requestRole: role,
+    requestRole: role, // 요청자
     apartmentId: apartmentId ?? undefined, // ??(왼쪽 값이 null이나 undefined이면 오른쪽 값, 그외 값은 왼쪽 값)
     // days: CLEANUP_GRACE_PERIOD_DAYS,
   });
 
   return res.status(200).json({
-    message: '작업이 성공적으로 완료되었습니다.'
+    message: '작업이 성공적으로 완료되었습니다.',
   });
 }
 
