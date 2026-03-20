@@ -1,4 +1,5 @@
 import { prismaClient } from '../libs/constants';
+import { NotificationType } from '@prisma/client';
 
 export const findUnreadNotificationsByUserId = async (userId: string) => {
   return prismaClient.notification.findMany({
@@ -25,10 +26,9 @@ export const updateNotificationReadStatus = async (notificationId: string) => {
   });
 };
 
-// 기존 파일 하단에 추가해라.
 export const createNotification = async (data: {
   content: string;
-  notificationType: any; // Prisma.NotificationType
+  notificationType: NotificationType;
   userId: string;
   complaintId?: string;
   noticeId?: string;
