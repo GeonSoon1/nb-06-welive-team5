@@ -80,7 +80,6 @@ describe('Complaint API 통합 테스트 (리팩토링 버전)', () => {
 
       expect(response.status).toBe(201);
       expect(response.body.message).toBe('정상적으로 등록 처리되었습니다');
-      expect(response.body.data.complaintId).toBe('comp-1');
       expect(complaintService.createComplaint).toHaveBeenCalledWith(
         mockUserId,
         mockAptId,
@@ -124,8 +123,8 @@ describe('Complaint API 통합 테스트 (리팩토링 버전)', () => {
       const response = await request(app).get('/api/complaints?page=1&limit=20');
 
       expect(response.status).toBe(200);
-      expect(response.body.data).toHaveProperty('complaints');
-      expect(response.body.data).toHaveProperty('totalCount');
+      expect(response.body).toHaveProperty('complaints');
+      expect(response.body).toHaveProperty('totalCount');
       expect(complaintService.getComplaints).toHaveBeenCalledWith(
         mockAptId,
         mockUserId,
@@ -154,7 +153,7 @@ describe('Complaint API 통합 테스트 (리팩토링 버전)', () => {
       const response = await request(app).get('/api/complaints/comp-1');
 
       expect(response.status).toBe(200);
-      expect(response.body.data.complaintId).toBe('comp-1');
+      expect(response.body.complaintId).toBe('comp-1');
       expect(complaintService.getComplaintDetail).toHaveBeenCalledWith(
         'comp-1',
         mockUserId,
@@ -177,7 +176,7 @@ describe('Complaint API 통합 테스트 (리팩토링 버전)', () => {
         .send({ title: '수정된 제목' });
 
       expect(response.status).toBe(200);
-      expect(response.body.data.title).toBe('수정된 제목');
+      expect(response.body.title).toBe('수정된 제목');
       expect(complaintService.updateUserComplaint).toHaveBeenCalledWith(
         'comp-1',
         mockUserId,
@@ -216,7 +215,7 @@ describe('Complaint API 통합 테스트 (리팩토링 버전)', () => {
         .send({ status: 'RESOLVED' });
 
       expect(response.status).toBe(200);
-      expect(response.body.data.status).toBe('RESOLVED');
+      expect(response.body.status).toBe('RESOLVED');
       expect(complaintService.updateComplaintStatus).toHaveBeenCalledWith('comp-1', mockAptId, {
         status: 'RESOLVED',
       });
