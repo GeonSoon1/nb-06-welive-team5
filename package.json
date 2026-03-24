@@ -19,6 +19,10 @@
     "dev": "nodemon ./src/main.ts --watch ./src",
     "typecheck": "tsc --noEmit",
     "test": "dotenv -e .env.test -- prisma migrate dev && dotenv -e .env.test -- jest -i --coverage"
+    "db:seed": "prisma db seed"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
