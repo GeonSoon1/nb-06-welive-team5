@@ -56,7 +56,7 @@ export const SignupUserBodyStruct = s.object({
   name: NameStruct,
   email: EmailStruct,
   contact: ContactStruct,
-  unitId: s.nonempty(s.string()), 
+  unitId: s.nonempty(s.string()),
 });
 
 export type SignupUserBody = s.Infer<typeof SignupUserBodyStruct>;
@@ -69,7 +69,7 @@ export const ApartmentStructureGroupStruct = s.object({
   startFloor: s.defaulted(s.integer(), 1),
   maxFloor: s.min(s.integer(), 1),
   unitsPerFloor: s.min(s.integer(), 1),
-})
+});
 
 export const SignupAdminBodyStruct = s.object({
   username: UsernameStruct,
@@ -80,7 +80,7 @@ export const SignupAdminBodyStruct = s.object({
   description: s.nonempty(trimmed),
 
   structureGroups: s.array(ApartmentStructureGroupStruct),
-  
+
   role: s.optional(RoleStruct),
   apartmentName: s.nonempty(trimmed),
   apartmentAddress: s.nonempty(trimmed),
@@ -88,7 +88,7 @@ export const SignupAdminBodyStruct = s.object({
 });
 
 // s.Infer는 "내가 만든 검증 설계도(Struct)를 보고, 그에 딱 맞는 TypeScript 타입을 자동으로 추출.
-export type SignupAdminBody = s.Infer<typeof SignupAdminBodyStruct>
+export type SignupAdminBody = s.Infer<typeof SignupAdminBodyStruct>;
 
 // --------------------
 // SUPER_ADMIN 회원가입
@@ -104,13 +104,14 @@ export const SignupSuperAdminBodyStruct = s.object({
   joinStatus: s.optional(JoinStatusStruct), // 서버에서 기본 APPROVED로 덮어씀
 });
 
-export type SignupSuperAdminBody = s.Infer<typeof SignupSuperAdminBodyStruct>
+export type SignupSuperAdminBody = s.Infer<typeof SignupSuperAdminBodyStruct>;
 
 // --------------------
 // 로그인
 // --------------------
 export const LoginBodyStruct = s.object({
   username: UsernameStruct,
-  password: PasswordStruct,
+  //password: PasswordStruct, 기존 좌측 코드로 할 경우 반환 값에 사용자가 입력한 비밀번호가 포함이되어서 보안 이슈 우려
+  //로그인시에는 단순히 빈 문자열인지만 체크 하는 코드로 변경
+  password: s.nonempty(s.string()),
 });
-
