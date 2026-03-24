@@ -27,14 +27,12 @@ describe('Polls Service', () => {
     describe('getPollById', () => {
         it('단일 투표 정보를 성공적으로 가져와야 한다', async () => {
             // Given
-            (pollRepository.updatePollStatuses as jest.Mock).mockResolvedValue(undefined);
             (pollRepository.findPollById as jest.Mock).mockResolvedValue(dummyPoll);
 
             // When
             const result = await pollService.getPollById('poll-123');
 
             // Then
-            expect(pollRepository.updatePollStatuses).toHaveBeenCalled();
             expect(pollRepository.findPollById).toHaveBeenCalledWith('poll-123');
             expect(result.pollId).toBe('poll-123');
             expect(result.status).toBe('IN_PROGRESS');
@@ -42,7 +40,6 @@ describe('Polls Service', () => {
         });
 
         it('투표를 찾을 수 없으면 CustomError(404)를 발생시켜야 한다', async () => {
-            (pollRepository.updatePollStatuses as jest.Mock).mockResolvedValue(undefined);
             (pollRepository.findPollById as jest.Mock).mockResolvedValue(null);
 
             await expect(pollService.getPollById('invalid-poll')).rejects.toThrow(CustomError);
