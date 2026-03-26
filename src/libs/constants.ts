@@ -70,3 +70,9 @@ export { Event as PrismaEvent, Notice, Vote, BoardType, NotificationType } from 
  * 5. [Super-Admin/ Admin] Rejected된 관리자들 & 유저들 삭제에 필요한 기간
  */
 export const CLEANUP_GRACE_PERIOD_DAYS = 0;
+
+/**
+ * 관리자 세대 등록시 최대값 설정
+ */
+export const SUPPORT_CONTACT = process.env.SUPPORT_CONTACT || "";
+export const MAX_BATCH_UNIT_LIMIT = 18751;

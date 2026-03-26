@@ -10,6 +10,8 @@ import NotFoundError from './NotFoundError';
 import UnauthorizedError from './UnauthorizedError';
 import ValidationError from './ValidationError';
 
+import { SUPPORT_CONTACT } from '../constants';
+
 /**
  * 모든 커스텀 에러의 기본이 되는 클래스 (커스텀으로 시작해도 괜찮다.)
  */
@@ -93,16 +95,18 @@ export const globalErrorHandler = (
         // 실제 에러가 발생한 지점의 필드명을 결정 (프론트엔드 전달용)
         const errorField = path[path.length - 1]; 
 
-        if (failure?.refinement === 'MaxDongCount' || isDongList) {
-            message = '최대 동의 개수(85개)를 초과하였습니다.';
+        if (failure?.refinement === 'MaxTotalUnits') {
+            message = `한 번에 생성 가능한 세대수(18,751세대)를 초과했습니다. 관리자(${SUPPORT_CONTACT})에게 문의해 주세요.`;
+        } else if (failure?.refinement === 'MaxDongCount' || isDongList) {
+            message = '최대 동의 개수는 25개동을 초과할 수 없습니다.'; 
         } else if (isMaxFloor) {
-            message = '최대 층수는 123층을 초과할 수 없습니다.';
+            message = '최대 층수는 30층을 초과할 수 없습니다.'; 
         } else if (isUnitsPerFloor) {
-            message = '층당 유닛(호)은 최대 10호를 초과할 수 없습니다.';
+            message = '층당 호수는 최대 25호를 초과할 수 없습니다.'; 
         } else if (isStartFloor) {
-            message = '시작 층수는 1층부터 123층 사이여야 합니다.';
+            message = '시작 층수는 1층부터 30층 사이여야 합니다.';
         } else {
-            message = err.message; // 그 외의 기본 에러
+            message = err.message; 
         }
 
         
