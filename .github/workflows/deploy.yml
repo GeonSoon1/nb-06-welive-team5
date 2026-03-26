@@ -2,7 +2,7 @@ name: CI Setup
 
 on:
   push:
-    branches: [feat/cicd-setup, dev] #배포 준비 끝나면 main으로 변경 예정
+    branches: [feat/cicd-deploy-setup, dev] #배포 준비 끝나면 main으로 변경 예정
   pull_request:
     branches: [dev]
 
@@ -39,3 +39,27 @@ jobs:
           name: build-artifact
           path: dist/
           retention-days: 7
+
+  # 빌드 성공 후 실제 서버에 배포하는 작업
+  deploy:
+    needs: test # test 작업이 성공해야만 실행됨
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifact
+          path: dist/
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ~/nb-06-welive-team5
+            git pull origin dev               # 최신 코드 당겨오기(배포 전 main으로 교체)
+            npm install --production          # 필요한 라이브러리 설치
+            npx prisma generate               # 프리스마 클라이언트 갱신
+            pm2 reload welive-api             # 서버 무중단 재시작
