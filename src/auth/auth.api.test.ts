@@ -180,11 +180,18 @@ describe('Auth API 종합 테스트 (Full Coverage - 227 Line Version)', () => {
       expect(userService.updateAdminStatus).toHaveBeenCalledWith('admin-1', 'APPROVED');
     });
 
-    it('PATCH /api/auth/admins/status - 일괄 상태 변경', async () => {
-      const res = await request(app).patch('/api/auth/admins/status').send({ status: 'APPROVED' });
-      expect(res.status).toBe(200);
-      expect(userService.updateAllAdminStatus).toHaveBeenCalled();
-    });
+  it('12. PATCH /admins/status - [확장] 모든 대기중인 관리자 일괄 승인 시 로직 검증', async () => {
+    const mockUpdateResult = { count: 3 }; // 3명의 관리자가 승인됨
+    (userService.updateAllAdminStatus as jest.Mock).mockResolvedValue(mockUpdateResult);
+
+    const res = await request(app)
+      .patch('/api/auth/admins/status')
+      .send({ status: 'APPROVED' });
+    
+    expect(res.status).toBe(200);
+    expect(userService.updateAllAdminStatus).toHaveBeenCalledWith('APPROVED');
+    expect(res.body.message).toBe('작업이 성공적으로 완료되었습니다');
+  });
 
     it('DELETE /api/auth/admins/:id - 계정 및 아파트 연쇄 삭제', async () => {
       const res = await request(app).delete('/api/auth/admins/admin-1');
