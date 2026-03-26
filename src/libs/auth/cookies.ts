@@ -21,7 +21,7 @@ export function setTokenCookies(res: ExpressResponse, accessToken: string, refre
   // 1. Access Token: 상대적으로 짧은 유효기간 (20시간 - 비즈니스 요구사항 반영)
   res.cookie(ACCESS_TOKEN_COOKIE_NAME, accessToken, {
     ...commonOptions,
-    maxAge: 20 * 60 * 60 * 1000,
+    maxAge: 30 * 60 * 1000,
   });
 
   // 2. Refresh Token: 긴 유효기간 (7일), 특정 경로(/auth/refresh)에서만 전송되도록 제한
