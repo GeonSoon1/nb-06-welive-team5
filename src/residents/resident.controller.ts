@@ -92,11 +92,7 @@ export async function getResidentDetail(req: ExpressRequest, res: ExpressRespons
 
   const result = await residentService.getResidentDetail(residentId, apartmentId!);
 
-  return res.status(200).json({
-    success: true,
-    message: '',
-    data: mapToResidentResponse(result),
-  });
+  return res.status(200).json(mapToResidentResponse(result));
 }
 
 // 5. 입주민 정보 수정
@@ -106,7 +102,7 @@ export async function updateResident(req: ExpressRequest, res: ExpressResponse) 
   const data = s.create(req.body, UpdateResidentStruct);
 
   const result = await residentService.updateResident(residentId, apartmentId!, data);
-  return res.status(200).json({ success: true, message: '', data: mapToResidentResponse(result) });
+  return res.status(200).json(mapToResidentResponse(result));
 }
 
 // 6. 입주민 삭제
@@ -116,11 +112,7 @@ export async function deleteResident(req: ExpressRequest, res: ExpressResponse) 
 
   await residentService.deleteResident(residentId, apartmentId!);
 
-  return res.status(200).json({
-    success: true,
-    message: '정상적으로 삭제 처리되었습니다',
-    data: null,
-  });
+  return res.status(200).json({ message: '작업이 성공적으로 완료되었습니다' });
 }
 
 // 7. CSV 업로드
