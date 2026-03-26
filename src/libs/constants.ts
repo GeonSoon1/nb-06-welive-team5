@@ -51,8 +51,8 @@ export const STATIC_PATH = '/public';
  * 3. 설정값
  */
 export const NODE_ENV = process.env.NODE_ENV || "development";
-export const ACCESS_TOKEN_COOKIE_NAME = "accessToken";
-export const REFRESH_TOKEN_COOKIE_NAME = "refreshToken";
+export const ACCESS_TOKEN_COOKIE_NAME = "access_token";
+export const REFRESH_TOKEN_COOKIE_NAME = "refresh_token";
 
 /**
  * 4. 검증된 환경 변수 Export

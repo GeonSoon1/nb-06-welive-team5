@@ -142,7 +142,7 @@ describe('Auth API 종합 테스트 (Full Coverage - 227 Line Version)', () => {
       const loginData = { username: 'testuser1', password: 'Password123!' };
       (authService.login as jest.Mock).mockResolvedValue({
         user: { id: 'user-1', name: '홍길동' },
-        tokens: { accessToken: 'at', refreshToken: 'rt' },
+        tokens: { access_token: 'at', refresh_token: 'rt' },
       });
 
       const res = await request(app).post('/api/auth/login').send(loginData);
@@ -159,13 +159,13 @@ describe('Auth API 종합 테스트 (Full Coverage - 227 Line Version)', () => {
 
     it('POST /api/auth/refresh - 성공: 새 토큰 발급', async () => {
       (authService.refresh as jest.Mock).mockResolvedValue({
-        accessToken: 'new-at',
-        refreshToken: 'new-rt',
+        access_token: 'new-at',
+        refresh_token: 'new-rt',
       });
 
       const res = await request(app)
         .post('/api/auth/refresh')
-        .set('Cookie', ['refreshToken=valid-rt']);
+        .set('Cookie', ['refresh_token=valid-rt']);
 
       expect(res.status).toBe(200);
       expect(res.headers['set-cookie']).toBeDefined();

@@ -13,14 +13,14 @@ export type TokenPayload = {
 // 1. Access Token 생성
 // constants.ts에서 JWT_ACCESS_TOKEN_SECRET가 있음을 검증을 했으므로 '!'를 붙여서 통과시킴
 export function generateTokens(payload: TokenPayload) {
-  const accessToken = jwt.sign(payload, JWT_ACCESS_TOKEN_SECRET!, {
+  const access_token = jwt.sign(payload, JWT_ACCESS_TOKEN_SECRET!, {
     expiresIn: "30m" // 30분.
   });
   // 2. Refresh Token 생성 (Payload를 최소화하여 보안 강화)
-  const refreshToken = jwt.sign({ id: payload.id }, JWT_REFRESH_TOKEN_SECRET!, {
+  const refresh_token = jwt.sign({ id: payload.id }, JWT_REFRESH_TOKEN_SECRET!, {
     expiresIn: "7d" 
   });
-  return { accessToken, refreshToken };
+  return { access_token, refresh_token };
 }
 
 // 3. Access Token 검증
