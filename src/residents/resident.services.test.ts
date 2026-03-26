@@ -273,10 +273,12 @@ describe('Resident Service 유닛 테스트', () => {
   });
 
   describe('getResidentDetail (입주민 상세 조회 서비스)', () => {
-    it('요청받은 ID로 레포지토리에서 입주민 정보를 조회하여 반환해야 한다.', async () => {
+    it('요청받은 ID와 아파트 ID로 레포지토리에서 입주민 정보를 조회하여 반환해야 한다.', async () => {
       const mockResidentId = 'res-1';
+      const mockApartmentId = 'apt-1234';
       const mockDbResult = {
         id: mockResidentId,
+        apartmentId: mockApartmentId,
         name: '김철수',
         dong: '101',
         ho: '101',
@@ -284,7 +286,7 @@ describe('Resident Service 유닛 테스트', () => {
 
       (residentRepository.findResidentById as jest.Mock).mockResolvedValue(mockDbResult);
 
-      const result = await residentService.getResidentDetail(mockResidentId);
+      const result = await residentService.getResidentDetail(mockResidentId, mockApartmentId);
 
       expect(residentRepository.findResidentById).toHaveBeenCalledWith(mockResidentId);
       expect(result).toEqual(mockDbResult);
@@ -293,8 +295,22 @@ describe('Resident Service 유닛 테스트', () => {
     it('조회된 입주민 정보가 없으면 BadRequestError를 던져야 한다.', async () => {
       (residentRepository.findResidentById as jest.Mock).mockResolvedValue(null);
 
-      await expect(residentService.getResidentDetail('invalid-id')).rejects.toThrow(
+      await expect(residentService.getResidentDetail('invalid-id', 'apt-1234')).rejects.toThrow(
         BadRequestError,
+      );
+    });
+
+    it('타 아파트의 입주민 정보에 접근하려 하면 ForbiddenError를 던져야 한다.', async () => {
+      const mockResidentId = 'res-1';
+      const mockDbResult = {
+        id: mockResidentId,
+        apartmentId: 'other-apt',
+      };
+
+      (residentRepository.findResidentById as jest.Mock).mockResolvedValue(mockDbResult);
+
+      await expect(residentService.getResidentDetail(mockResidentId, 'my-apt')).rejects.toThrow(
+        '해당 아파트의 입주민 정보에 접근할 권한이 없습니다.',
       );
     });
   });
@@ -302,6 +318,7 @@ describe('Resident Service 유닛 테스트', () => {
   describe('updateResident (입주민 정보 수정 서비스)', () => {
     it('존재하는 입주민의 정보를 수정하고 변경된 데이터를 반환해야 한다.', async () => {
       const mockId = 'res-1';
+      const mockApartmentId = 'apt-1234';
       const mockUpdateData = {
         name: '홍길동(수정)',
         building: '101',
@@ -312,6 +329,7 @@ describe('Resident Service 유닛 테스트', () => {
 
       (residentRepository.findResidentById as jest.Mock).mockResolvedValue({
         id: mockId,
+        apartmentId: mockApartmentId,
         name: '기존이름',
       });
 
@@ -323,7 +341,7 @@ describe('Resident Service 유닛 테스트', () => {
       };
       (residentRepository.updateResident as jest.Mock).mockResolvedValue(mockUpdatedResult);
 
-      const result = await residentService.updateResident(mockId, mockUpdateData);
+      const result = await residentService.updateResident(mockId, mockApartmentId, mockUpdateData);
 
       expect(residentRepository.findResidentById).toHaveBeenCalledWith(mockId);
       expect(residentRepository.updateResident).toHaveBeenCalledWith(mockId, mockUpdateData);
@@ -334,7 +352,7 @@ describe('Resident Service 유닛 테스트', () => {
       (residentRepository.findResidentById as jest.Mock).mockResolvedValue(null);
 
       await expect(
-        residentService.updateResident('invalid-id', { name: '이름수정' }),
+        residentService.updateResident('invalid-id', 'apt-1234', { name: '이름수정' }),
       ).rejects.toThrow(BadRequestError);
     });
   });
@@ -342,9 +360,11 @@ describe('Resident Service 유닛 테스트', () => {
   describe('deleteResident (입주민 삭제 서비스)', () => {
     it('존재하는 입주민 정보를 확인한 후 삭제(Repository 호출)를 수행해야 한다.', async () => {
       const mockId = 'res-1';
+      const mockApartmentId = 'apt-1234';
 
       (residentRepository.findResidentById as jest.Mock).mockResolvedValue({
         id: mockId,
+        apartmentId: mockApartmentId,
         name: '홍길동',
       });
 
@@ -352,7 +372,7 @@ describe('Resident Service 유닛 테스트', () => {
         id: mockId,
       });
 
-      await residentService.deleteResident(mockId);
+      await residentService.deleteResident(mockId, mockApartmentId);
 
       expect(residentRepository.findResidentById).toHaveBeenCalledWith(mockId);
       expect(residentRepository.deleteResident).toHaveBeenCalledWith(mockId);
@@ -361,7 +381,9 @@ describe('Resident Service 유닛 테스트', () => {
     it('존재하지 않는 입주민을 삭제하려 하면 BadRequestError를 던져야 한다.', async () => {
       (residentRepository.findResidentById as jest.Mock).mockResolvedValue(null);
 
-      await expect(residentService.deleteResident('invalid-id')).rejects.toThrow(BadRequestError);
+      await expect(residentService.deleteResident('invalid-id', 'apt-1234')).rejects.toThrow(
+        BadRequestError,
+      );
     });
   });
 });
