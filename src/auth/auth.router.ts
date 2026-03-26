@@ -10,7 +10,7 @@ import * as residentController from '../residents/resident.controller';
 const authRouter = express.Router();
 
 authRouter.post('/signup', catchAsync(authController.signupUser));
-authRouter.post('/signup/super-admin', catchAsync(authController.signupSuperAdmin));
+authRouter.post('/signup/super-admin', authenticate, authorize(Role.SUPER_ADMIN), catchAsync(authController.signupSuperAdmin));
 authRouter.post('/signup/admin', catchAsync(authController.signupAdmin));
 
 authRouter.post('/login', catchAsync(authController.login));
