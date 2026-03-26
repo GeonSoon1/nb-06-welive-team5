@@ -87,24 +87,40 @@ export async function createResidentFromUser(req: ExpressRequest, res: ExpressRe
 
 // 4. 입주민 상세조회
 export async function getResidentDetail(req: ExpressRequest, res: ExpressResponse) {
+  const { apartmentId } = req.user!;
   const residentId = getValidResidentId(req);
-  const resident = await residentService.getResidentDetail(residentId);
-  return res.status(200).json(mapToResidentResponse(resident));
+
+  const result = await residentService.getResidentDetail(residentId, apartmentId!);
+
+  return res.status(200).json({
+    success: true,
+    message: '',
+    data: mapToResidentResponse(result),
+  });
 }
 
 // 5. 입주민 정보 수정
 export async function updateResident(req: ExpressRequest, res: ExpressResponse) {
+  const { apartmentId } = req.user!;
   const residentId = getValidResidentId(req);
   const data = s.create(req.body, UpdateResidentStruct);
-  const result = await residentService.updateResident(residentId, data);
-  return res.status(200).json(mapToResidentResponse(result));
+
+  const result = await residentService.updateResident(residentId, apartmentId!, data);
+  return res.status(200).json({ success: true, message: '', data: mapToResidentResponse(result) });
 }
 
 // 6. 입주민 삭제
 export async function deleteResident(req: ExpressRequest, res: ExpressResponse) {
+  const { apartmentId } = req.user!;
   const residentId = getValidResidentId(req);
-  await residentService.deleteResident(residentId);
-  return res.status(200).json({ message: '작업이 성공적으로 완료되었습니다' });
+
+  await residentService.deleteResident(residentId, apartmentId!);
+
+  return res.status(200).json({
+    success: true,
+    message: '정상적으로 삭제 처리되었습니다',
+    data: null,
+  });
 }
 
 // 7. CSV 업로드
@@ -157,8 +173,8 @@ export async function updateResidentStatus(req: ExpressRequest, res: ExpressResp
   // 3. 서비스 호출
   await residentService.updateResidentStatus(residentId, status);
 
-  return res.status(200).json({ 
-    message: '작업이 성공적으로 완료되었습니다' 
+  return res.status(200).json({
+    message: '작업이 성공적으로 완료되었습니다',
   });
 }
 
@@ -167,13 +183,13 @@ export async function updateAllResidentStatus(req: ExpressRequest, res: ExpressR
   const { status } = s.create(req.body, UpdateStatusBodyStruct);
 
   if (!req.user) {
-    throw new UnauthorizedError('인증 정보가 없습니다.')
+    throw new UnauthorizedError('인증 정보가 없습니다.');
   }
   const { apartmentId } = req.user;
 
   await residentService.updateAllResidentStatus(apartmentId!, status);
 
   return res.status(200).json({
-    message: '작업이 성공적으로 완료되었습니다'
+    message: '작업이 성공적으로 완료되었습니다',
   });
 }

@@ -2,11 +2,26 @@ import * as csv from 'fast-csv';
 import { Readable } from 'stream';
 import { prismaClient as prisma, Prisma } from '../libs/constants';
 import BadRequestError from '../libs/errors/BadRequestError';
+import ForbiddenError from '../libs/errors/ForbiddenError';
 import * as residentRepository from './resident.repository';
 import * as userRepository from '../users/user.repository';
 import { CsvUploadResult } from './resident.type';
 import { CreateResidentDto, UpdateResidentDto, GetResidentsQueryDto } from './resident.struct';
 import { JoinStatus, Role } from '@prisma/client';
+
+async function validateResidentOwnership(residentId: string, apartmentId: string) {
+  const resident = await residentRepository.findResidentById(residentId);
+
+  if (!resident) {
+    throw new BadRequestError('해당 입주민을 찾을 수 없습니다.');
+  }
+
+  if (resident.apartmentId !== apartmentId) {
+    throw new ForbiddenError('해당 아파트의 입주민 정보에 접근할 권한이 없습니다.');
+  }
+
+  return resident;
+}
 
 // 1. 입주민 리소스 생성(개별 등록)
 export async function createResident(apartmentId: string, data: CreateResidentDto) {
@@ -45,27 +60,32 @@ export async function createResidentFromUser(apartmentId: string, userId: string
 }
 
 // 4. 입주민 상세조회
-export async function getResidentDetail(id: string) {
-  const resident = await residentRepository.findResidentById(id);
-  if (!resident) {
-    throw new BadRequestError('입주민 상세 조회 실패');
-  }
+export async function getResidentDetail(id: string, apartmentId: string) {
+  const resident = await validateResidentOwnership(id, apartmentId);
   return resident;
 }
 
 // 5. 입주민 정보 수정
-export async function updateResident(id: string, updateData: UpdateResidentDto) {
-  await getResidentDetail(id);
+export async function updateResident(
+  id: string,
+  apartmentId: string,
+  updateData: UpdateResidentDto,
+) {
+  await validateResidentOwnership(id, apartmentId);
+
   const result = await residentRepository.updateResident(id, updateData);
   if (!result) throw new BadRequestError('입주민 정보 수정 실패');
+
   return result;
 }
 
 // 6. 입주민 삭제
-export async function deleteResident(id: string) {
-  await getResidentDetail(id);
+export async function deleteResident(id: string, apartmentId: string) {
+  await validateResidentOwnership(id, apartmentId);
+
   const result = await residentRepository.deleteResident(id);
   if (!result) throw new BadRequestError('입주민 정보 삭제 실패');
+
   return result;
 }
 
@@ -142,10 +162,9 @@ export async function exportResidentsToCsv(apartmentId: string, query: GetReside
 
 // 10. 입주민 (user) 상태 변경 (건순)
 export async function updateResidentStatus(residentId: string, status: JoinStatus) {
-  
   // 1. ResidentId를 통해 연결된 UserId와 현재 정보를 가져옴
   const resident = await residentRepository.findResidentWithAuthInfo(prisma, residentId);
-  
+
   if (!resident) {
     throw new BadRequestError('해당 주민 정보를 찾을 수 없습니다.');
   }
