@@ -38,14 +38,43 @@ export async function updateAdminStatus(adminId: string, status: JoinStatus) {
 /**
  * [super-admin] 관리자(admin)의 가입 상태를 일괄 변경.
  */
+/**
+ * [super-admin] 관리자(admin)의 가입 상태를 일괄 변경.
+ */
 export async function updateAllAdminStatus(status: JoinStatus) {
-  const result = await userRepository.updateAllAdmins(prismaClient, {
-    targetRole: Role.ADMIN,
-    fromStatus: JoinStatus.PENDING,
-    toStatus: status,
+  // 1. 승인 대기 중인 모든 관리자와 그들의 아파트 ID를 가져오기
+  const pendingAdmins = await userRepository.findUsersByStatus(prismaClient, {
+    role: Role.ADMIN,
+    joinStatus: JoinStatus.PENDING,
   });
 
-  return result;
+  if (pendingAdmins.length === 0) {
+    return { count: 0 };
+  }
+
+  // 2. 트랜잭션 시작
+  return await prismaClient.$transaction(async (tx) => {
+    // A. 유저들 상태 일괄 변경
+    const updateResult = await userRepository.updateAllAdmins(tx, {
+      targetRole: Role.ADMIN,
+      fromStatus: JoinStatus.PENDING,
+      toStatus: status,
+    });
+
+    // B. 승인 시에만 연결된 아파트들도 모두 활성화
+    if (status === JoinStatus.APPROVED) {
+      const apartmentIds = pendingAdmins
+        .map((admin) => admin.apartmentId)
+        .filter((id): id is string => !!id);
+
+      if (apartmentIds.length > 0) {
+        // 아파트 테이블 일괄 업데이트
+        await apartmentRepository.activateManyApartments(tx, apartmentIds);
+      }
+    }
+
+    return updateResult;
+  });
 }
 
 

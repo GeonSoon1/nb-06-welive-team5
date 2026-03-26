@@ -252,3 +252,10 @@ export async function activateApartment(db: DbClient, apartmentId: string, admin
     },
   });
 }
+
+export async function activateManyApartments(db: DbClient, apartmentIds: string[]) {
+  return await db.apartment.updateMany({
+    where: { id: { in: apartmentIds } },
+    data: { apartmentStatus: 'APPROVED' },
+  });
+}

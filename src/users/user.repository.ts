@@ -59,6 +59,16 @@ export async function updateAllAdmins(
   });
 }
 
+export async function findUsersByStatus(
+  db: DbClient,
+  where: { role: Role; joinStatus: JoinStatus }
+) {
+  return await db.user.findMany({
+    where,
+    select: { id: true, apartmentId: true },
+  });
+}
+
 /**
  * 유저의 가입 상태(JoinStatus)를 업데이트.
  */

@@ -61,10 +61,10 @@ export async function login(input: LoginInput): Promise<{user: LoginResponse; to
 }
 
 
-export async function refresh(refreshToken: string): Promise<AuthTokens> {
+export async function refresh(refresh_token: string): Promise<AuthTokens> {
   // [Design Intent]
   // 1. 토큰 자체의 유효성(서명, 만료시간)을 검증한다.
-  const decoded = verifyRefreshToken(refreshToken);
+  const decoded = verifyRefreshToken(refresh_token);
 
   // 2. [Security Check] 토큰은 유효해도 그 사이 유저가 삭제되었거나 정지되었을 수 있다.
   // DB를 조회하여 최신 상태를 확인하는 것이 'Stateful'한 검증의 핵심이다.

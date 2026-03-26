@@ -51,8 +51,8 @@ export const STATIC_PATH = '/public';
  * 3. 설정값
  */
 export const NODE_ENV = process.env.NODE_ENV || "development";
-export const ACCESS_TOKEN_COOKIE_NAME = "accessToken";
-export const REFRESH_TOKEN_COOKIE_NAME = "refreshToken";
+export const ACCESS_TOKEN_COOKIE_NAME = "access_token";
+export const REFRESH_TOKEN_COOKIE_NAME = "refresh_token";
 
 /**
  * 4. 검증된 환경 변수 Export
@@ -83,3 +83,9 @@ export { Event as PrismaEvent, Notice, Vote, BoardType, NotificationType } from 
  * 5. [Super-Admin/ Admin] Rejected된 관리자들 & 유저들 삭제에 필요한 기간
  */
 export const CLEANUP_GRACE_PERIOD_DAYS = 0;
+
+/**
+ * 관리자 세대 등록시 최대값 설정
+ */
+export const SUPPORT_CONTACT = process.env.SUPPORT_CONTACT || "";
+export const MAX_BATCH_UNIT_LIMIT = 18751;

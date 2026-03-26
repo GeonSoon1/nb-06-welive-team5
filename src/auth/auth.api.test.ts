@@ -142,7 +142,7 @@ describe('Auth API 종합 테스트 (Full Coverage - 227 Line Version)', () => {
       const loginData = { username: 'testuser1', password: 'Password123!' };
       (authService.login as jest.Mock).mockResolvedValue({
         user: { id: 'user-1', name: '홍길동' },
-        tokens: { accessToken: 'at', refreshToken: 'rt' },
+        tokens: { access_token: 'at', refresh_token: 'rt' },
       });
 
       const res = await request(app).post('/api/auth/login').send(loginData);
@@ -159,13 +159,13 @@ describe('Auth API 종합 테스트 (Full Coverage - 227 Line Version)', () => {
 
     it('POST /api/auth/refresh - 성공: 새 토큰 발급', async () => {
       (authService.refresh as jest.Mock).mockResolvedValue({
-        accessToken: 'new-at',
-        refreshToken: 'new-rt',
+        access_token: 'new-at',
+        refresh_token: 'new-rt',
       });
 
       const res = await request(app)
         .post('/api/auth/refresh')
-        .set('Cookie', ['refreshToken=valid-rt']);
+        .set('Cookie', ['refresh_token=valid-rt']);
 
       expect(res.status).toBe(200);
       expect(res.headers['set-cookie']).toBeDefined();
@@ -180,11 +180,18 @@ describe('Auth API 종합 테스트 (Full Coverage - 227 Line Version)', () => {
       expect(userService.updateAdminStatus).toHaveBeenCalledWith('admin-1', 'APPROVED');
     });
 
-    it('PATCH /api/auth/admins/status - 일괄 상태 변경', async () => {
-      const res = await request(app).patch('/api/auth/admins/status').send({ status: 'APPROVED' });
-      expect(res.status).toBe(200);
-      expect(userService.updateAllAdminStatus).toHaveBeenCalled();
-    });
+  it('12. PATCH /admins/status - [확장] 모든 대기중인 관리자 일괄 승인 시 로직 검증', async () => {
+    const mockUpdateResult = { count: 3 }; // 3명의 관리자가 승인됨
+    (userService.updateAllAdminStatus as jest.Mock).mockResolvedValue(mockUpdateResult);
+
+    const res = await request(app)
+      .patch('/api/auth/admins/status')
+      .send({ status: 'APPROVED' });
+    
+    expect(res.status).toBe(200);
+    expect(userService.updateAllAdminStatus).toHaveBeenCalledWith('APPROVED');
+    expect(res.body.message).toBe('작업이 성공적으로 완료되었습니다');
+  });
 
     it('DELETE /api/auth/admins/:id - 계정 및 아파트 연쇄 삭제', async () => {
       const res = await request(app).delete('/api/auth/admins/admin-1');

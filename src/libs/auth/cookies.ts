@@ -10,7 +10,7 @@ import {
 const isProd = NODE_ENV === 'production';
 
 // 로그인/토큰 갱신 시 쿠키에 토큰을 넣어주는 과정
-export function setTokenCookies(res: ExpressResponse, accessToken: string, refreshToken: string) {
+export function setTokenCookies(res: ExpressResponse, access_token: string, refresh_token: string) {
   // 공통 보안 옵션
   const commonOptions = {
     httpOnly: true, // JS에서 접근 불가 (XSS 방어)
@@ -19,13 +19,13 @@ export function setTokenCookies(res: ExpressResponse, accessToken: string, refre
   };
 
   // 1. Access Token: 상대적으로 짧은 유효기간 (20시간 - 비즈니스 요구사항 반영)
-  res.cookie(ACCESS_TOKEN_COOKIE_NAME, accessToken, {
+  res.cookie(ACCESS_TOKEN_COOKIE_NAME, access_token, {
     ...commonOptions,
-    maxAge: 20 * 60 * 60 * 1000,
+    maxAge: 30 * 60 * 1000,
   });
 
   // 2. Refresh Token: 긴 유효기간 (7일), 특정 경로(/auth/refresh)에서만 전송되도록 제한
-  res.cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken, {
+  res.cookie(REFRESH_TOKEN_COOKIE_NAME, refresh_token, {
     ...commonOptions,
     maxAge: 7 * 24 * 60 * 60 * 1000,
     path: '/api/auth/refresh', // 브라우저는 오직 /auth/refresh로 시작하는 경로에 요청을 보낼 때만 이 쿠키를 서버에 같이 보냄.

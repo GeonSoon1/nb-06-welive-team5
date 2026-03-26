@@ -1,6 +1,7 @@
 // src/auth/auth.struct.ts
 import * as s from 'superstruct';
 import isEmail from 'is-email';
+import { MAX_BATCH_UNIT_LIMIT } from '../libs/constants';
 
 // 공통: trim + nonempty
 const trimmed = s.coerce(s.string(), s.string(), (v) => v.trim());
@@ -64,12 +65,26 @@ export type SignupUserBody = s.Infer<typeof SignupUserBodyStruct>;
 // --------------------
 // ADMIN 회원가입
 // --------------------
-export const ApartmentStructureGroupStruct = s.object({
-  dongList: s.nonempty(trimmed),
-  startFloor: s.defaulted(s.integer(), 1),
-  maxFloor: s.min(s.integer(), 1),
-  unitsPerFloor: s.min(s.integer(), 1),
-});
+export const ApartmentStructureGroupStruct = s.refine(
+  s.object({
+    dongList: s.refine(s.nonempty(trimmed), 'MaxDongCount', (value) => {
+      const dongs = value.split(',').map((d) => d.trim()).filter(Boolean);
+      return dongs.length <= 25;
+    }),
+    startFloor: s.defaulted(s.size(s.integer(), 1, 30), 1),
+    maxFloor: s.size(s.integer(), 1, 30),
+    unitsPerFloor: s.size(s.integer(), 1, 25),
+  }),
+  'MaxTotalUnits',
+  (value) => {
+    const dongCount = value.dongList.split(',').filter(Boolean).length;
+    const floorCount = value.maxFloor - value.startFloor + 1;
+    const totalUnits = dongCount * floorCount * value.unitsPerFloor;
+
+    // 1만 세대 초과 시 false 리턴 -> StructError 발생
+    return totalUnits <= MAX_BATCH_UNIT_LIMIT;
+  }
+);
 
 export const SignupAdminBodyStruct = s.object({
   username: UsernameStruct,

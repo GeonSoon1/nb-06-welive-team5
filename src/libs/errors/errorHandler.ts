@@ -10,6 +10,8 @@ import NotFoundError from './NotFoundError';
 import UnauthorizedError from './UnauthorizedError';
 import ValidationError from './ValidationError';
 
+import { SUPPORT_CONTACT } from '../constants';
+
 /**
  * 모든 커스텀 에러의 기본이 되는 클래스 (커스텀으로 시작해도 괜찮다.)
  */
@@ -79,7 +81,39 @@ export const globalErrorHandler = (
     }
 
     // 4. Superstruct 및 커스텀 HTTP 에러 처리
-    else if (err instanceof StructError || err instanceof BadRequestError) {
+    else if (err instanceof StructError) {
+        statusCode = 400;
+        const failure = err.failures()[0];
+        
+        // 예: ['structureGroups', '0', 'unitsPerFloor'] -> 'unitsPerFloor' 추출
+        const path = failure?.path || [];
+        const isUnitsPerFloor = path.includes('unitsPerFloor');
+        const isMaxFloor = path.includes('maxFloor');
+        const isStartFloor = path.includes('startFloor');
+        const isDongList = path.includes('dongList');
+
+        // 실제 에러가 발생한 지점의 필드명을 결정 (프론트엔드 전달용)
+        const errorField = path[path.length - 1]; 
+
+        if (failure?.refinement === 'MaxTotalUnits') {
+            message = `한 번에 생성 가능한 세대수(18,751세대)를 초과했습니다. 관리자(${SUPPORT_CONTACT})에게 문의해 주세요.`;
+        } else if (failure?.refinement === 'MaxDongCount' || isDongList) {
+            message = '최대 동의 개수는 25개동을 초과할 수 없습니다.'; 
+        } else if (isMaxFloor) {
+            message = '최대 층수는 30층을 초과할 수 없습니다.'; 
+        } else if (isUnitsPerFloor) {
+            message = '층당 호수는 최대 25호를 초과할 수 없습니다.'; 
+        } else if (isStartFloor) {
+            message = '시작 층수는 1층부터 30층 사이여야 합니다.';
+        } else {
+            message = err.message; 
+        }
+
+        
+        data = { ...data, field: errorField };
+    }
+    
+    else if (err instanceof BadRequestError) {
         statusCode = 400;
         message = err.message;
     } else if (err instanceof UnauthorizedError) {

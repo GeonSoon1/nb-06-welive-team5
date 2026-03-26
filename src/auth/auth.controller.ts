@@ -42,7 +42,7 @@ export async function signupAdmin(req: ExpressRequest, res: ExpressResponse) {
 export async function login(req: ExpressRequest, res: ExpressResponse) {
   const data = s.create(req.body, LoginBodyStruct);
   const { user, tokens } = await authService.login(data);
-  setTokenCookies(res, tokens.accessToken, tokens.refreshToken);
+  setTokenCookies(res, tokens.access_token, tokens.refresh_token);
   return res.status(200).json(user);
 }
 
@@ -58,20 +58,20 @@ export async function logout(req: ExpressRequest, res: ExpressResponse) {
 
 export async function refresh(req: ExpressRequest, res: ExpressResponse) {
   // 브라우저가 /auth/refresh 경로로 자동으로 보내준 쿠키에서 토큰을 추출한다.
-  const refreshToken = req.cookies[REFRESH_TOKEN_COOKIE_NAME];
+  const refresh_token = req.cookies[REFRESH_TOKEN_COOKIE_NAME];
 
-  if (!refreshToken) throw new UnauthorizedError('토큰 갱신 중 오류가 발생했습니다.');
+  if (!refresh_token) throw new UnauthorizedError('토큰 갱신 중 오류가 발생했습니다.');
 
-  const tokens = await authService.refresh(refreshToken);
+  const tokens = await authService.refresh(refresh_token);
 
   // 새로운 토큰 세트를 쿠키에 갱신 (기존 쿠키 덮어쓰기)
-  setTokenCookies(res, tokens.accessToken, tokens.refreshToken);
+  setTokenCookies(res, tokens.access_token, tokens.refresh_token);
 
   return res.status(200).json({ message: '작업이 성공적으로 완료되었습니다' });
 }
 
 // app.use(cookieParser())의 역할로 들어오는 쿠키가 밑에처럼 된다.
 // req.cookies = {
-//   accessToken: "abc123",
-//   refreshToken: "xyz789"
+//   access_token: "abc123",
+//   refresh_token: "xyz789"
 // }
