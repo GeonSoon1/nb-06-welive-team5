@@ -79,7 +79,37 @@ export const globalErrorHandler = (
     }
 
     // 4. Superstruct 및 커스텀 HTTP 에러 처리
-    else if (err instanceof StructError || err instanceof BadRequestError) {
+    else if (err instanceof StructError) {
+        statusCode = 400;
+        const failure = err.failures()[0];
+        
+        // 예: ['structureGroups', '0', 'unitsPerFloor'] -> 'unitsPerFloor' 추출
+        const path = failure?.path || [];
+        const isUnitsPerFloor = path.includes('unitsPerFloor');
+        const isMaxFloor = path.includes('maxFloor');
+        const isStartFloor = path.includes('startFloor');
+        const isDongList = path.includes('dongList');
+
+        // 실제 에러가 발생한 지점의 필드명을 결정 (프론트엔드 전달용)
+        const errorField = path[path.length - 1]; 
+
+        if (failure?.refinement === 'MaxDongCount' || isDongList) {
+            message = '최대 동의 개수(85개)를 초과하였습니다.';
+        } else if (isMaxFloor) {
+            message = '최대 층수는 123층을 초과할 수 없습니다.';
+        } else if (isUnitsPerFloor) {
+            message = '층당 유닛(호)은 최대 10호를 초과할 수 없습니다.';
+        } else if (isStartFloor) {
+            message = '시작 층수는 1층부터 123층 사이여야 합니다.';
+        } else {
+            message = err.message; // 그 외의 기본 에러
+        }
+
+        
+        data = { ...data, field: errorField };
+    }
+    
+    else if (err instanceof BadRequestError) {
         statusCode = 400;
         message = err.message;
     } else if (err instanceof UnauthorizedError) {

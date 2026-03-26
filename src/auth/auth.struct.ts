@@ -65,10 +65,15 @@ export type SignupUserBody = s.Infer<typeof SignupUserBodyStruct>;
 // ADMIN 회원가입
 // --------------------
 export const ApartmentStructureGroupStruct = s.object({
-  dongList: s.nonempty(trimmed),
-  startFloor: s.defaulted(s.integer(), 1),
-  maxFloor: s.min(s.integer(), 1),
-  unitsPerFloor: s.min(s.integer(), 1),
+  // 1. dongList: 문자열 길이보다는 '동의 개수'가 중요하므로 refine으로 체크
+  dongList: s.refine(s.nonempty(trimmed), 'MaxDongCount', (value) => {
+    const dongs = value.split(',').map((d) => d.trim()).filter(Boolean);
+    return dongs.length <= 85; // 최대 85개동 제한
+  }),
+
+  startFloor: s.defaulted(s.size(s.integer(), 1, 123), 1),
+  maxFloor: s.size(s.integer(), 1, 123),// maxFloor: 최대 123층 제한
+  unitsPerFloor: s.size(s.integer(), 1, 10),// unitsPerFloor: 최대 10호 제한
 });
 
 export const SignupAdminBodyStruct = s.object({
