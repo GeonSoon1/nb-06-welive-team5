@@ -3,13 +3,17 @@ import type { ExpressHandler } from '../libs/constants';
 import { CreateNoticeStruct, GetNoticeListQuery, UpdateNoticeStruct } from './notice.struct';
 import { CustomError } from '../libs/errors/errorHandler';
 import * as noticeService from './notice.service';
+import { consoleLoggingIntegration } from '@sentry/node';
+
+
 
 export const createNotice: ExpressHandler = async (req, res, next) => {
     try {
-        assert(req.body, CreateNoticeStruct);
-        const userId = req.user!.id;
-
-        await noticeService.createNotice(userId, req.body);
+        console.log(req.body);
+        const { userId, ...bodyWithoutUserId } = req.body;
+        const noticevalue = superstruct.create(bodyWithoutUserId, CreateNoticeStruct);
+        const _userId = req.user!.id;
+        await noticeService.createNotice(_userId, noticevalue);
         res.status(201).json({ message: '정상적으로 등록 처리되었습니다' });
     } catch (error) {
         next(error);
@@ -46,12 +50,12 @@ export const updateNotice: ExpressHandler = async (req, res, next) => {
     try {
         const { noticeId } = req.params;
         if (typeof noticeId !== 'string' || !noticeId || !isUuid.v4(noticeId)) throw new CustomError(400, '잘못된 요청입니다. (noticeId)');
-
-        assert(req.body, UpdateNoticeStruct);
-        const userId = req.user!.id;
+        const { userId, ...bodyWithoutUserId } = req.body;
+        const noticevalue = superstruct.create(bodyWithoutUserId, UpdateNoticeStruct);
+        const _userId = req.user!.id;
         const userRole = req.user!.role;
 
-        const result = await noticeService.updateNotice(noticeId, userId, userRole, req.body);
+        const result = await noticeService.updateNotice(noticeId, _userId, userRole, noticevalue);
         res.status(200).json(result);
     } catch (error) {
         next(error);

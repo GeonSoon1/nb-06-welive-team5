@@ -17,8 +17,7 @@ export const createPoll = async (userId: string, apartmentId: string | null, pol
 
     const apartment = await prismaClient.apartment.findFirst({
         where: {
-            id: apartmentId,
-            apartmentboardId: boardId,
+            id: apartmentId
         }
     });
 
@@ -29,10 +28,10 @@ export const createPoll = async (userId: string, apartmentId: string | null, pol
         data: {
             ...voteData,
             targetScope: buildingPermission,
-            startTime: startDate,
-            endTime: endDate,
+            startDate: startDate,
+            endDate: endDate,
             authorId: userId,
-            apartmentboardId: boardId,
+            apartmentboardId: apartment.apartmentboardId,
             voteOptions: {
                 create: options.map((option) => ({
                     content: option.title,
@@ -82,8 +81,8 @@ export const getPollList = async (query: GetPollListDto, apartmentId: string | n
                 buildingPermission: poll.targetScope,
                 createdAt: poll.createdAt,
                 updatedAt: poll.updatedAt,
-                startDate: poll.startTime,
-                endDate: poll.endTime,
+                startDate: poll.startDate,
+                endDate: poll.endDate,
                 status: poll.status,
             };
         }),
@@ -119,8 +118,8 @@ export const getPollById = async (pollId: string, apartmentId: string | null, ro
         buildingPermission: poll.targetScope,
         createdAt: poll.createdAt,
         updatedAt: poll.updatedAt,
-        startDate: poll.startTime,
-        endDate: poll.endTime,
+        startDate: poll.startDate,
+        endDate: poll.endDate,
         status: poll.status,
         content: poll.content,
         boardName: poll.apartmentboardId,
@@ -156,8 +155,8 @@ export const updatePoll = async (pollId: string, userId: string, userRole: Role,
     const updateData: Prisma.VoteUpdateInput = { ...voteData };
 
     if (buildingPermission !== undefined) updateData.targetScope = buildingPermission;
-    if (startDate) updateData.startTime = startDate;
-    if (endDate) updateData.endTime = endDate;
+    if (startDate) updateData.startDate = startDate;
+    if (endDate) updateData.endDate = endDate;
 
     if (options) {
         // 기존 옵션의 ID 목록 추출
