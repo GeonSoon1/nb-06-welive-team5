@@ -58,14 +58,14 @@ jobs:
 
           if [ "$CURRENT_TG_ARN" == "${{ secrets.TG_A_ARN }}" ]; then
             echo "TARGET_NAME=GREEN" >> $GITHUB_ENV
-            echo "TARGET_INSTANCE_IDS=${{ secrets.EC2_INSTANCE_ID_C }},${{ secrets.EC2_INSTANCE_ID_D }}" >> $GITHUB_ENV
+            echo TARGET_INSTANCE_IDS=${{ secrets.EC2_INSTANCE_ID_C }},${{ secrets.EC2_INSTANCE_ID_D }} >> $GITHUB_ENV
             echo "ID_1=${{ secrets.EC2_INSTANCE_ID_C }}" >> $GITHUB_ENV
             echo "ID_2=${{ secrets.EC2_INSTANCE_ID_D }}" >> $GITHUB_ENV
             echo "TARGET_TG_ARN=${{ secrets.TG_B_ARN }}" >> $GITHUB_ENV
             echo "TARGET_PORT=8080" >> $GITHUB_ENV
           else
             echo "TARGET_NAME=BLUE" >> $GITHUB_ENV
-            echo "TARGET_INSTANCE_IDS=${{ secrets.EC2_INSTANCE_ID_A }},${{ secrets.EC2_INSTANCE_ID_B }}" >> $GITHUB_ENV
+            echo TARGET_INSTANCE_IDS=${{ secrets.EC2_INSTANCE_ID_A }},${{ secrets.EC2_INSTANCE_ID_B }} >> $GITHUB_ENV
             echo "ID_1=${{ secrets.EC2_INSTANCE_ID_A }}" >> $GITHUB_ENV
             echo "ID_2=${{ secrets.EC2_INSTANCE_ID_B }}" >> $GITHUB_ENV
             echo "TARGET_TG_ARN=${{ secrets.TG_A_ARN }}" >> $GITHUB_ENV
