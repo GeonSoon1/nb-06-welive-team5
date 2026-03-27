@@ -23,7 +23,7 @@ apartmentRouter.get(
 
 
 /**
- * 아파트 목록 조회( super_admin, admin, user 다 여기로 와서 controller에서 분기 처리하기)
+ * [통합 목록 조회] GET /api/apartments
  */ 
 apartmentRouter.get(
   '/',
