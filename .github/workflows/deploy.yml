@@ -102,10 +102,5 @@ jobs:
       # 4. [Traffic Switch] 모든 타겟이 정상이면 로드밸런서 리스너를 신규 그룹으로 전환합니다.
       - name: Switch Traffic
         run: |
-          aws elbv2 modify-listener \
-            --listener-arn ${{ secrets.ALB_LISTENER_ARN }} \
-            --default-actions Type=forward,TargetGroupArn=${{ env.TARGET_TG_ARN }}
-
-          aws elbv2 modify-listener \
-            --listener-arn ${{ secrets.ALB_LISTENER_8080_ARN }} \
-            --default-actions Type=forward,TargetGroupArn=${{ env.CURRENT_TG_ARN }}
+          aws elbv2 modify-listener --listener-arn ${{ secrets.ALB_LISTENER_ARN }} --default-actions Type=forward,TargetGroupArn=${{ env.TARGET_TG_ARN }}
+          aws elbv2 modify-listener --listener-arn ${{ secrets.ALB_LISTENER_8080_ARN }} --default-actions Type=forward,TargetGroupArn=${{ env.CURRENT_TG_ARN }}
