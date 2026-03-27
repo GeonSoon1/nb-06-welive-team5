@@ -8,36 +8,38 @@ import { authorize } from '../middlewares/authorize';
 const apartmentRouter = express.Router();
 
 /**
- * [공개용/회원가입] 아파트 목록 조회
- */
+  * [공개용/회원가입] 아파트 목록 조회
+  */
 apartmentRouter.get('/public', catchAsync(apartmentController.getPublicApartments));
 
-/**
- * [슈퍼관리자/관리자] 아파트 목록 조회
- */
-apartmentRouter.get(
-  '/',
-  authenticate,
-  authorize(Role.SUPER_ADMIN, Role.ADMIN),
-  catchAsync(apartmentController.getAdminApartments),
-);
 
 /**
- * [공개용/회원가입] 아파트 기본 정보 상세 조회
- */
+  * [공개용/회원가입] 아파트 기본 정보 상세 조회
+  */
 apartmentRouter.get(
   '/public/:id', 
   catchAsync(apartmentController.getPublicApartmentDetail)
 );
 
+
 /**
- * [슈퍼관리자/관리자] 아파트 상세 조회 
+ * [통합 목록 조회] GET /api/apartments
+ */ 
+apartmentRouter.get(
+  '/',
+  authenticate, // 로그인 여부만 확인
+  catchAsync(apartmentController.getApartmentsByRole) // 통합 컨트롤러 호출
+);
+
+
+/**
+ * [통합 상세 조회] GET /api/apartments/:id
  */
 apartmentRouter.get(
-  '/:id', 
-  authenticate, 
-  authorize(Role.SUPER_ADMIN, Role.ADMIN),
-  catchAsync(apartmentController.getApartmentDetail)
-)
+  '/:id',
+  authenticate, // 유저 식별을 위해 필요
+  catchAsync(apartmentController.getApartmentDetailByRole) // 통합 컨트롤러 연결
+);
+
 
 export default apartmentRouter;

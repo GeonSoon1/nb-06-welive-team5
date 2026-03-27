@@ -16,6 +16,8 @@ export async function validateComplaintOwnership(
   complaintId: string,
   apartmentId: string,
 ): Promise<boolean> {
+  if (!apartmentId) return false;
+
   const complaint = await prisma.complaint.findFirst({
     where: {
       id: complaintId,
