@@ -25,6 +25,10 @@ async function validateResidentOwnership(residentId: string, apartmentId: string
 
 // 1. 입주민 리소스 생성(개별 등록)
 export async function createResident(apartmentId: string, data: CreateResidentDto) {
+  if (data.contact) {
+    data.contact = data.contact.replace(/\D/g, '');
+  }
+
   const newResident = await residentRepository.createResident(apartmentId, data);
   if (!newResident) throw new BadRequestError('입주민 리소스 생성(개별 등록) 실패');
   return newResident;
@@ -50,7 +54,7 @@ export async function createResidentFromUser(apartmentId: string, userId: string
 
   const result = await createResident(apartmentId, {
     name: user.name,
-    contact: user.contact,
+    contact: user.contact.replace(/\D/g, ''),
     building: user.apartmentUnit?.dong ?? '',
     unitNumber: user.apartmentUnit?.ho ?? '',
     isHouseholder: 'MEMBER',
@@ -72,6 +76,10 @@ export async function updateResident(
   updateData: UpdateResidentDto,
 ) {
   await validateResidentOwnership(id, apartmentId);
+
+  if (updateData.contact) {
+    updateData.contact = updateData.contact.replace(/\D/g, '');
+  }
 
   const result = await residentRepository.updateResident(id, updateData);
   if (!result) throw new BadRequestError('입주민 정보 수정 실패');
@@ -105,7 +113,7 @@ export async function uploadResidentsFromCsv(
         residents.push({
           apartmentId: apartmentId,
           name: row.이름 || row.name,
-          contact: row.연락처 || row.contact,
+          contact: (row.연락처 || row.contact || '').toString().replace(/\D/g, ''),
           dong: row.동 || row.building || '',
           ho: row.호 || row.unitNumber || '',
           isHouseholder: row.세대주여부 === '세대주' ? 'HOUSEHOLDER' : 'MEMBER',
