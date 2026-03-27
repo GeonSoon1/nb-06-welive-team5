@@ -54,8 +54,9 @@ export const UpdatePoll: ExpressHandler = async (req: ExpressRequest, res: Expre
         const pollId = req.params.pollId;
         if (typeof pollId !== 'string' || !isUuid.v4(pollId)) throw new CustomError(400, "잘못된 요청입니다.(pollId)");
 
+        const { boardId, ...bodyWithoutUserId } = req.body;
 
-        const validatedBody = superstruct.create(req.body, UpdatePollStruct);
+        const validatedBody = superstruct.create(bodyWithoutUserId, UpdatePollStruct);
 
 
 
