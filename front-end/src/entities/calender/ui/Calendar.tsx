@@ -32,8 +32,8 @@ function isDateInRange(cellDate: Date, start: string, end: string): boolean {
 }
 
 export default function Calendar() {
-  const [year, setYear] = useState<number>(2025);
-  const [month, setMonth] = useState<number>(5);
+  const [year, setYear] = useState<number>(() => new Date().getFullYear());
+  const [month, setMonth] = useState<number>(() => new Date().getMonth());
   const [updateEvents, setUpdateEvents] = useState<EventsProps[]>([]);
   const user = useAuthStore((state) => state.user);
 

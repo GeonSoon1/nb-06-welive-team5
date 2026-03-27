@@ -50,7 +50,7 @@ async function main() {
     console.log('🚮 Cleanup finished.');
   }
 
-  const defaultPassword = await hashPassword('password123');
+  const defaultPassword = await hashPassword('1');
   const now = new Date();
 
   // --- 1. SUPER_ADMIN & ADMINS ---
@@ -212,7 +212,7 @@ async function main() {
     }),
     // 2. 정상 승인된 세대원 (번호 중복 해결)
     prisma.user.create({
-      data: { username: 'user2', password: defaultPassword, contact: '010-4444-2222', name: '김가족', email: 'u2@email.com', role: Role.USER, apartmentId: apartment.id, apartmentUnitId: units[0]!.id, joinStatus: JoinStatus.APPROVED },
+      data: { username: 'user2', password: defaultPassword, contact: '010-4444-2222', name: '김가족', email: 'u2@email.com', role: Role.USER, apartmentId: apartment.id, apartmentUnitId: units[1]!.id, joinStatus: JoinStatus.APPROVED },
     }),
     // 3. 정상 승인된 다른 동 세대주
     prisma.user.create({
