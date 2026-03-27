@@ -20,34 +20,39 @@ async function main() {
   console.log('🌱 Seeding database...');
 
   // --- Clean up database ---
-  console.log('🧹 Cleaning up existing data...');
-  // Order of deletion matters to avoid foreign key constraints
-  await prisma.comment.deleteMany({});
-  await prisma.voteRecord.deleteMany({});
-  await prisma.voteOption.deleteMany({});
-  await prisma.notification.deleteMany({});
-  await prisma.event.deleteMany({});
-  await prisma.notice.deleteMany({});
-  await prisma.complaint.deleteMany({});
-  await prisma.vote.deleteMany({});
-  await prisma.resident.deleteMany({});
-  await prisma.apartmentUnit.deleteMany({});
-  await prisma.apartmentStructureGroup.deleteMany({});
-  await prisma.user.deleteMany({ where: { role: { not: 'SUPER_ADMIN' } } });
-  
-  // We handle apartment and apartment board deletion carefully
-  const apartments = await prisma.apartment.findMany({});
-  for (const apt of apartments) {
-    await prisma.apartment.update({
-      where: { id: apt.id },
-      data: { adminId: null },
-    });
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('🧹 Cleaning up existing data...');
+    // Order of deletion matters to avoid foreign key constraints
+    await prisma.comment.deleteMany({});
+    await prisma.voteRecord.deleteMany({});
+    await prisma.voteOption.deleteMany({});
+    await prisma.notification.deleteMany({});
+    await prisma.event.deleteMany({});
+    await prisma.notice.deleteMany({});
+    await prisma.complaint.deleteMany({});
+    await prisma.vote.deleteMany({});
+    await prisma.resident.deleteMany({});
+    await prisma.apartmentUnit.deleteMany({});
+    await prisma.apartmentStructureGroup.deleteMany({});
+    await prisma.user.deleteMany({ where: { role: { not: 'SUPER_ADMIN' } } });
+
+    // We handle apartment and apartment board deletion carefully
+    const apartments = await prisma.apartment.findMany({});
+    for (const apt of apartments) {
+      await prisma.apartment.update({
+        where: { id: apt.id },
+        data: { adminId: null },
+      });
+    }
+    await prisma.apartment.deleteMany({});
+    await prisma.apartmentBoard.deleteMany({});
+
+    // Super admin might be special, handle separately if needed or recreate
+    await prisma.user.deleteMany({ where: { role: 'SUPER_ADMIN' } });
+    console.log('🚮 Cleanup finished.');
+  } else {
+    console.log('🚫 Skipping cleanup in production environment.');
   }
-  await prisma.apartment.deleteMany({});
-  await prisma.apartmentBoard.deleteMany({});
-  
-  // Super admin might be special, handle separately if needed or recreate
-  await prisma.user.deleteMany({ where: { role: 'SUPER_ADMIN' } });
 
 
   // --- Hashed Password ---
@@ -117,7 +122,7 @@ async function main() {
   const unit101_102 = await prisma.apartmentUnit.create({
     data: { apartmentId: apartment.id, dong: '101', floor: 1, ho: '102' },
   });
-   const unit102_201 = await prisma.apartmentUnit.create({
+  const unit102_201 = await prisma.apartmentUnit.create({
     data: { apartmentId: apartment.id, dong: '102', floor: 2, ho: '201' },
   });
 
@@ -159,7 +164,7 @@ async function main() {
       joinStatus: JoinStatus.APPROVED,
     },
   });
-    const user3 = await prisma.user.create({
+  const user3 = await prisma.user.create({
     data: {
       username: 'user3',
       password: defaultPassword,
@@ -194,30 +199,30 @@ async function main() {
       },
     ],
   });
-  
+
   // --- Create Notices ---
   console.log('📢 Creating Notices...');
   const notice1 = await prisma.notice.create({
     data: {
-        title: '정기 소독 안내 (6월)',
-        content: '아파트 전체 정기 소독이 6월 25일에 실시될 예정입니다. 각 세대에서는 협조 부탁드립니다.',
-        category: NoticeCategory.MAINTENANCE,
-        authorId: admin.id,
-        apartmentboardId: apartmentBoard.id,
-        isImportant: true,
-        isSchedule: true,
-        startDate: new Date('2026-06-25T09:00:00Z'),
-        endDate: new Date('2026-06-25T17:00:00Z'),
+      title: '정기 소독 안내 (6월)',
+      content: '아파트 전체 정기 소독이 6월 25일에 실시될 예정입니다. 각 세대에서는 협조 부탁드립니다.',
+      category: NoticeCategory.MAINTENANCE,
+      authorId: admin.id,
+      apartmentboardId: apartmentBoard.id,
+      isImportant: true,
+      isSchedule: true,
+      startDate: new Date('2026-06-25T09:00:00Z'),
+      endDate: new Date('2026-06-25T17:00:00Z'),
     },
   });
 
   const notice2 = await prisma.notice.create({
     data: {
-        title: '커뮤니티 센터 이용 시간 변경 안내',
-        content: '7월 1일부터 커뮤니티 센터(헬스장, 독서실) 이용 시간이 06:00 ~ 23:00로 변경됩니다.',
-        category: NoticeCategory.COMMUNITY,
-        authorId: admin.id,
-        apartmentboardId: apartmentBoard.id,
+      title: '커뮤니티 센터 이용 시간 변경 안내',
+      content: '7월 1일부터 커뮤니티 센터(헬스장, 독서실) 이용 시간이 06:00 ~ 23:00로 변경됩니다.',
+      category: NoticeCategory.COMMUNITY,
+      authorId: admin.id,
+      apartmentboardId: apartmentBoard.id,
     },
   });
 
@@ -225,48 +230,48 @@ async function main() {
   // --- Create Complaints ---
   console.log('🗣️ Creating Complaints...');
   const complaint1 = await prisma.complaint.create({
-      data: {
-          title: '101동 앞 가로등이 깜빡거립니다.',
-          content: '밤에 다닐 때 불편합니다. 빠른 수리 부탁드립니다.',
-          authorId: user1.id,
-          apartmentboardId: apartmentBoard.id,
-          isPublic: true,
-          status: ComplaintStatus.PENDING,
-      }
+    data: {
+      title: '101동 앞 가로등이 깜빡거립니다.',
+      content: '밤에 다닐 때 불편합니다. 빠른 수리 부탁드립니다.',
+      authorId: user1.id,
+      apartmentboardId: apartmentBoard.id,
+      isPublic: true,
+      status: ComplaintStatus.PENDING,
+    }
   });
 
   // --- Create Votes ---
   console.log('🗳️ Creating Votes...');
   const vote1 = await prisma.vote.create({
-      data: {
-          title: '놀이터 바닥 교체 공사 찬반 투표',
-          content: '아이들의 안전을 위해 노후화된 놀이터 바닥을 우레탄으로 교체하는 공사에 대한 주민 여러분의 의견을 묻습니다.',
-          targetScope: 0, // 0: 전체, 1: 세대주
-          startTime: new Date('2026-07-01T00:00:00Z'),
-          endTime: new Date('2026-07-15T23:59:59Z'),
-          status: VoteStatus.IN_PROGRESS,
-          authorId: admin.id,
-          apartmentboardId: apartmentBoard.id,
-      },
+    data: {
+      title: '놀이터 바닥 교체 공사 찬반 투표',
+      content: '아이들의 안전을 위해 노후화된 놀이터 바닥을 우레탄으로 교체하는 공사에 대한 주민 여러분의 의견을 묻습니다.',
+      targetScope: 0, // 0: 전체, 1: 세대주
+      startTime: new Date('2026-07-01T00:00:00Z'),
+      endTime: new Date('2026-07-15T23:59:59Z'),
+      status: VoteStatus.IN_PROGRESS,
+      authorId: admin.id,
+      apartmentboardId: apartmentBoard.id,
+    },
   });
 
   const voteOption1_1 = await prisma.voteOption.create({
-      data: { voteId: vote1.id, content: '찬성' },
+    data: { voteId: vote1.id, content: '찬성' },
   });
   const voteOption1_2 = await prisma.voteOption.create({
-      data: { voteId: vote1.id, content: '반대' },
+    data: { voteId: vote1.id, content: '반대' },
   });
 
   // --- Create Vote Records ---
   console.log('✍️ Creating Vote Records...');
   await prisma.voteRecord.create({
-      data: { userId: user1.id, voteId: vote1.id, voteOptionId: voteOption1_1.id },
-  });
-    await prisma.voteRecord.create({
-      data: { userId: user2.id, voteId: vote1.id, voteOptionId: voteOption1_1.id },
+    data: { userId: user1.id, voteId: vote1.id, voteOptionId: voteOption1_1.id },
   });
   await prisma.voteRecord.create({
-      data: { userId: user3.id, voteId: vote1.id, voteOptionId: voteOption1_2.id },
+    data: { userId: user2.id, voteId: vote1.id, voteOptionId: voteOption1_1.id },
+  });
+  await prisma.voteRecord.create({
+    data: { userId: user3.id, voteId: vote1.id, voteOptionId: voteOption1_2.id },
   });
 
   await prisma.voteOption.update({
@@ -282,38 +287,38 @@ async function main() {
   // --- Create Comments ---
   console.log('💬 Creating Comments...');
   await prisma.comment.create({
-      data: {
-          content: '항상 수고 많으십니다. 확인 부탁드려요!',
-          authorId: user1.id,
-          complaintId: complaint1.id,
-      }
+    data: {
+      content: '항상 수고 많으십니다. 확인 부탁드려요!',
+      authorId: user1.id,
+      complaintId: complaint1.id,
+    }
   });
-    await prisma.comment.create({
-      data: {
-          content: '안전이 최우선이죠. 찬성합니다.',
-          authorId: user2.id,
-          voteId: vote1.id,
-      }
+  await prisma.comment.create({
+    data: {
+      content: '안전이 최우선이죠. 찬성합니다.',
+      authorId: user2.id,
+      voteId: vote1.id,
+    }
   });
 
   // --- Create Notifications ---
   console.log('🔔 Creating Notifications...');
-    await prisma.notification.create({
-        data: {
-            content: `새로운 민원 [${complaint1.title}]이 등록되었습니다.`,
-            notificationType: NotificationType.COMPLAINT_REQ,
-            userId: admin.id,
-            complaintId: complaint1.id
-        }
-    });
-    await prisma.notification.create({
-        data: {
-            content: `새로운 공지 [${notice2.title}]가 등록되었습니다.`,
-            notificationType: NotificationType.NOTICE_REG,
-            userId: user1.id,
-            noticeId: notice2.id
-        }
-    });
+  await prisma.notification.create({
+    data: {
+      content: `새로운 민원 [${complaint1.title}]이 등록되었습니다.`,
+      notificationType: NotificationType.COMPLAINT_REQ,
+      userId: admin.id,
+      complaintId: complaint1.id
+    }
+  });
+  await prisma.notification.create({
+    data: {
+      content: `새로운 공지 [${notice2.title}]가 등록되었습니다.`,
+      notificationType: NotificationType.NOTICE_REG,
+      userId: user1.id,
+      noticeId: notice2.id
+    }
+  });
 
 
   console.log('✅ Seeding finished.');

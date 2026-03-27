@@ -10,8 +10,20 @@ import ForbiddenError from '../libs/errors/ForbiddenError';
  * @param userId 작성자 ID
  * @param pollData 컨트롤러에서 검증된 DTO
  */
-export const createPoll = async (userId: string, pollData: CreatePollDto) => {
+export const createPoll = async (userId: string, apartmentId: string | null, pollData: CreatePollDto) => {
     const { options, boardId, buildingPermission, startDate, endDate, ...voteData } = pollData;
+
+    if (!apartmentId) throw new ForbiddenError('소속된 아파트 정보가 없습니다.');
+
+    const apartment = await prismaClient.apartment.findFirst({
+        where: {
+            id: apartmentId,
+            apartmentboardId: boardId,
+        }
+    });
+
+    if (!apartment) throw new ForbiddenError('유효하지 않은 게시판입니다.');
+
 
     const newPoll = await prismaClient.vote.create({
         data: {
@@ -38,11 +50,19 @@ export const createPoll = async (userId: string, pollData: CreatePollDto) => {
 /**
  * 투표 목록 조회
  */
-export const getPollList = async (query: GetPollListDto) => {
+export const getPollList = async (query: GetPollListDto, apartmentId: string | null, role: Role) => {
     const { page, limit, buildingPermission, status, keyword } = query;
     const skip = (page - 1) * limit;
 
     const where: Prisma.VoteWhereInput = {};
+
+    // SUPER_ADMIN이 아닌 경우, 자신이 속한 아파트의 투표만 조회하도록 필터링
+    if (role !== Role.SUPER_ADMIN) {
+        if (!apartmentId) throw new ForbiddenError('소속된 아파트 정보가 없습니다.');
+        where.apartmentboard = {
+            apartment: { id: apartmentId }
+        };
+    }
 
     if (status) where.status = status;
     if (buildingPermission !== undefined) where.targetScope = buildingPermission;
@@ -74,10 +94,22 @@ export const getPollList = async (query: GetPollListDto) => {
 /**
  * 투표 상세 조회
  */
-export const getPollById = async (pollId: string) => {
+export const getPollById = async (pollId: string, apartmentId: string | null, role: Role) => {
     const poll = await pollRepository.findPollById(pollId);
 
     if (!poll) throw new CustomError(404, '투표 글을 찾을 수 없습니다.');
+
+    // SUPER_ADMIN이 아닌 경우, 해당 투표가 자신의 아파트 소속인지 확인
+    if (role !== Role.SUPER_ADMIN) {
+        if (!apartmentId) throw new ForbiddenError('소속된 아파트 정보가 없습니다.');
+        const accessCheck = await prismaClient.vote.findFirst({
+            where: {
+                id: pollId,
+                apartmentboard: { apartment: { id: apartmentId } }
+            }
+        });
+        if (!accessCheck) throw new ForbiddenError('해당 투표에 접근 권한이 없습니다.');
+    }
 
     return {
         pollId: poll.id,
@@ -103,12 +135,21 @@ export const getPollById = async (pollId: string) => {
 /**
  * 투표 수정 (권한 확인 포함)
  */
-export const updatePoll = async (pollId: string, userId: string, userRole: Role, pollData: UpdatePollDto) => {
+export const updatePoll = async (pollId: string, userId: string, userRole: Role, apartmentId: string | null, pollData: UpdatePollDto) => {
     const poll = await pollRepository.findPollById(pollId);
     if (!poll) throw new CustomError(404, '투표 글을 찾을 수 없습니다.');
     const isAdmin = userRole === Role.ADMIN || userRole === Role.SUPER_ADMIN;
     const isOwner = poll.authorId === userId;
     if (!isOwner && !isAdmin) throw new ForbiddenError('자신이 작성한 투표만 수정할 수 있습니다.');
+
+    // ADMIN 권한이더라도 자신이 관리하는 아파트의 투표만 수정 가능하도록 제한
+    if (!isOwner && userRole === Role.ADMIN) {
+        if (!apartmentId) throw new ForbiddenError('소속된 아파트 정보가 없습니다.');
+        const accessCheck = await prismaClient.vote.findFirst({
+            where: { id: pollId, apartmentboard: { apartment: { id: apartmentId } } }
+        });
+        if (!accessCheck) throw new ForbiddenError('자신이 관리하는 아파트의 투표만 수정할 수 있습니다.');
+    }
 
     const { options, buildingPermission, startDate, endDate, ...voteData } = pollData;
 
@@ -149,7 +190,7 @@ export const updatePoll = async (pollId: string, userId: string, userRole: Role,
 /**
  * 투표 삭제 (권한 확인 포함)
  */
-export const deletePoll = async (pollId: string, userId: string, userRole: Role) => {
+export const deletePoll = async (pollId: string, userId: string, userRole: Role, apartmentId: string | null) => {
     const poll = await pollRepository.findPollById(pollId);
     if (!poll) throw new CustomError(404, '투표 글을 찾을 수 없습니다.');
 
@@ -159,6 +200,15 @@ export const deletePoll = async (pollId: string, userId: string, userRole: Role)
     //작성자 본인이 아니더라도 관리자이면 삭제 가능하도록 조건 추가
     if (!isOwner) {
         if (!isAdmin) throw new ForbiddenError('자신이 작성한 투표만 삭제할 수 있습니다.');
+
+        // ADMIN 권한이더라도 자신이 관리하는 아파트의 투표만 삭제 가능하도록 제한
+        if (userRole === Role.ADMIN) {
+            if (!apartmentId) throw new ForbiddenError('소속된 아파트 정보가 없습니다.');
+            const accessCheck = await prismaClient.vote.findFirst({
+                where: { id: pollId, apartmentboard: { apartment: { id: apartmentId } } }
+            });
+            if (!accessCheck) throw new ForbiddenError('자신이 관리하는 아파트의 투표만 삭제할 수 있습니다.');
+        }
     }
 
     await pollRepository.deletePoll(pollId);

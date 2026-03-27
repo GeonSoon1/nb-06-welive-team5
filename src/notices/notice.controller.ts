@@ -19,7 +19,9 @@ export const createNotice: ExpressHandler = async (req, res, next) => {
 export const getNoticeList: ExpressHandler = async (req, res, next) => {
     try {
         const query = superstruct.create(req.query, GetNoticeListQuery);
-        const result = await noticeService.getNoticeList(query);
+        const { apartmentId, role } = req.user!;
+
+        const result = await noticeService.getNoticeList(query, apartmentId, role);
         res.status(200).json(result);
     } catch (error) {
         next(error);
@@ -32,7 +34,8 @@ export const getNoticeDetail: ExpressHandler = async (req, res, next) => {
         const { noticeId } = req.params;
         if (typeof noticeId !== 'string' || !noticeId || !isUuid.v4(noticeId)) throw new CustomError(400, '잘못된 요청입니다. (noticeId)');
 
-        const result = await noticeService.getNoticeDetail(noticeId);
+        const { apartmentId, role } = req.user!;
+        const result = await noticeService.getNoticeDetail(noticeId, apartmentId, role);
         res.status(200).json(result);
     } catch (error) {
         next(error);
