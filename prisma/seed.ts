@@ -1,4 +1,3 @@
-
 import {
   PrismaClient,
   Role,
@@ -20,42 +19,42 @@ async function main() {
   console.log('🌱 Seeding database...');
 
   // --- Clean up database ---
-  console.log('🧹 Cleaning up existing data...');
-  // Order of deletion matters to avoid foreign key constraints
-  await prisma.comment.deleteMany({});
-  await prisma.voteRecord.deleteMany({});
-  await prisma.voteOption.deleteMany({});
-  await prisma.notification.deleteMany({});
-  await prisma.event.deleteMany({});
-  await prisma.notice.deleteMany({});
-  await prisma.complaint.deleteMany({});
-  await prisma.vote.deleteMany({});
-  await prisma.resident.deleteMany({});
-  await prisma.apartmentUnit.deleteMany({});
-  await prisma.apartmentStructureGroup.deleteMany({});
-  await prisma.user.deleteMany({ where: { role: { not: 'SUPER_ADMIN' } } });
-  
-  // We handle apartment and apartment board deletion carefully
-  const apartments = await prisma.apartment.findMany({});
-  for (const apt of apartments) {
-    await prisma.apartment.update({
-      where: { id: apt.id },
-      data: { adminId: null },
-    });
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('🧹 Cleaning up existing data...');
+    await prisma.comment.deleteMany({});
+    await prisma.voteRecord.deleteMany({});
+    await prisma.voteOption.deleteMany({});
+    await prisma.notification.deleteMany({});
+    await prisma.event.deleteMany({});
+    await prisma.notice.deleteMany({});
+    await prisma.complaint.deleteMany({});
+    await prisma.vote.deleteMany({});
+    await prisma.resident.deleteMany({});
+    await prisma.user.updateMany({ data: { apartmentUnitId: null } });
+    await prisma.apartmentUnit.deleteMany({});
+    await prisma.apartmentStructureGroup.deleteMany({});
+    await prisma.user.deleteMany({ where: { role: { not: 'SUPER_ADMIN' } } });
+
+    const apartments = await prisma.apartment.findMany({});
+    for (const apt of apartments) {
+      await prisma.apartment.update({
+        where: { id: apt.id },
+        data: { adminId: null },
+      });
+    }
+    await prisma.apartment.deleteMany({});
+    await prisma.apartmentBoard.deleteMany({});
+
+    await prisma.user.deleteMany({ where: { role: 'SUPER_ADMIN' } });
+    console.log('🚮 Cleanup finished.');
   }
-  await prisma.apartment.deleteMany({});
-  await prisma.apartmentBoard.deleteMany({});
-  
-  // Super admin might be special, handle separately if needed or recreate
-  await prisma.user.deleteMany({ where: { role: 'SUPER_ADMIN' } });
 
-
-  // --- Hashed Password ---
   const defaultPassword = await hashPassword('password123');
+  const now = new Date();
 
-  // --- Create SUPER_ADMIN ---
-  console.log('👤 Creating SUPER_ADMIN...');
-  const superAdmin = await prisma.user.create({
+  // --- 1. SUPER_ADMIN & ADMIN ---
+  console.log('👤 Creating Admins...');
+  await prisma.user.create({
     data: {
       username: 'superadmin',
       password: defaultPassword,
@@ -67,8 +66,6 @@ async function main() {
     },
   });
 
-  // --- Create Apartment Admin ---
-  console.log('👤 Creating ADMIN...');
   const admin = await prisma.user.create({
     data: {
       username: 'adminuser',
@@ -77,16 +74,13 @@ async function main() {
       name: '김관리',
       email: 'admin@welive.com',
       role: Role.ADMIN,
-      joinStatus: JoinStatus.PENDING, // Will be approved after apartment assignment
+      joinStatus: JoinStatus.PENDING,
     },
   });
 
-  // --- Create Apartment & Board ---
+  // --- 2. APARTMENT & BOARD ---
   console.log('🏢 Creating Apartment and Board...');
-  const apartmentBoard = await prisma.apartmentBoard.create({
-    data: {},
-  });
-
+  const apartmentBoard = await prisma.apartmentBoard.create({ data: {} });
   const apartment = await prisma.apartment.create({
     data: {
       name: '웰라이브 아파트',
@@ -99,224 +93,210 @@ async function main() {
     },
   });
 
-  // --- Create Apartment Structure & Units ---
-  console.log('🏗️ Creating Apartment Structure and Units...');
+  await prisma.user.update({
+    where: { id: admin.id },
+    data: { apartmentId: apartment.id, joinStatus: JoinStatus.APPROVED },
+  });
+
+  // --- 3. STRUCTURE & UNITS ---
+  console.log('🏗️ Creating Structure and Units...');
   await prisma.apartmentStructureGroup.create({
     data: {
       apartmentId: apartment.id,
       dongList: '101동,102동',
       startFloor: 1,
-      maxFloor: 20,
-      unitsPerFloor: 4,
+      maxFloor: 5,
+      unitsPerFloor: 2,
     },
   });
 
-  const unit101_101 = await prisma.apartmentUnit.create({
-    data: { apartmentId: apartment.id, dong: '101', floor: 1, ho: '101' },
-  });
-  const unit101_102 = await prisma.apartmentUnit.create({
-    data: { apartmentId: apartment.id, dong: '101', floor: 1, ho: '102' },
-  });
-   const unit102_201 = await prisma.apartmentUnit.create({
-    data: { apartmentId: apartment.id, dong: '102', floor: 2, ho: '201' },
-  });
+  const units = [];
+  for (const dong of ['101', '102']) {
+    for (let floor = 1; floor <= 3; floor++) {
+      for (let ho = 1; ho <= 2; ho++) {
+        const unit = await prisma.apartmentUnit.create({
+          data: {
+            apartmentId: apartment.id,
+            dong,
+            floor,
+            ho: `${floor}0${ho}`,
+          },
+        });
+        units.push(unit);
+      }
+    }
+  }
 
+  // --- 4. USERS & RESIDENTS (다양한 가입 상태 테스트) ---
+  console.log('👥 Creating Users and Residents...');
+  const users = await Promise.all([
+    // 1. 정상 승인된 세대주
+    prisma.user.create({
+      data: { username: 'user1', password: defaultPassword, contact: '010-2222-1111', name: '이세대', email: 'u1@email.com', role: Role.USER, apartmentId: apartment.id, apartmentUnitId: units[0].id, joinStatus: JoinStatus.APPROVED },
+    }),
+    // 2. 정상 승인된 세대원
+    prisma.user.create({
+      data: { username: 'user2', password: defaultPassword, contact: '010-2222-2222', name: '김가족', email: 'u2@email.com', role: Role.USER, apartmentId: apartment.id, apartmentUnitId: units[0].id, joinStatus: JoinStatus.APPROVED },
+    }),
+    // 3. 정상 승인된 다른 동 세대주
+    prisma.user.create({
+      data: { username: 'user3', password: defaultPassword, contact: '010-2222-3333', name: '박이웃', email: 'u3@email.com', role: Role.USER, apartmentId: apartment.id, apartmentUnitId: units[2].id, joinStatus: JoinStatus.APPROVED },
+    }),
+    // 4. 가입 대기 중인 유저
+    prisma.user.create({
+      data: { username: 'pendingUser', password: defaultPassword, contact: '010-2222-4444', name: '최대기', email: 'p@email.com', role: Role.USER, apartmentId: apartment.id, apartmentUnitId: units[3].id, joinStatus: JoinStatus.PENDING },
+    }),
+    // 5. 가입 반려된 유저
+    prisma.user.create({
+      data: { username: 'rejectedUser', password: defaultPassword, contact: '010-2222-5555', name: '정거절', email: 'r@email.com', role: Role.USER, apartmentId: apartment.id, apartmentUnitId: units[4].id, joinStatus: JoinStatus.REJECTED },
+    }),
+    // 6. 정보 수정 필요 유저
+    prisma.user.create({
+      data: { username: 'updateUser', password: defaultPassword, contact: '010-2222-6666', name: '오수정', email: 'u@email.com', role: Role.USER, apartmentId: apartment.id, apartmentUnitId: units[5].id, joinStatus: JoinStatus.NEED_UPDATE },
+    }),
+  ]);
 
-  // --- Update Admin user with apartment info ---
-  await prisma.user.update({
-    where: { id: admin.id },
+  // Residents 매핑
+  const residentData = users.map((u, idx) => ({
+    userId: u.id,
+    apartmentId: apartment.id,
+    dong: u.apartmentUnitId ? units.find(unit => unit.id === u.apartmentUnitId)!.dong : '101',
+    ho: u.apartmentUnitId ? units.find(unit => unit.id === u.apartmentUnitId)!.ho : '101',
+    name: u.name,
+    contact: u.contact,
+    isHouseholder: idx === 0 || idx === 2 ? HouseHolderStatus.HOUSEHOLDER : HouseHolderStatus.MEMBER,
+    residenceStatus: u.joinStatus === JoinStatus.APPROVED ? ResidenceStatus.RESIDENCE : ResidenceStatus.NO_RESIDENCE,
+  }));
+  await prisma.resident.createMany({ data: residentData });
+
+  // --- 5. NOTICES & EVENTS (다양한 공지 및 일정 연동) ---
+  console.log('📢 Creating Notices and Events...');
+
+  // 5-1. 긴급 공지 (일정 없음)
+  await prisma.notice.create({
     data: {
-      apartmentId: apartment.id,
-      joinStatus: JoinStatus.APPROVED,
+      title: '[긴급] 단지 내 정전 안내', content: '한전 변압기 교체로 인해 약 30분간 정전이 발생합니다.',
+      category: NoticeCategory.EMERGENCY, authorId: admin.id, apartmentboardId: apartmentBoard.id,
+      isImportant: true, isSchedule: false,
     },
   });
 
-  // --- Create Regular Users ---
-  console.log('👥 Creating regular USERs...');
-  const user1 = await prisma.user.create({
+  // 5-2. 일정 공지 (이벤트 자동 생성 시뮬레이션)
+  const noticeSchedule = await prisma.notice.create({
     data: {
-      username: 'user1',
-      password: defaultPassword,
-      contact: '010-1234-5671',
-      name: '이주민',
-      email: 'user1@email.com',
-      role: Role.USER,
-      apartmentId: apartment.id,
-      apartmentUnitId: unit101_101.id,
-      joinStatus: JoinStatus.APPROVED,
-    },
-  });
-  const user2 = await prisma.user.create({
-    data: {
-      username: 'user2',
-      password: defaultPassword,
-      contact: '010-1234-5672',
-      name: '박세대',
-      email: 'user2@email.com',
-      role: Role.USER,
-      apartmentId: apartment.id,
-      apartmentUnitId: unit101_102.id,
-      joinStatus: JoinStatus.APPROVED,
-    },
-  });
-    const user3 = await prisma.user.create({
-    data: {
-      username: 'user3',
-      password: defaultPassword,
-      contact: '010-1234-5673',
-      name: '최세대',
-      email: 'user3@email.com',
-      role: Role.USER,
-      apartmentId: apartment.id,
-      apartmentUnitId: unit102_201.id,
-      joinStatus: JoinStatus.APPROVED,
+      title: '정기 소독 및 저수조 청소 안내', content: '6월 정기 소독 및 저수조 청소가 실시됩니다.',
+      category: NoticeCategory.MAINTENANCE, authorId: admin.id, apartmentboardId: apartmentBoard.id,
+      isImportant: false, isSchedule: true,
+      startDate: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2, 9, 0, 0),
+      endDate: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2, 18, 0, 0),
     },
   });
 
-  // --- Create Residents ---
-  console.log('🏡 Creating Residents...');
-  await prisma.resident.createMany({
-    data: [
-      {
-        dong: '101', ho: '101', name: '이주민', contact: '010-1234-5671',
-        isHouseholder: HouseHolderStatus.HOUSEHOLDER, userId: user1.id, apartmentId: apartment.id,
-        residenceStatus: ResidenceStatus.RESIDENCE,
-      },
-      {
-        dong: '101', ho: '102', name: '박세대', contact: '010-1234-5672',
-        isHouseholder: HouseHolderStatus.HOUSEHOLDER, userId: user2.id, apartmentId: apartment.id,
-        residenceStatus: ResidenceStatus.RESIDENCE,
-      },
-      {
-        dong: '102', ho: '201', name: '최세대', contact: '010-1234-5673',
-        isHouseholder: HouseHolderStatus.HOUSEHOLDER, userId: user3.id, apartmentId: apartment.id,
-        residenceStatus: ResidenceStatus.RESIDENCE,
-      },
-    ],
-  });
-  
-  // --- Create Notices ---
-  console.log('📢 Creating Notices...');
-  const notice1 = await prisma.notice.create({
+  await prisma.event.create({
     data: {
-        title: '정기 소독 안내 (6월)',
-        content: '아파트 전체 정기 소독이 6월 25일에 실시될 예정입니다. 각 세대에서는 협조 부탁드립니다.',
-        category: NoticeCategory.MAINTENANCE,
-        authorId: admin.id,
-        apartmentboardId: apartmentBoard.id,
-        isImportant: true,
-        isSchedule: true,
-        startDate: new Date('2026-06-25T09:00:00Z'),
-        endDate: new Date('2026-06-25T17:00:00Z'),
-    },
+      title: noticeSchedule.title, type: BoardType.NOTICE, category: NotificationType.NOTICE_REG,
+      startDate: noticeSchedule.startDate!, endDate: noticeSchedule.endDate!,
+      apartmentId: apartment.id, noticeId: noticeSchedule.id,
+    }
   });
 
-  const notice2 = await prisma.notice.create({
-    data: {
-        title: '커뮤니티 센터 이용 시간 변경 안내',
-        content: '7월 1일부터 커뮤니티 센터(헬스장, 독서실) 이용 시간이 06:00 ~ 23:00로 변경됩니다.',
-        category: NoticeCategory.COMMUNITY,
-        authorId: admin.id,
-        apartmentboardId: apartmentBoard.id,
-    },
-  });
-
-
-  // --- Create Complaints ---
+  // --- 6. COMPLAINTS (상태별 민원 및 댓글) ---
   console.log('🗣️ Creating Complaints...');
-  const complaint1 = await prisma.complaint.create({
-      data: {
-          title: '101동 앞 가로등이 깜빡거립니다.',
-          content: '밤에 다닐 때 불편합니다. 빠른 수리 부탁드립니다.',
-          authorId: user1.id,
-          apartmentboardId: apartmentBoard.id,
-          isPublic: true,
-          status: ComplaintStatus.PENDING,
-      }
+
+  // 6-1. 접수 대기 민원
+  await prisma.complaint.create({
+    data: { title: '101동 엘리베이터 소음', content: '엘리베이터 움직일 때마다 끼익 소리가 심합니다.', authorId: users[0].id, apartmentboardId: apartmentBoard.id, status: ComplaintStatus.PENDING, isPublic: true },
   });
 
-  // --- Create Votes ---
-  console.log('🗳️ Creating Votes...');
-  const vote1 = await prisma.vote.create({
-      data: {
-          title: '놀이터 바닥 교체 공사 찬반 투표',
-          content: '아이들의 안전을 위해 노후화된 놀이터 바닥을 우레탄으로 교체하는 공사에 대한 주민 여러분의 의견을 묻습니다.',
-          targetScope: 0, // 0: 전체, 1: 세대주
-          startTime: new Date('2026-07-01T00:00:00Z'),
-          endTime: new Date('2026-07-15T23:59:59Z'),
-          status: VoteStatus.IN_PROGRESS,
-          authorId: admin.id,
-          apartmentboardId: apartmentBoard.id,
-      },
+  // 6-2. 처리 중 민원 + 관리자 댓글
+  const complaintProg = await prisma.complaint.create({
+    data: { title: '지하주차장 누수', content: '지하 1층 A구역 천장에서 물이 떨어집니다.', authorId: users[2].id, apartmentboardId: apartmentBoard.id, status: ComplaintStatus.IN_PROGRESS, isPublic: true },
   });
-
-  const voteOption1_1 = await prisma.voteOption.create({
-      data: { voteId: vote1.id, content: '찬성' },
-  });
-  const voteOption1_2 = await prisma.voteOption.create({
-      data: { voteId: vote1.id, content: '반대' },
-  });
-
-  // --- Create Vote Records ---
-  console.log('✍️ Creating Vote Records...');
-  await prisma.voteRecord.create({
-      data: { userId: user1.id, voteId: vote1.id, voteOptionId: voteOption1_1.id },
-  });
-    await prisma.voteRecord.create({
-      data: { userId: user2.id, voteId: vote1.id, voteOptionId: voteOption1_1.id },
-  });
-  await prisma.voteRecord.create({
-      data: { userId: user3.id, voteId: vote1.id, voteOptionId: voteOption1_2.id },
-  });
-
-  await prisma.voteOption.update({
-    where: { id: voteOption1_1.id },
-    data: { voteCount: { increment: 2 } },
-  });
-
-  await prisma.voteOption.update({
-    where: { id: voteOption1_2.id },
-    data: { voteCount: { increment: 1 } },
-  });
-
-  // --- Create Comments ---
-  console.log('💬 Creating Comments...');
   await prisma.comment.create({
-      data: {
-          content: '항상 수고 많으십니다. 확인 부탁드려요!',
-          authorId: user1.id,
-          complaintId: complaint1.id,
-      }
-  });
-    await prisma.comment.create({
-      data: {
-          content: '안전이 최우선이죠. 찬성합니다.',
-          authorId: user2.id,
-          voteId: vote1.id,
-      }
+    data: { content: '현장 확인 완료하였으며, 보수 업체 배정 중입니다.', authorId: admin.id, complaintId: complaintProg.id }
   });
 
-  // --- Create Notifications ---
+  // 6-3. 처리 완료 민원
+  const complaintRes = await prisma.complaint.create({
+    data: { title: '가로등 전구 교체 요망', content: '놀이터 옆 가로등이 나갔습니다.', authorId: users[1].id, apartmentboardId: apartmentBoard.id, status: ComplaintStatus.RESOLVED, isPublic: true },
+  });
+  await prisma.comment.create({
+    data: { content: '전구 교체 완료했습니다. 감사합니다.', authorId: admin.id, complaintId: complaintRes.id }
+  });
+
+  // 6-4. 비공개 반려 민원
+  await prisma.complaint.create({
+    data: { title: '층간소음 해결해주세요', content: '윗집 발소리가 너무 큽니다.', authorId: users[0].id, apartmentboardId: apartmentBoard.id, status: ComplaintStatus.REJECTED, isPublic: false },
+  });
+
+
+  // --- 7. VOTES (상태별 투표 및 결과) ---
+  console.log('🗳️ Creating Votes...');
+
+  // 7-1. 진행 중 투표
+  const voteInProgress = await prisma.vote.create({
+    data: {
+      title: '단지 내 헬스장 운영시간 연장 찬반 투표', content: '현재 22시까지인 운영시간을 24시까지 연장하는 것에 대한 투표입니다.', targetScope: 0,
+      startTime: new Date(now.getTime() - 1000 * 60 * 60 * 24 * 2), // 2일 전 시작
+      endTime: new Date(now.getTime() + 1000 * 60 * 60 * 24 * 5), // 5일 후 종료
+      status: VoteStatus.IN_PROGRESS, authorId: admin.id, apartmentboardId: apartmentBoard.id,
+    },
+  });
+  const optIn1 = await prisma.voteOption.create({ data: { voteId: voteInProgress.id, content: '찬성', voteCount: 2 } });
+  const optIn2 = await prisma.voteOption.create({ data: { voteId: voteInProgress.id, content: '반대', voteCount: 0 } });
+
+  await prisma.voteRecord.create({ data: { userId: users[0].id, voteId: voteInProgress.id, voteOptionId: optIn1.id } });
+  await prisma.voteRecord.create({ data: { userId: users[1].id, voteId: voteInProgress.id, voteOptionId: optIn1.id } });
+
+  // 7-2. 마감된 투표 (세대주만)
+  const voteClosed = await prisma.vote.create({
+    data: {
+      title: '제3기 입주자대표회의 회장 선거', content: '회장 후보 투표입니다. (세대주 전용)', targetScope: 1,
+      startTime: new Date(now.getTime() - 1000 * 60 * 60 * 24 * 10),
+      endTime: new Date(now.getTime() - 1000 * 60 * 60 * 24 * 3),
+      status: VoteStatus.CLOSED, authorId: admin.id, apartmentboardId: apartmentBoard.id,
+    },
+  });
+  const optCls1 = await prisma.voteOption.create({ data: { voteId: voteClosed.id, content: '기호 1번 이주민', voteCount: 1 } });
+  const optCls2 = await prisma.voteOption.create({ data: { voteId: voteClosed.id, content: '기호 2번 박대표', voteCount: 1 } });
+  await prisma.voteRecord.create({ data: { userId: users[0].id, voteId: voteClosed.id, voteOptionId: optCls1.id } });
+  await prisma.voteRecord.create({ data: { userId: users[2].id, voteId: voteClosed.id, voteOptionId: optCls2.id } });
+
+  // 7-3. 예정된 투표 (이벤트 등록)
+  const votePending = await prisma.vote.create({
+    data: {
+      title: '재활용 쓰레기 수거일 변경 투표', content: '수거일을 화요일에서 목요일로 변경하는 안건입니다.', targetScope: 0,
+      startTime: new Date(now.getTime() + 1000 * 60 * 60 * 24 * 7),
+      endTime: new Date(now.getTime() + 1000 * 60 * 60 * 24 * 14),
+      status: VoteStatus.PENDING, authorId: admin.id, apartmentboardId: apartmentBoard.id,
+    },
+  });
+  await prisma.voteOption.createMany({
+    data: [{ voteId: votePending.id, content: '찬성' }, { voteId: votePending.id, content: '반대' }]
+  });
+  await prisma.event.create({
+    data: {
+      title: '[투표예정] ' + votePending.title, type: BoardType.VOTE, category: NotificationType.VOTE_REG,
+      startDate: votePending.startTime, endDate: votePending.endTime,
+      apartmentId: apartment.id, voteId: votePending.id,
+    }
+  });
+
+
+  // --- 8. NOTIFICATIONS ---
   console.log('🔔 Creating Notifications...');
-    await prisma.notification.create({
-        data: {
-            content: `새로운 민원 [${complaint1.title}]이 등록되었습니다.`,
-            notificationType: NotificationType.COMPLAINT_REQ,
-            userId: admin.id,
-            complaintId: complaint1.id
-        }
-    });
-    await prisma.notification.create({
-        data: {
-            content: `새로운 공지 [${notice2.title}]가 등록되었습니다.`,
-            notificationType: NotificationType.NOTICE_REG,
-            userId: user1.id,
-            noticeId: notice2.id
-        }
-    });
+  await prisma.notification.createMany({
+    data: [
+      { userId: admin.id, content: '새로운 가입 요청이 있습니다.', notificationType: NotificationType.SIGNUP_REQ },
+      { userId: admin.id, content: '신규 민원이 접수되었습니다.', notificationType: NotificationType.COMPLAINT_REQ, complaintId: complaintProg.id },
+      { userId: users[2].id, content: '접수하신 민원이 [처리 중] 상태로 변경되었습니다.', notificationType: NotificationType.COMPLAINT_IN_PROGRESS, complaintId: complaintProg.id },
+      { userId: users[1].id, content: '접수하신 민원이 [처리 완료] 되었습니다.', notificationType: NotificationType.COMPLAINT_RESOLVED, complaintId: complaintRes.id, isChecked: true },
+      { userId: users[0].id, content: '새로운 공지사항이 등록되었습니다.', notificationType: NotificationType.NOTICE_REG, noticeId: noticeSchedule.id },
+      { userId: users[0].id, content: '참여하신 투표가 마감되었습니다.', notificationType: NotificationType.VOTE_CLOSED, voteId: voteClosed.id },
+    ]
+  });
 
-
-  console.log('✅ Seeding finished.');
+  console.log('✅ Seeding finished successfully.');
 }
 
 main()
@@ -328,4 +308,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
-

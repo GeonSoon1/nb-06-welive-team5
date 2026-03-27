@@ -1,8 +1,17 @@
 import * as noticeService from '../src/notices/notice.service';
 import * as noticeRepository from '../src/notices/notice.repository';
 import { CustomError } from '../src/libs/errors/errorHandler';
+import { Role } from '@prisma/client';
+import { prismaClient } from '../src/libs/constants';
 
 jest.mock('../src/notices/notice.repository');
+jest.mock('../src/libs/constants', () => ({
+    prismaClient: {
+        notice: {
+            findFirst: jest.fn(),
+        },
+    },
+}));
 
 describe('Notice Service', () => {
     beforeEach(() => {
@@ -28,9 +37,10 @@ describe('Notice Service', () => {
             };
             (noticeRepository.findNoticeById as jest.Mock).mockResolvedValue(mockNotice);
             (noticeRepository.incrementViewCount as jest.Mock).mockResolvedValue(undefined);
+            (prismaClient.notice.findFirst as jest.Mock).mockResolvedValue(mockNotice);
 
             // When
-            const result = await noticeService.getNoticeDetail('notice-1');
+            const result = await noticeService.getNoticeDetail('notice-1', 'testapartmendid', Role.USER);
 
             // Then
             expect(noticeRepository.findNoticeById).toHaveBeenCalledWith('notice-1');
@@ -42,7 +52,9 @@ describe('Notice Service', () => {
         it('공지사항이 없으면 CustomError(404)를 발생시켜야 한다', async () => {
             (noticeRepository.findNoticeById as jest.Mock).mockResolvedValue(null);
 
-            await expect(noticeService.getNoticeDetail('invalid')).rejects.toThrow(CustomError);
+            await expect(noticeService.getNoticeDetail('invalid', 'testapartmendid', Role.USER)).rejects.toThrow(
+                CustomError
+            );
         });
     });
 });
