@@ -21,7 +21,9 @@ const getValidComplaintId = (req: ExpressRequest): string => {
 
 export async function createComplaint(req: ExpressRequest, res: ExpressResponse) {
   const { id: authorId, apartmentId } = req.user!;
-  const data = s.create(req.body, CreateComplaintStruct);
+  const { boardId, userId, ...bodyWithoutExtras } = req.body;
+
+  const data = s.create(bodyWithoutExtras, CreateComplaintStruct);
 
   await complaintService.createComplaint(authorId, apartmentId!, data);
 
@@ -59,7 +61,9 @@ export async function getComplaintDetail(req: ExpressRequest, res: ExpressRespon
 export async function updateUserComplaint(req: ExpressRequest, res: ExpressResponse) {
   const { id: userId, apartmentId } = req.user!;
   const complaintId = getValidComplaintId(req);
-  const data = s.create(req.body, UpdateUserComplaintStruct);
+  const { boardId, userId: extraUserId, ...bodyWithoutExtras } = req.body;
+
+  const data = s.create(bodyWithoutExtras, UpdateUserComplaintStruct);
 
   const result = await complaintService.updateUserComplaint(
     complaintId,
@@ -86,9 +90,10 @@ export async function deleteUserComplaint(req: ExpressRequest, res: ExpressRespo
 export async function updateComplaintStatus(req: ExpressRequest, res: ExpressResponse) {
   const { apartmentId } = req.user!;
   const complaintId = getValidComplaintId(req);
-  const data = s.create(req.body, UpdateComplaintStatusStruct);
 
-  // 2. 서비스 호출 시 apartmentId 추가 전달
+  const { boardId, userId, ...bodyWithoutExtras } = req.body;
+  const data = s.create(bodyWithoutExtras, UpdateComplaintStatusStruct);
+
   const result = await complaintService.updateComplaintStatus(complaintId, apartmentId!, data);
 
   return res.status(200).json(result);
