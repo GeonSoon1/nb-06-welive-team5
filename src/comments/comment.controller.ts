@@ -14,9 +14,9 @@ const getValidCommentId = (req: ExpressRequest): string => {
 
 export async function createComment(req: ExpressRequest, res: ExpressResponse) {
   const { id: authorId, apartmentId } = req.user!;
+  const { userId, ...bodyWithoutUserId } = req.body;
 
-  const data = s.create(req.body, CreateCommentStruct);
-
+  const data = s.create(bodyWithoutUserId, CreateCommentStruct);
   const result = await commentService.createComment(authorId, apartmentId!, data);
 
   return res.status(201).json(result);
@@ -26,7 +26,9 @@ export async function updateComment(req: ExpressRequest, res: ExpressResponse) {
   const { id: authorId, apartmentId } = req.user!;
   const commentId = getValidCommentId(req);
 
-  const data = s.create(req.body, UpdateCommentStruct);
+  const { userId, ...bodyWithoutUserId } = req.body;
+  const data = s.create(bodyWithoutUserId, UpdateCommentStruct);
+
   const result = await commentService.updateComment(commentId, authorId, apartmentId!, data);
 
   return res.status(200).json(result);
