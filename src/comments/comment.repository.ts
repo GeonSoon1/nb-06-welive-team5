@@ -7,6 +7,8 @@ export async function validateBoardOwnership(
   boardType: BoardType,
   apartmentId: string,
 ): Promise<boolean> {
+  if (!apartmentId) return false;
+
   const whereClause = {
     id: boardId,
     apartmentboard: { apartment: { id: apartmentId } },
