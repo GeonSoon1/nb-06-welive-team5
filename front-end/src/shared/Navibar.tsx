@@ -47,9 +47,10 @@ export default function Navibar() {
   async function handleLogout() {
     try {
       const res = await axiosInstance.post('/auth/logout');
-      if (res.status === 200 || res.status === 201) {
+      if (res.status === 200 || res.status === 201 || res.status === 204) {
         clearUser();
         router.replace('/');
+        alert('로그아웃 했습니다.');
       } else {
         alert('로그아웃에 실패했습니다.');
       }

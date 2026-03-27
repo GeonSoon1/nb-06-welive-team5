@@ -10,6 +10,7 @@ import {
   VoteStatus,
   BoardType,
   NotificationType,
+  ApartmentUnit
 } from '@prisma/client';
 import { hashPassword } from '../src/libs/auth/password';
 
@@ -52,7 +53,7 @@ async function main() {
   const defaultPassword = await hashPassword('password123');
   const now = new Date();
 
-  // --- 1. SUPER_ADMIN & ADMIN ---
+  // --- 1. SUPER_ADMIN & ADMINS ---
   console.log('👤 Creating Admins...');
   await prisma.user.create({
     data: {
@@ -66,6 +67,7 @@ async function main() {
     },
   });
 
+  // 1번 아파트 관리자
   const admin = await prisma.user.create({
     data: {
       username: 'adminuser',
@@ -74,12 +76,40 @@ async function main() {
       name: '김관리',
       email: 'admin@welive.com',
       role: Role.ADMIN,
-      joinStatus: JoinStatus.PENDING,
+      joinStatus: JoinStatus.APPROVED,
     },
   });
 
-  // --- 2. APARTMENT & BOARD ---
-  console.log('🏢 Creating Apartment and Board...');
+  // 2번 아파트 관리자
+  const admin2 = await prisma.user.create({
+    data: {
+      username: 'adminuser2',
+      password: defaultPassword,
+      contact: '010-2222-2222',
+      name: '이관리',
+      email: 'admin2@welive.com',
+      role: Role.ADMIN,
+      joinStatus: JoinStatus.REJECTED,
+    },
+  });
+
+  // 3번 아파트 관리자
+  const admin3 = await prisma.user.create({
+    data: {
+      username: 'adminuser3',
+      password: defaultPassword,
+      contact: '010-3333-3333',
+      name: '박관리',
+      email: 'admin3@welive.com',
+      role: Role.ADMIN,
+      joinStatus: JoinStatus.NEED_UPDATE,
+    },
+  });
+
+  // --- 2. APARTMENTS & BOARDS ---
+  console.log('🏢 Creating Apartments and Boards...');
+
+  // 1번 아파트: 웰라이브 아파트
   const apartmentBoard = await prisma.apartmentBoard.create({ data: {} });
   const apartment = await prisma.apartment.create({
     data: {
@@ -92,70 +122,115 @@ async function main() {
       adminId: admin.id,
     },
   });
-
   await prisma.user.update({
     where: { id: admin.id },
     data: { apartmentId: apartment.id, joinStatus: JoinStatus.APPROVED },
   });
 
-  // --- 3. STRUCTURE & UNITS ---
-  console.log('🏗️ Creating Structure and Units...');
-  await prisma.apartmentStructureGroup.create({
+  // 2번 아파트: 센트럴 푸르지오
+  const apartmentBoard2 = await prisma.apartmentBoard.create({ data: {} });
+  const apartment2 = await prisma.apartment.create({
     data: {
-      apartmentId: apartment.id,
-      dongList: '101동,102동',
-      startFloor: 1,
-      maxFloor: 5,
-      unitsPerFloor: 2,
+      name: '센트럴 푸르지오',
+      address: '경기도 성남시 분당구 판교역로 100',
+      officeNumber: '031-111-2222',
+      description: '자연과 함께하는 센트럴 푸르지오',
+      apartmentStatus: ApartmentStatus.APPROVED,
+      apartmentboardId: apartmentBoard2.id,
+      adminId: admin2.id,
     },
   });
+  await prisma.user.update({
+    where: { id: admin2.id },
+    data: { apartmentId: apartment2.id, joinStatus: JoinStatus.APPROVED },
+  });
 
-  const units = [];
-  for (const dong of ['101', '102']) {
-    for (let floor = 1; floor <= 3; floor++) {
-      for (let ho = 1; ho <= 2; ho++) {
-        const unit = await prisma.apartmentUnit.create({
-          data: {
-            apartmentId: apartment.id,
-            dong,
-            floor,
-            ho: `${floor}0${ho}`,
-          },
-        });
-        units.push(unit);
+  // 3번 아파트: 더샵 스타시티
+  const apartmentBoard3 = await prisma.apartmentBoard.create({ data: {} });
+  const apartment3 = await prisma.apartment.create({
+    data: {
+      name: '더샵 스타시티',
+      address: '부산광역시 해운대구 센텀중앙로 78',
+      officeNumber: '051-333-4444',
+      description: '최고급 주거환경 더샵 스타시티',
+      apartmentStatus: ApartmentStatus.APPROVED,
+      apartmentboardId: apartmentBoard3.id,
+      adminId: admin3.id,
+    },
+  });
+  await prisma.user.update({
+    where: { id: admin3.id },
+    data: { apartmentId: apartment3.id, joinStatus: JoinStatus.APPROVED },
+  });
+
+  // --- 3. STRUCTURE & UNITS ---
+  console.log('🏗️ Creating Structure and Units for all apartments...');
+
+  const targetApartments = [apartment, apartment2, apartment3];
+  const units: ApartmentUnit[] = []; // 1번 아파트 유닛 배열 (유저 생성 로직 호환용)
+
+  for (const apt of targetApartments) {
+    await prisma.apartmentStructureGroup.create({
+      data: {
+        apartmentId: apt.id,
+        dongList: '101동,102동',
+        startFloor: 1,
+        maxFloor: 5,
+        unitsPerFloor: 2,
+      },
+    });
+
+    for (const dong of ['101', '102']) {
+      for (let floor = 1; floor <= 3; floor++) {
+        for (let ho = 1; ho <= 2; ho++) {
+          const unit = await prisma.apartmentUnit.create({
+            data: {
+              apartmentId: apt.id,
+              dong,
+              floor,
+              ho: `${floor}0${ho}`,
+            },
+          });
+
+          // 기존 유저 더미데이터가 '웰라이브 아파트(apartment)'를 기준으로 하므로
+          // 1번 아파트의 유닛들만 기존 units 배열에 담아줍니다.
+          if (apt.id === apartment.id) {
+            units.push(unit);
+          }
+        }
       }
     }
   }
 
-  // --- 4. USERS & RESIDENTS (다양한 가입 상태 테스트) ---
+  // --- 4. USERS & RESIDENTS (웰라이브 아파트 기준) ---
+  // --- 4. USERS & RESIDENTS (웰라이브 아파트 기준) ---
   console.log('👥 Creating Users and Residents...');
   const users = await Promise.all([
     // 1. 정상 승인된 세대주
     prisma.user.create({
-      data: { username: 'user1', password: defaultPassword, contact: '010-2222-1111', name: '이세대', email: 'u1@email.com', role: Role.USER, apartmentId: apartment.id, apartmentUnitId: units[0].id, joinStatus: JoinStatus.APPROVED },
+      data: { username: 'user1', password: defaultPassword, contact: '010-4444-1111', name: '이세대', email: 'u1@email.com', role: Role.USER, apartmentId: apartment.id, apartmentUnitId: units[0]!.id, joinStatus: JoinStatus.APPROVED },
     }),
-    // 2. 정상 승인된 세대원
+    // 2. 정상 승인된 세대원 (번호 중복 해결)
     prisma.user.create({
-      data: { username: 'user2', password: defaultPassword, contact: '010-2222-2222', name: '김가족', email: 'u2@email.com', role: Role.USER, apartmentId: apartment.id, apartmentUnitId: units[0].id, joinStatus: JoinStatus.APPROVED },
+      data: { username: 'user2', password: defaultPassword, contact: '010-4444-2222', name: '김가족', email: 'u2@email.com', role: Role.USER, apartmentId: apartment.id, apartmentUnitId: units[0]!.id, joinStatus: JoinStatus.APPROVED },
     }),
     // 3. 정상 승인된 다른 동 세대주
     prisma.user.create({
-      data: { username: 'user3', password: defaultPassword, contact: '010-2222-3333', name: '박이웃', email: 'u3@email.com', role: Role.USER, apartmentId: apartment.id, apartmentUnitId: units[2].id, joinStatus: JoinStatus.APPROVED },
+      data: { username: 'user3', password: defaultPassword, contact: '010-4444-3333', name: '박이웃', email: 'u3@email.com', role: Role.USER, apartmentId: apartment.id, apartmentUnitId: units[2]!.id, joinStatus: JoinStatus.APPROVED },
     }),
     // 4. 가입 대기 중인 유저
     prisma.user.create({
-      data: { username: 'pendingUser', password: defaultPassword, contact: '010-2222-4444', name: '최대기', email: 'p@email.com', role: Role.USER, apartmentId: apartment.id, apartmentUnitId: units[3].id, joinStatus: JoinStatus.PENDING },
+      data: { username: 'pendingUser', password: defaultPassword, contact: '010-4444-4444', name: '최대기', email: 'p@email.com', role: Role.USER, apartmentId: apartment.id, apartmentUnitId: units[3]!.id, joinStatus: JoinStatus.PENDING },
     }),
     // 5. 가입 반려된 유저
     prisma.user.create({
-      data: { username: 'rejectedUser', password: defaultPassword, contact: '010-2222-5555', name: '정거절', email: 'r@email.com', role: Role.USER, apartmentId: apartment.id, apartmentUnitId: units[4].id, joinStatus: JoinStatus.REJECTED },
+      data: { username: 'rejectedUser', password: defaultPassword, contact: '010-4444-5555', name: '정거절', email: 'r@email.com', role: Role.USER, apartmentId: apartment.id, apartmentUnitId: units[4]!.id, joinStatus: JoinStatus.REJECTED },
     }),
     // 6. 정보 수정 필요 유저
     prisma.user.create({
-      data: { username: 'updateUser', password: defaultPassword, contact: '010-2222-6666', name: '오수정', email: 'u@email.com', role: Role.USER, apartmentId: apartment.id, apartmentUnitId: units[5].id, joinStatus: JoinStatus.NEED_UPDATE },
+      data: { username: 'updateUser', password: defaultPassword, contact: '010-4444-6666', name: '오수정', email: 'u@email.com', role: Role.USER, apartmentId: apartment.id, apartmentUnitId: units[5]!.id, joinStatus: JoinStatus.NEED_UPDATE },
     }),
   ]);
-
   // Residents 매핑
   const residentData = users.map((u, idx) => ({
     userId: u.id,
@@ -229,7 +304,6 @@ async function main() {
     data: { title: '층간소음 해결해주세요', content: '윗집 발소리가 너무 큽니다.', authorId: users[0].id, apartmentboardId: apartmentBoard.id, status: ComplaintStatus.REJECTED, isPublic: false },
   });
 
-
   // --- 7. VOTES (상태별 투표 및 결과) ---
   console.log('🗳️ Creating Votes...');
 
@@ -237,13 +311,13 @@ async function main() {
   const voteInProgress = await prisma.vote.create({
     data: {
       title: '단지 내 헬스장 운영시간 연장 찬반 투표', content: '현재 22시까지인 운영시간을 24시까지 연장하는 것에 대한 투표입니다.', targetScope: 0,
-      startTime: new Date(now.getTime() - 1000 * 60 * 60 * 24 * 2), // 2일 전 시작
-      endTime: new Date(now.getTime() + 1000 * 60 * 60 * 24 * 5), // 5일 후 종료
+      startDate: new Date(now.getTime() - 1000 * 60 * 60 * 24 * 2),
+      endDate: new Date(now.getTime() + 1000 * 60 * 60 * 24 * 5),
       status: VoteStatus.IN_PROGRESS, authorId: admin.id, apartmentboardId: apartmentBoard.id,
     },
   });
   const optIn1 = await prisma.voteOption.create({ data: { voteId: voteInProgress.id, content: '찬성', voteCount: 2 } });
-  const optIn2 = await prisma.voteOption.create({ data: { voteId: voteInProgress.id, content: '반대', voteCount: 0 } });
+  await prisma.voteOption.create({ data: { voteId: voteInProgress.id, content: '반대', voteCount: 0 } });
 
   await prisma.voteRecord.create({ data: { userId: users[0].id, voteId: voteInProgress.id, voteOptionId: optIn1.id } });
   await prisma.voteRecord.create({ data: { userId: users[1].id, voteId: voteInProgress.id, voteOptionId: optIn1.id } });
@@ -252,8 +326,8 @@ async function main() {
   const voteClosed = await prisma.vote.create({
     data: {
       title: '제3기 입주자대표회의 회장 선거', content: '회장 후보 투표입니다. (세대주 전용)', targetScope: 1,
-      startTime: new Date(now.getTime() - 1000 * 60 * 60 * 24 * 10),
-      endTime: new Date(now.getTime() - 1000 * 60 * 60 * 24 * 3),
+      startDate: new Date(now.getTime() - 1000 * 60 * 60 * 24 * 10),
+      endDate: new Date(now.getTime() - 1000 * 60 * 60 * 24 * 3),
       status: VoteStatus.CLOSED, authorId: admin.id, apartmentboardId: apartmentBoard.id,
     },
   });
@@ -266,8 +340,8 @@ async function main() {
   const votePending = await prisma.vote.create({
     data: {
       title: '재활용 쓰레기 수거일 변경 투표', content: '수거일을 화요일에서 목요일로 변경하는 안건입니다.', targetScope: 0,
-      startTime: new Date(now.getTime() + 1000 * 60 * 60 * 24 * 7),
-      endTime: new Date(now.getTime() + 1000 * 60 * 60 * 24 * 14),
+      startDate: new Date(now.getTime() + 1000 * 60 * 60 * 24 * 7),
+      endDate: new Date(now.getTime() + 1000 * 60 * 60 * 24 * 14),
       status: VoteStatus.PENDING, authorId: admin.id, apartmentboardId: apartmentBoard.id,
     },
   });
@@ -277,7 +351,7 @@ async function main() {
   await prisma.event.create({
     data: {
       title: '[투표예정] ' + votePending.title, type: BoardType.VOTE, category: NotificationType.VOTE_REG,
-      startDate: votePending.startTime, endDate: votePending.endTime,
+      startDate: votePending.startDate, endDate: votePending.endDate,
       apartmentId: apartment.id, voteId: votePending.id,
     }
   });

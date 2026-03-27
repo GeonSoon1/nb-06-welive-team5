@@ -6,10 +6,12 @@ import * as pollService from './poll.services';
 
 export const CreatePolls: ExpressHandler = async (req: ExpressRequest, res: ExpressResponse, next: ExpressNextFunction) => {
     try {
-        assert(req.body, CreatePollStruct);
+        const validatedBody = superstruct.create(req.body, CreatePollStruct);
 
         const { id: userId, apartmentId } = req.user!;
-        const newPoll = await pollService.createPoll(userId, apartmentId, req.body);
+
+        const newPoll = await pollService.createPoll(userId, apartmentId, validatedBody);
+
         res.status(201).json({ success: true, message: '투표가 성공적으로 생성되었습니다.', data: newPoll });
     } catch (error) {
         next(error);
@@ -52,15 +54,20 @@ export const UpdatePoll: ExpressHandler = async (req: ExpressRequest, res: Expre
         const pollId = req.params.pollId;
         if (typeof pollId !== 'string' || !isUuid.v4(pollId)) throw new CustomError(400, "잘못된 요청입니다.(pollId)");
 
-        assert(req.body, UpdatePollStruct);
+
+        const validatedBody = superstruct.create(req.body, UpdatePollStruct);
+
+
 
         const { id: userId, apartmentId, role } = req.user!;
-        const updatedPoll = await pollService.updatePoll(pollId, userId, role, apartmentId, req.body);
+        const updatedPoll = await pollService.updatePoll(pollId, userId, role, apartmentId, validatedBody);
         res.status(200).json({ success: true, message: '투표가 수정되었습니다.', data: updatedPoll });
     } catch (error) {
         next(error);
     }
 };
+
+
 
 export const DeletePoll: ExpressHandler = async (req: ExpressRequest, res: ExpressResponse, next: ExpressNextFunction) => {
     try {

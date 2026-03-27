@@ -11,7 +11,7 @@ export const addVote = async (optionId: string, userId: string) => {
     const pollId = poll.id;
     const apartmentboardId = poll.apartmentboardId;
 
-    if (poll.endTime < new Date()) {
+    if (poll.endDate < new Date()) {
         throw new CustomError(400, '투표 기간이 종료되었습니다.');
     }
 

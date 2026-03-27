@@ -94,8 +94,8 @@ describe('Resident API 통합 테스트 (Supertest)', () => {
       expect(resident.id).toBe('res-1');
       expect(resident.building).toBe('101');
       expect(resident.unitNumber).toBe('101');
-      expect(resident.userId).toEqual({ id: 'user-123' });
-      expect(resident.email).toEqual({ email: 'test@test.com' });
+      expect(resident.userId).toEqual('user-123');
+      expect(resident.email).toEqual('test@test.com');
       expect(resident.isRegistered).toBe(true);
       expect(resident.approvalStatus).toBe('APPROVED');
     });
@@ -156,8 +156,8 @@ describe('Resident API 통합 테스트 (Supertest)', () => {
       expect(response.body.id).toBe('res-new-1');
       expect(response.body.building).toBe('101');
       expect(response.body.unitNumber).toBe('101');
-      expect(response.body.userId).toEqual({ id: 'user-999' });
-      expect(response.body.email).toEqual({ email: 'hong@test.com' });
+      expect(response.body.userId).toEqual('user-999');
+      expect(response.body.email).toEqual('hong@test.com');
       expect(response.body.isRegistered).toBe(true);
       expect(response.body.approvalStatus).toBe('PENDING');
     });
@@ -211,9 +211,9 @@ describe('Resident API 통합 테스트 (Supertest)', () => {
       const response = await request(app).post('/api/residents/from-users/user-123');
 
       expect(response.status).toBe(201);
-      expect(response.body.message).toBe('유저 정보로 입주민 등록이 완료되었습니다.'); //
+      expect(response.body.message).toBe('유저 정보로 입주민 등록이 완료되었습니다.');
       expect(response.body.id).toBe('res-from-user-1');
-      expect(response.body.userId).toEqual({ id: 'user-123' });
+      expect(response.body.userId).toEqual('user-123');
       expect(response.body.building).toBe('105');
       expect(response.body.unitNumber).toBe('202');
       expect(response.body.isHouseholder).toBe('MEMBER');
@@ -403,8 +403,8 @@ describe('Resident API 통합 테스트 (Supertest)', () => {
       expect(response.body.id).toBe('res-1');
       expect(response.body.building).toBe('101');
       expect(response.body.unitNumber).toBe('101');
-      expect(response.body.userId).toEqual({ id: 'user-123' });
-      expect(response.body.email).toEqual({ email: 'test@test.com' });
+      expect(response.body.userId).toEqual('user-123');
+      expect(response.body.email).toEqual('test@test.com');
       expect(response.body.isRegistered).toBe(true);
     });
 
@@ -466,11 +466,10 @@ describe('Resident API 통합 테스트 (Supertest)', () => {
       expect(response.body.name).toBe('홍길동(수정)');
       expect(response.body.building).toBe('101');
       expect(response.body.unitNumber).toBe('102');
-      expect(response.body.userId).toEqual({ id: 'user-123' });
+      expect(response.body.userId).toEqual('user-123');
     });
 
     it('잘못된 형식의 데이터를 보내면 400 상태코드를 반환해야 한다.', async () => {
-      // [준비] 로그인 통과
       (authenticate as jest.Mock).mockImplementationOnce((req, res, next) => {
         req.user = {
           id: 'admin-1',

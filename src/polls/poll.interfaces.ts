@@ -6,8 +6,8 @@ export interface PollType {
     title: string;
     content: string;
     targetScope: number;
-    startTime: Date;
-    endTime: Date;
+    startDate: Date;
+    endDate: Date;
     status: VoteStatus;
 
     authorId: string;

@@ -2,7 +2,7 @@ import express from 'express';
 import * as authController from './auth.controller';
 import { catchAsync } from '../libs/catchAsync';
 import { authorize } from '../middlewares/authorize';
-import { authenticate } from '../middlewares/authenticate'
+import { authenticate } from '../middlewares/authenticate';
 import { Role } from '@prisma/client';
 import * as userController from '../users/user.controller';
 import * as residentController from '../residents/resident.controller';
@@ -24,12 +24,12 @@ authRouter.patch(
   authenticate,
   authorize(Role.SUPER_ADMIN),
   catchAsync(userController.updateAllAdminStatus),
-)
+);
 
 // [슈퍼관리자] 관리자 가입 상태 변경 (단건)
 authRouter.patch(
-  '/admins/:adminId/status', 
-  authenticate, 
+  '/admins/:adminId/status',
+  authenticate,
   authorize(Role.SUPER_ADMIN),
   catchAsync(userController.updateAdminStatus)
 );
@@ -42,7 +42,7 @@ authRouter.patch(
   authenticate,
   authorize(Role.SUPER_ADMIN),
   catchAsync(userController.updateAdminInfo)
-)
+);
 
 /**
  * [ADMIN] 주민 가입 상태 변경 (단건)
@@ -75,7 +75,7 @@ authRouter.post(
   authenticate,
   authorize(Role.SUPER_ADMIN, Role.ADMIN),
   catchAsync(userController.cleanupRejectedUsers)
-)
+);
 
 /**
  * [Super-Admin] 관리자 정보(아파트 정보 포함) 삭제

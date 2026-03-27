@@ -7,13 +7,29 @@ import ForbiddenError from '../libs/errors/ForbiddenError';
 
 export const createNotice = async (userId: string, data: CreateNoticeDto) => {
     const { boardId, startDate, endDate, ...rest } = data;
-
+    // 2. 안전한 백엔드 단에서 userId를 이용해 해당 유저의 아파트와 게시판 정보를 조회합니다.
+    const user = await prismaClient.user.findUnique({
+        where: { id: userId },
+        select: {
+            apartment: {
+                select: {
+                    apartmentboardId: true // 진짜 필요한 아파트 게시판 ID만 쏙 뽑아옵니다.
+                }
+            }
+        }
+    });
+    // 3. 예외 처리: 유저가 소속된 아파트가 없거나 게시판이 없는 경우 방어
+    if (!user || !user.apartment || !user.apartment.apartmentboardId) {
+        throw new Error("해당 사용자의 아파트 게시판 정보를 찾을 수 없습니다.");
+        // (실제 프로젝트에서는 커스텀 에러 클래스나 상태 코드를 던지시면 됩니다)
+    }
+    const realBoardId = user.apartment.apartmentboardId;
     // Prisma.NoticeCreateInput 타입에 맞춰 데이터 변환
     const noticeData: Prisma.NoticeCreateInput = {
         ...rest,
         startDate: startDate,
         endDate: endDate,
-        apartmentboard: { connect: { id: boardId } },
+        apartmentboard: { connect: { id: realBoardId } },
         author: { connect: { id: userId } },
     };
 
@@ -21,7 +37,6 @@ export const createNotice = async (userId: string, data: CreateNoticeDto) => {
 };
 
 export const getNoticeList = async (query: GetNoticeListDto, apartmentId: string | null, role: Role) => {
-    //필터 필요 지금은 다른아파트 사람이 해당아파트 투표확인 가능 -todo
     const { page, limit, category, search } = query;
     const skip = (page - 1) * limit;
 
@@ -118,7 +133,6 @@ export const updateNotice = async (noticeId: string, userId: string, userRole: R
     const { boardId, startDate, endDate, ...rest } = data;
     const updateData: Prisma.NoticeUpdateInput = {
         ...rest,
-        ...(boardId && { apartmentboard: { connect: { id: boardId } } }),
         ...(startDate && { startDate }),
         ...(endDate && { endDate }),
     };

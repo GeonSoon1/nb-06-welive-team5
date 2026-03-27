@@ -15,12 +15,12 @@ import { UpdateStatusBodyStruct } from '../users/user.struct';
 
 const mapToResidentResponse = (r: ResidentWithUser) => ({
   id: r.id,
-  userId: r.user ? { id: r.user.id } : {},
+  userId: r.user?.id || null,
   building: r.dong,
   unitNumber: r.ho,
   contact: r.contact,
   name: r.name,
-  email: r.user ? { email: r.user.email } : {},
+  email: r.user?.email || null,
   residenceStatus: r.residenceStatus,
   isHouseholder: r.isHouseholder,
   isRegistered: !!r.userId,

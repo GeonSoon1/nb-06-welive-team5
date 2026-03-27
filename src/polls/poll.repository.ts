@@ -6,7 +6,7 @@ export const updatePollStatuses = async () => {
     // 1. 종료 시간이 지난 투표를 CLOSED(마감)로 변경
     await prismaClient.vote.updateMany({
         where: {
-            endTime: { lte: now },
+            endDate: { lte: now },
             status: { not: 'CLOSED' },
         },
         data: { status: 'CLOSED' },
@@ -15,8 +15,8 @@ export const updatePollStatuses = async () => {
     // 2. 시작 시간이 지났고 진행 전인 투표를 IN_PROGRESS(진행 중)로 변경
     await prismaClient.vote.updateMany({
         where: {
-            startTime: { lte: now },
-            endTime: { gt: now },
+            startDate: { lte: now },
+            endDate: { gt: now },
             status: 'PENDING',
         },
         data: { status: 'IN_PROGRESS' },

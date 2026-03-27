@@ -16,7 +16,7 @@ describe('PollsVote Service', () => {
                 vote: {
                     id: 'poll-1',
                     apartmentboardId: 'board-1',
-                    endTime: new Date(Date.now() + 100000), // 종료되지 않음
+                    endDate: new Date(Date.now() + 100000), // 종료되지 않음
                     status: 'IN_PROGRESS'
                 }
             };
