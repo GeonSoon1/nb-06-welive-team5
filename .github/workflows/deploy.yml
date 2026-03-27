@@ -2,9 +2,9 @@ name: CI/CD Pipeline (Blue-Green 2:2)
 
 on:
   push:
-    branches: [refactor/cicd-setup, dev]
+    branches: [refactor/cicd-setup, dev] # main으로 변경 예정
   pull_request:
-    branches: [dev]
+    branches: [dev] # main으로 변경 예정
 
 jobs:
   test:
