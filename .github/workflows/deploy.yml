@@ -2,9 +2,9 @@ name: CI/CD Pipeline (Blue-Green 2:2)
 
 on:
   push:
-    branches: [refactor/cicd-setup, dev]
+    branches: [refactor/cicd-setup, dev] # main으로 변경 예정
   pull_request:
-    branches: [dev]
+    branches: [dev] # main으로 변경 예정
 
 jobs:
   test:
@@ -56,6 +56,8 @@ jobs:
         run: |
           CURRENT_TG_ARN=$(aws elbv2 describe-listeners --listener-arns ${{ secrets.ALB_LISTENER_ARN }} --query "Listeners[0].DefaultActions[0].TargetGroupArn" --output text)
 
+          echo "CURRENT_TG_ARN=$CURRENT_TG_ARN" >> $GITHUB_ENV
+
           if [ "$CURRENT_TG_ARN" == "${{ secrets.TG_A_ARN }}" ]; then
             echo "TARGET_NAME=GREEN" >> $GITHUB_ENV
             echo TARGET_INSTANCE_IDS=${{ secrets.EC2_INSTANCE_ID_C }},${{ secrets.EC2_INSTANCE_ID_D }} >> $GITHUB_ENV
@@ -100,9 +102,5 @@ jobs:
       # 4. [Traffic Switch] 모든 타겟이 정상이면 로드밸런서 리스너를 신규 그룹으로 전환합니다.
       - name: Switch Traffic
         run: |
-          aws elbv2 modify-listener \
-            --listener-arn ${{ secrets.ALB_LISTENER_ARN }} \
-            --default-actions Type=forward,TargetGroupArn=${{ env.TARGET_TG_ARN }}
-
-      - name: Success
-        run: echo "Successfully deployed to ${{ env.TARGET_NAME }} pair at Port ${{ env.TARGET_PORT }}!"
+          aws elbv2 modify-listener --listener-arn ${{ secrets.ALB_LISTENER_ARN }} --default-actions Type=forward,TargetGroupArn=${{ env.TARGET_TG_ARN }}
+          aws elbv2 modify-listener --listener-arn ${{ secrets.ALB_LISTENER_8080_ARN }} --default-actions Type=forward,TargetGroupArn=${{ env.CURRENT_TG_ARN }}
