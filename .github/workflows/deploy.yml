@@ -79,7 +79,9 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
-          instance-ids: ${{ env.TARGET_INSTANCE_IDS }}
+          instance-ids: |
+            ${{ env.ID_1 }}
+            ${{ env.ID_2 }}
           working-directory: /home/ubuntu/nb-06-welive-team5
           command: |
             git pull origin dev
