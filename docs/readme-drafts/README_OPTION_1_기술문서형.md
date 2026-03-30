@@ -28,8 +28,6 @@
 
 <br />
 
----
-
 ## 목차
 
 - [프로젝트 소개](#프로젝트-소개)
@@ -44,8 +42,6 @@
 - [배포 환경](#배포-환경)
 - [팀원별 구현 기능](#팀원별-구현-기능)
 - [개발 컨벤션](#개발-컨벤션)
-
----
 
 ## 프로젝트 소개
 
@@ -63,8 +59,6 @@
 - **슈퍼관리자(SUPER_ADMIN)**: 아파트 등록 승인, 관리자 관리, 전체 시스템 운영
 
 <br />
-
----
 
 ## 팀원 소개
 
@@ -108,8 +102,6 @@
 
 <br />
 
----
-
 ## 기술 스택
 
 ### Backend
@@ -150,8 +142,6 @@
 | **협업** | ![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white) ![Notion](https://img.shields.io/badge/Notion-000000?style=for-the-badge&logo=notion&logoColor=white) |
 
 <br />
-
----
 
 ## 시스템 아키텍처
 
@@ -201,8 +191,6 @@
 
 <br />
 
----
-
 ## ERD
 
 <!-- TODO: ERD 이미지 추가 (ERD Cloud나 dbdiagram.io에서 export) -->
@@ -240,8 +228,6 @@ Vote ──┬── 1:N ──── VoteOption (투표 선택지)
 | `NoticeCategory` | GENERAL, ANNOUNCEMENT, MAINTENANCE, COMMUNITY, EMERGENCY, ... | 공지 분류 |
 
 <br />
-
----
 
 ## 주요 기능
 
@@ -317,8 +303,6 @@ Vote ──┬── 1:N ──── VoteOption (투표 선택지)
 | 지연 삭제 | 삭제 예약 → Cron Job으로 새벽 3시 일괄 삭제 |
 
 <br />
-
----
 
 ## API 명세
 
@@ -435,8 +419,6 @@ Vote ──┬── 1:N ──── VoteOption (투표 선택지)
 
 <br />
 
----
-
 ## 프로젝트 구조
 
 ```
@@ -501,8 +483,6 @@ nb-06-welive-team5/
 ```
 
 <br />
-
----
 
 ## Quick Start
 
@@ -589,8 +569,6 @@ npm run typecheck     # TypeScript 타입 검사
 
 <br />
 
----
-
 ## 배포 환경
 
 ### Blue-Green 무중단 배포
@@ -633,8 +611,6 @@ GitHub Push (dev)
 **배포 흐름**: 현재 BLUE 운영 중 → GREEN에 새 버전 배포 → Health Check 통과 → ALB가 GREEN으로 트래픽 전환 → 이전 BLUE는 대기
 
 <br />
-
----
 
 ## 팀원별 구현 기능
 
@@ -693,8 +669,6 @@ GitHub Push (dev)
 
 <br />
 
----
-
 ## 개발 컨벤션
 
 ### 브랜치 전략
@@ -743,8 +717,6 @@ Type:
 - `dev` → `main` merge는 팀 합의 후 진행
 
 <br />
-
----
 
 <div align="center">
 

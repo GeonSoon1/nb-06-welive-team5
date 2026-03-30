@@ -38,8 +38,6 @@ npm run dev                  # http://localhost:3000
 
 <br />
 
----
-
 ## 팀원 구성
 
 | 이름 | 역할 | GitHub | 블로그 |
@@ -49,8 +47,6 @@ npm run dev                  # http://localhost:3000
 | 팀원3 | 담당 모듈 C | [GitHub](https://github.com/팀원3) | [Blog](https://your-blog-3.com) |
 
 <br />
-
----
 
 ## 프로젝트 소개
 
@@ -64,8 +60,6 @@ npm run dev                  # http://localhost:3000
 **WeLive**는 아파트 단지의 세 역할(입주민·관리자·슈퍼관리자)이 하나의 플랫폼에서 소통하고 관리하는 멀티테넌트 커뮤니티 서비스입니다.
 
 <br />
-
----
 
 ## 기술 스택
 
@@ -87,11 +81,7 @@ npm run dev                  # http://localhost:3000
 
 <br />
 
----
-
 ## 팀원별 구현 기능
-
----
 
 <!--
   TODO: 팀원별 담당 모듈을 실제에 맞게 채워주세요.
@@ -135,8 +125,6 @@ npm run dev                  # http://localhost:3000
 
 <!-- TODO: 스크린샷 추가 -->
 
----
-
 ### 🟩 팀원2 — 담당 모듈 B
 
 **담당 모듈**: `모듈3`, `모듈4`
@@ -171,8 +159,6 @@ npm run dev                  # http://localhost:3000
 
 <!-- TODO: 스크린샷 추가 -->
 
----
-
 ### 🟧 팀원3 — 담당 모듈 C
 
 **담당 모듈**: `모듈5`, `모듈6`
@@ -206,8 +192,6 @@ npm run dev                  # http://localhost:3000
 ```
 
 <!-- TODO: 스크린샷 추가 -->
-
----
 
 ## API 엔드포인트 전체 목록
 
@@ -307,8 +291,6 @@ npm run dev                  # http://localhost:3000
 
 <br />
 
----
-
 ## 프로젝트 구조
 
 <details>
@@ -379,8 +361,6 @@ nb-06-welive-team5/
 
 <br />
 
----
-
 ## 환경변수
 
 ```env
@@ -410,8 +390,6 @@ SUPPORT_CONTACT=010-1234-5678
 
 <br />
 
----
-
 ## 테스트
 
 ```bash
@@ -437,8 +415,6 @@ npm run typecheck     # TypeScript 타입 검사
 | PollScheduler | poll-Scheduler.api.test.ts | - |
 
 <br />
-
----
 
 <div align="center">
 
