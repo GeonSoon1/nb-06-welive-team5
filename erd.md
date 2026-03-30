@@ -1,194 +1,197 @@
 ```mermaid
 erDiagram
-    %% ==========================================
-    %% Entities
-    %% ==========================================
-    Apartment {
-        String id PK
-        String name
-        String address
-        String officeNumber
-        String description
-        DateTime createdAt
-        DateTime updatedAt
-        ApartmentStatus apartmentStatus
-        String adminId FK "Unique"
-        String ApartmentboardId FK "Unique"
+    APARTMENT ||--|| APARTMENT_BOARD : "1:1 Relation"
+    APARTMENT ||--o| USER : "Managed by (ADMIN)"
+    APARTMENT ||--o{ APARTMENT_STRUCTURE_GROUP : "Defines structure"
+    APARTMENT ||--o{ APARTMENT_UNIT : "Contains units"
+    APARTMENT ||--o{ USER : "Has residents (USERS)"
+    APARTMENT ||--o{ RESIDENT : "Official list"
+    APARTMENT ||--o{ EVENT : "Schedules"
+
+    APARTMENT_BOARD ||--o{ NOTICE : "Hosts"
+    APARTMENT_BOARD ||--o{ COMPLAINT : "Hosts"
+    APARTMENT_BOARD ||--o{ VOTE : "Hosts"
+
+    USER ||--o{ NOTICE : "Authors"
+    USER ||--o{ COMPLAINT : "Authors"
+    USER ||--o{ COMMENT : "Writes"
+    USER ||--o{ VOTE : "Initiates"
+    USER ||--o{ VOTE_RECORD : "Casts vote"
+    USER ||--o{ NOTIFICATION : "Receives"
+    USER ||--o| RESIDENT : "Mapped to profile"
+    USER }o--o| APARTMENT_UNIT : "Lives in"
+
+    NOTICE ||--o{ COMMENT : "Has comments"
+    NOTICE ||--o{ NOTIFICATION : "Triggers"
+    NOTICE ||--o{ EVENT : "Linked to"
+
+    COMPLAINT ||--o{ COMMENT : "Has comments"
+    COMPLAINT ||--o{ NOTIFICATION : "Triggers"
+
+    VOTE ||--|{ VOTE_OPTION : "Has options"
+    VOTE ||--o{ VOTE_RECORD : "Logs"
+    VOTE ||--o{ COMMENT : "Has comments"
+    VOTE ||--o{ NOTIFICATION : "Triggers"
+    VOTE ||--o{ EVENT : "Linked to"
+
+    VOTE_OPTION ||--o{ VOTE_RECORD : "Selected in"
+
+    %% [Entities with Full Fields]
+
+    APARTMENT {
+        string id PK
+        string name
+        string address
+        string officeNumber
+        string description
+        datetime createdAt
+        datetime updatedAt
+        enum apartmentStatus
+        string apartmentboardId FK
+        string adminId FK
     }
 
-    ApartmentBoard {
-        String id PK
-        DateTime createdAt
-        DateTime updatedAt
+    APARTMENT_STRUCTURE_GROUP {
+        string id PK
+        string apartmentId FK
+        string dongList
+        int startFloor
+        int maxFloor
+        int unitsPerFloor
     }
 
-    User {
-        String id PK
-        String username "Unique"
-        String password
-        String contact "Unique"
-        String name
-        String email "Unique"
-        String image
-        Role role
-        JoinStatus joinStatus
-        String dong
-        String ho
-        String apartmentId FK
+    APARTMENT_UNIT {
+        string id PK
+        string apartmentId FK
+        string dong
+        int floor
+        string ho
+        boolean isActive
     }
 
-    Resident {
-        String id PK
-        String dong
-        String ho
-        String name
-        String contact
-        HouseHolderStatus isHouseholder
-        ResidenceStatus residenceStatus
-        String userId FK "Unique"
-        String apartmentId FK
+    APARTMENT_BOARD {
+        string id PK
+        datetime createdAt
+        datetime updatedAt
     }
 
-    Notice {
-        String id PK
-        NoticeCategory category
-        String title
-        String content
-        Boolean isImportant
-        Boolean isSchedule
-        DateTime startDate
-        DateTime endDate
-        Int viewCount
-        Int commentsCount
-        DateTime createdAt
-        DateTime updatedAt
-        String authorId FK
-        String apartmentboardId FK
+    USER {
+        string id PK
+        string username
+        string password
+        string contact
+        string name
+        string email
+        string image
+        enum role
+        string apartmentId FK
+        string apartmentUnitId FK
+        enum joinStatus
+        datetime createdAt
+        datetime updatedAt
     }
 
-    Complaint {
-        String id PK
-        String title
-        String content
-        Boolean isPublic
-        ComplaintStatus status
-        Int viewCount
-        Int commentsCount
-        DateTime createdAt
-        DateTime updatedAt
-        String authorId FK
-        String apartmentboardId FK
+    RESIDENT {
+        string id PK
+        string dong
+        string ho
+        string name
+        string contact
+        enum isHouseholder
+        string userId FK
+        string apartmentId FK
+        enum residenceStatus
     }
 
-    Comment {
-        String id PK
-        String content
-        DateTime createdAt
-        DateTime updatedAt
-        String authorId FK
-        String noticeId FK
-        String complaintId FK
-        String voteId FK
+    NOTICE {
+        string id PK
+        enum category
+        string title
+        string content
+        boolean isImportant
+        boolean isSchedule
+        datetime startDate
+        datetime endDate
+        int viewCount
+        int commentsCount
+        string authorId FK
+        string apartmentboardId FK
+        boolean isPinned
     }
 
-    Vote {
-        String id PK
-        String title
-        String content
-        Int targetScope
-        DateTime startTime
-        DateTime endTime
-        VoteStatus status
-        DateTime createdAt
-        DateTime updatedAt
-        String authorId FK
-        String apartmentboardId FK
+    COMPLAINT {
+        string id PK
+        string title
+        string content
+        boolean isPublic
+        enum status
+        int viewCount
+        int commentsCount
+        string authorId FK
+        string apartmentboardId FK
     }
 
-    VoteOption {
-        String id PK
-        String content
-        Int voteCount
-        String voteId FK
-        DateTime createdAt
-        DateTime updatedAt
+    VOTE {
+        string id PK
+        string title
+        string content
+        int targetScope
+        datetime startDate
+        datetime endDate
+        enum status
+        string authorId FK
+        string apartmentboardId FK
     }
 
-    VoteRecord {
-        String id PK
-        DateTime createdAt
-        String userId FK
-        String voteId FK
-        String voteOptionId FK
+    VOTE_OPTION {
+        string id PK
+        string content
+        int voteCount
+        string voteId FK
     }
 
-    Notification {
-        String id PK
-        String content
-        NotificationType notificationType
-        Boolean isChecked
-        String noticeId FK
-        String complaintId FK
-        String voteId FK
-        String userId FK
-        DateTime createdAt
-        DateTime updatedAt
+    VOTE_RECORD {
+        string id PK
+        string userId FK
+        string voteId FK
+        string voteOptionId FK
     }
 
-    Event {
-        String id PK
-        String title
-        BoardType type
-        DateTime startDate
-        DateTime endDate
-        NotificationType category
-        String apartmentId FK
-        String noticeId FK
-        String voteId FK
-        DateTime createdAt
-        DateTime updatedAt
+    COMMENT {
+        string id PK
+        string content
+        string authorId FK
+        string noticeId FK
+        string complaintId FK
+        string voteId FK
     }
 
-    %% ==========================================
-    %% Relationships
-    %% ==========================================
-    
-    %% Apartment & Hub Relations
-    Apartment ||--o| User : "admin (1:1)"
-    Apartment ||--o{ User : "users (1:N)"
-    Apartment ||--o{ Resident : "residents (1:N)"
-    Apartment ||--|| ApartmentBoard : "has_board (1:1)"
-    Apartment ||--o{ Event : "events (1:N)"
+    NOTIFICATION {
+        string id PK
+        string content
+        enum notificationType
+        boolean isChecked
+        string noticeId FK
+        string complaintId FK
+        string voteId FK
+        string userId FK
+    }
 
-    %% ApartmentBoard Hub (The Core)
-    ApartmentBoard ||--o{ Notice : "contains"
-    ApartmentBoard ||--o{ Complaint : "contains"
-    ApartmentBoard ||--o{ Vote : "contains"
+    EVENT {
+        string id PK
+        string title
+        enum type
+        datetime startDate
+        datetime endDate
+        enum category
+        string apartmentId FK
+        string noticeId FK
+        string voteId FK
+    }
 
-    %% User Relations
-    User ||--o| Resident : "resident (1:1)"
-    User ||--o{ Notice : "author (1:N)"
-    User ||--o{ Complaint : "author (1:N)"
-    User ||--o{ Comment : "author (1:N)"
-    User ||--o{ Vote : "author (1:N)"
-    User ||--o{ VoteRecord : "myVotes (1:N)"
-    User ||--o{ Notification : "notifications (1:N)"
-
-    %% Notice Relations
-    Notice ||--o{ Comment : "comments (1:N)"
-    Notice ||--o{ Notification : "notifications (1:N)"
-    Notice ||--o{ Event : "events (1:N)"
-
-    %% Complaint Relations
-    Complaint ||--o{ Comment : "comments (1:N)"
-    Complaint ||--o{ Notification : "notifications (1:N)"
-
-    %% Vote Relations
-    Vote ||--o{ VoteOption : "voteOptions (1:N)"
-    Vote ||--o{ VoteRecord : "voteRecords (1:N)"
-    Vote ||--o{ Comment : "comments (1:N)"
-    Vote ||--o{ Notification : "notifications (1:N)"
-    Vote ||--o{ Event : "events (1:N)"
-
-    %% VoteOption Relations
-    VoteOption ||--o{ VoteRecord : "selections (1:N)"
+    DELETED_FILE {
+        string id PK
+        string fileKey
+        string reason
+        datetime createdAt
+    }
