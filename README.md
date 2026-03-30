@@ -11,7 +11,7 @@
 
 <br />
 
-[![Deploy](https://img.shields.io/badge/Live_Demo-배포_링크-4CAF50?style=for-the-badge)](https://your-deploy-url.com)
+[![Deploy](https://img.shields.io/badge/Live_Demo-배포_링크-4CAF50?style=for-the-badge)](https://welive.pro/)
 [![Notion](https://img.shields.io/badge/Notion-팀_노션-000000?style=for-the-badge&logo=notion)](https://www.notion.so/5-3141acdd347a8135b9d8e1abecbfdc33?source=copy_link)
 
 <br />
