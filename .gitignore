@@ -11,4 +11,7 @@ front-end/.github
 front-end/.gitignore
 front-end/.prettierrc
 front-end/node_modules/
+front-end/public
+front-end/out
+front-end/.next
 connect-db.sh

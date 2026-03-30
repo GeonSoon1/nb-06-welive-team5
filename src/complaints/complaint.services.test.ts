@@ -15,6 +15,7 @@ import BadRequestError from '../libs/errors/BadRequestError';
 import { GetComplaintsQueryDto } from './complaint.struct';
 import { ComplaintListResponse, ComplaintDetailResponse } from './complaint.type';
 import { prismaClient as prisma } from '../libs/constants';
+import * as userRepository from '../users/user.repository';
 
 jest.mock('./complaint.repository');
 jest.mock('../notifications/notification.repository');
@@ -29,6 +30,7 @@ jest.mock('../libs/constants', () => ({
     COMPLAINT_REJECTED: 'COMPLAINT_REJECTED',
   },
 }));
+jest.mock('../users/user.repository');
 
 describe('Complaint Service 최종 통합 테스트', () => {
   const mockDate = new Date();
@@ -50,6 +52,10 @@ describe('Complaint Service 최종 통합 테스트', () => {
 
   describe('createComplaint', () => {
     it('민원 등록 성공 시 관리자에게 알림이 전송되어야 한다.', async () => {
+      // 3. 테스트 내부에서 findAdminsByApartmentId가 반환할 가짜 데이터를 설정해줍니다.
+      (userRepository.findAdminsByApartmentId as jest.Mock).mockResolvedValue([
+        { id: mockAdminId, role: 'ADMIN' }, // 'admin-999'로 설정된 변수 사용
+      ]);
       const dto = { title: '층간소음', content: '내용', isPublic: true };
 
       (complaintRepository.getBoardIdByApartment as jest.Mock).mockResolvedValue('board-1');

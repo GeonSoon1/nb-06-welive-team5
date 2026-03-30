@@ -58,3 +58,22 @@ export type AdminApartmentWithRelations = Apartment & {
   admin: Pick<User, 'name' | 'contact' | 'email'> | null;
   structureGroups: Pick<ApartmentStructureGroup, 'dongList' | 'startFloor' | 'maxFloor' | 'unitsPerFloor'>[];
 };
+export type AdminApartmentResponse = Omit<Apartment, 'adminId'> & {
+  adminId: string | null;
+  adminName: string | null;
+  adminContact: string | null;
+  adminEmail: string | null;
+
+  // 아래 필드들은 동/호수 계산을 통해 만들어낼 가상 필드들
+  startComplexNumber?: string;
+  endComplexNumber?: string;
+  startDongNumber?: string;
+  endDongNumber?: string;
+  startFloorNumber?: string;
+  endFloorNumber?: string;
+  startHoNumber?: string;
+  endHoNumber?: string;
+
+  dongRange?: { start: string; end: string; };
+  hoRange?: { start: string; end: string; };
+};

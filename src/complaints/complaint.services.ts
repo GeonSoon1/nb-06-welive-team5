@@ -1,5 +1,7 @@
 import * as complaintRepository from './complaint.repository';
 import * as notificationRepository from '../notifications/notification.repository';
+import { sendNotificationToUser } from '../notifications/notification.service';
+import * as userRepository from '../users/user.repository';
 import {
   CreateComplaintDto,
   UpdateUserComplaintDto,
@@ -11,7 +13,7 @@ import {
   ComplaintListResponse,
   ComplaintDetailResponse,
 } from './complaint.type';
-import { NotificationType, prismaClient as prisma } from '../libs/constants';
+import { NotificationType, prismaClient } from '../libs/constants';
 import { Role } from '@prisma/client';
 import BadRequestError from '../libs/errors/BadRequestError';
 import NotFoundError from '../libs/errors/NotFoundError';
@@ -89,7 +91,7 @@ const validateUserComplaintAccess = async (
   return validComplaint;
 };
 
-//1. 민원 등록 및 관리자 알림
+// 1. 민원 등록 및 관리자 알림
 export async function createComplaint(
   authorId: string,
   apartmentId: string,
@@ -100,18 +102,18 @@ export async function createComplaint(
 
   const newComplaint = await complaintRepository.createComplaint(authorId, boardId, data);
 
-  const apartment = await prisma.apartment.findUnique({
-    where: { id: apartmentId },
-    select: { adminId: true },
-  });
-
-  if (apartment?.adminId) {
-    await notificationRepository.createNotification({
-      content: '새로운 민원이 등록되었습니다.',
-      notificationType: NotificationType.COMPLAINT_REQ,
-      userId: apartment.adminId,
-      complaintId: newComplaint.id,
-    });
+  // 실시간 알림 전송
+  const admins = await userRepository.findAdminsByApartmentId(prismaClient, apartmentId);
+  if (admins.length > 0) {
+    const notificationPromises = admins.map((admin) =>
+      sendNotificationToUser({
+        userId: admin.id,
+        content: `새로운 민원이 등록되었습니다: ${newComplaint.title}`,
+        notificationType: NotificationType.COMPLAINT_REQ,
+        complaintId: newComplaint.id,
+      }),
+    );
+    await Promise.all(notificationPromises);
   }
 
   return formatComplaint(newComplaint as ComplaintWithAuthor);
@@ -197,7 +199,6 @@ export async function deleteUserComplaint(
 }
 
 // 6. 관리자 민원 상태 수정 및 작성자 알림
-
 export async function updateComplaintStatus(
   complaintId: string,
   apartmentId: string,
@@ -211,6 +212,7 @@ export async function updateComplaintStatus(
     data.status,
   );
 
+  // 민원 상태 변경 시 작성자에게 실시간 알림 전송
   if (updatedComplaint.authorId) {
     const statusMap = {
       IN_PROGRESS: NotificationType.COMPLAINT_IN_PROGRESS,
@@ -218,11 +220,12 @@ export async function updateComplaintStatus(
       REJECTED: NotificationType.COMPLAINT_REJECTED,
     } as const;
 
-    await notificationRepository.createNotification({
-      content: `귀하가 접수한 민원의 상태가 [${data.status}]로 변경되었습니다.`,
-      notificationType:
-        statusMap[data.status as keyof typeof statusMap] || NotificationType.GENERAL,
+    const notificationType = statusMap[data.status as keyof typeof statusMap] || NotificationType.GENERAL;
+
+    await sendNotificationToUser({
       userId: updatedComplaint.authorId,
+      content: `귀하가 접수한 민원 '${updatedComplaint.title}'의 상태가 [${data.status}]로 변경되었습니다.`,
+      notificationType: notificationType,
       complaintId: updatedComplaint.id,
     });
   }

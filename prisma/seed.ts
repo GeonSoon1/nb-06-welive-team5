@@ -59,7 +59,7 @@ async function main() {
     data: {
       username: 'superadmin',
       password: defaultPassword,
-      contact: '010-0000-0000',
+      contact: '01000000000',
       name: '총관리자',
       email: 'super@admin.com',
       role: Role.SUPER_ADMIN,
@@ -415,7 +415,7 @@ async function main() {
   // 7-2. 마감된 투표 (세대주만)
   const voteClosed = await prisma.vote.create({
     data: {
-      title: '제3기 입주자대표회의 회장 선거', content: '회장 후보 투표입니다. (세대주 전용)', targetScope: 1,
+      title: '제3기 입주자대표회의 회장 선거', content: '회장 후보 투표입니다. (세대주 전용)', targetScope: 101,
       startDate: new Date(now.getTime() - 1000 * 60 * 60 * 24 * 10),
       endDate: new Date(now.getTime() - 1000 * 60 * 60 * 24 * 3),
       status: VoteStatus.CLOSED, authorId: admin.id, apartmentboardId: apartmentBoard.id,

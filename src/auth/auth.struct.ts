@@ -57,7 +57,12 @@ export const SignupUserBodyStruct = s.object({
   name: NameStruct,
   email: EmailStruct,
   contact: ContactStruct,
-  unitId: s.nonempty(s.string()),
+  // unitId: s.nonempty(s.string()),
+  // 프론트엔드에서 넘어오는 새로운 필드들 추가
+  apartmentName: s.nonempty(s.string()),
+  apartmentDong: s.nonempty(s.string()),
+  apartmentHo: s.nonempty(s.string()),
+  role: s.enums(['USER', 'ADMIN', 'SUPER_ADMIN']), // Role 열거형 검증
 });
 
 export type SignupUserBody = s.Infer<typeof SignupUserBodyStruct>;
