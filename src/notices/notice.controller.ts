@@ -9,7 +9,6 @@ import { consoleLoggingIntegration } from '@sentry/node';
 
 export const createNotice: ExpressHandler = async (req, res, next) => {
     try {
-        console.log(req.body);
         const { userId, ...bodyWithoutUserId } = req.body;
         const noticevalue = superstruct.create(bodyWithoutUserId, CreateNoticeStruct);
         const _userId = req.user!.id;

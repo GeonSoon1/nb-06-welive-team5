@@ -40,5 +40,4 @@ app.use(globalErrorHandler);
 
 app.listen(PORT, () => {
   initScheduler(); // 서버 시작시 크론도 실
-  console.log(`Server started on port ${PORT}`);
 });
