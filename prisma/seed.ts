@@ -50,7 +50,7 @@ async function main() {
     console.log('🚮 Cleanup finished.');
   }
 
-  const defaultPassword = await hashPassword('1');
+  const defaultPassword = await hashPassword('password123');
   const now = new Date();
 
   // --- 1. SUPER_ADMIN & ADMINS ---
@@ -72,11 +72,11 @@ async function main() {
     data: {
       username: 'adminuser',
       password: defaultPassword,
-      contact: '010-1111-1111',
+      contact: '01011111111',
       name: '김관리',
       email: 'admin@welive.com',
       role: Role.ADMIN,
-      joinStatus: JoinStatus.APPROVED,
+      joinStatus: JoinStatus.PENDING,
     },
   });
 
@@ -85,7 +85,7 @@ async function main() {
     data: {
       username: 'adminuser2',
       password: defaultPassword,
-      contact: '010-2222-2222',
+      contact: '01022222222',
       name: '이관리',
       email: 'admin2@welive.com',
       role: Role.ADMIN,
@@ -98,7 +98,7 @@ async function main() {
     data: {
       username: 'adminuser3',
       password: defaultPassword,
-      contact: '010-3333-3333',
+      contact: '01033333333',
       name: '박관리',
       email: 'admin3@welive.com',
       role: Role.ADMIN,
@@ -115,7 +115,7 @@ async function main() {
     data: {
       name: '웰라이브 아파트',
       address: '서울시 강남구 테헤란로 427',
-      officeNumber: '02-1234-5678',
+      officeNumber: '0212345678',
       description: '살기 좋은 웰라이브 아파트입니다.',
       apartmentStatus: ApartmentStatus.APPROVED,
       apartmentboardId: apartmentBoard.id,
@@ -133,7 +133,7 @@ async function main() {
     data: {
       name: '센트럴 푸르지오',
       address: '경기도 성남시 분당구 판교역로 100',
-      officeNumber: '031-111-2222',
+      officeNumber: '0311112222',
       description: '자연과 함께하는 센트럴 푸르지오',
       apartmentStatus: ApartmentStatus.APPROVED,
       apartmentboardId: apartmentBoard2.id,
@@ -151,7 +151,7 @@ async function main() {
     data: {
       name: '더샵 스타시티',
       address: '부산광역시 해운대구 센텀중앙로 78',
-      officeNumber: '051-333-4444',
+      officeNumber: '0513334444',
       description: '최고급 주거환경 더샵 스타시티',
       apartmentStatus: ApartmentStatus.APPROVED,
       apartmentboardId: apartmentBoard3.id,
@@ -208,27 +208,27 @@ async function main() {
   const users = await Promise.all([
     // 1. 정상 승인된 세대주
     prisma.user.create({
-      data: { username: 'user1', password: defaultPassword, contact: '010-4444-1111', name: '이세대', email: 'u1@email.com', role: Role.USER, apartmentId: apartment.id, apartmentUnitId: units[0]!.id, joinStatus: JoinStatus.APPROVED },
+      data: { username: 'user1', password: defaultPassword, contact: '01044441111', name: '이세대', email: 'u1@email.com', role: Role.USER, apartmentId: apartment.id, apartmentUnitId: units[0]!.id, joinStatus: JoinStatus.APPROVED },
     }),
     // 2. 정상 승인된 세대원 (번호 중복 해결)
     prisma.user.create({
-      data: { username: 'user2', password: defaultPassword, contact: '010-4444-2222', name: '김가족', email: 'u2@email.com', role: Role.USER, apartmentId: apartment.id, apartmentUnitId: units[1]!.id, joinStatus: JoinStatus.APPROVED },
+      data: { username: 'user2', password: defaultPassword, contact: '01044442222', name: '김가족', email: 'u2@email.com', role: Role.USER, apartmentId: apartment.id, apartmentUnitId: units[1]!.id, joinStatus: JoinStatus.APPROVED },
     }),
     // 3. 정상 승인된 다른 동 세대주
     prisma.user.create({
-      data: { username: 'user3', password: defaultPassword, contact: '010-4444-3333', name: '박이웃', email: 'u3@email.com', role: Role.USER, apartmentId: apartment.id, apartmentUnitId: units[2]!.id, joinStatus: JoinStatus.APPROVED },
+      data: { username: 'user3', password: defaultPassword, contact: '01044443333', name: '박이웃', email: 'u3@email.com', role: Role.USER, apartmentId: apartment.id, apartmentUnitId: units[2]!.id, joinStatus: JoinStatus.APPROVED },
     }),
     // 4. 가입 대기 중인 유저
     prisma.user.create({
-      data: { username: 'pendingUser', password: defaultPassword, contact: '010-4444-4444', name: '최대기', email: 'p@email.com', role: Role.USER, apartmentId: apartment.id, apartmentUnitId: units[3]!.id, joinStatus: JoinStatus.PENDING },
+      data: { username: 'pendingUser', password: defaultPassword, contact: '01044444444', name: '최대기', email: 'p@email.com', role: Role.USER, apartmentId: apartment.id, apartmentUnitId: units[3]!.id, joinStatus: JoinStatus.PENDING },
     }),
     // 5. 가입 반려된 유저
     prisma.user.create({
-      data: { username: 'rejectedUser', password: defaultPassword, contact: '010-4444-5555', name: '정거절', email: 'r@email.com', role: Role.USER, apartmentId: apartment.id, apartmentUnitId: units[4]!.id, joinStatus: JoinStatus.REJECTED },
+      data: { username: 'rejectedUser', password: defaultPassword, contact: '01044445555', name: '정거절', email: 'r@email.com', role: Role.USER, apartmentId: apartment.id, apartmentUnitId: units[4]!.id, joinStatus: JoinStatus.REJECTED },
     }),
     // 6. 정보 수정 필요 유저
     prisma.user.create({
-      data: { username: 'updateUser', password: defaultPassword, contact: '010-4444-6666', name: '오수정', email: 'u@email.com', role: Role.USER, apartmentId: apartment.id, apartmentUnitId: units[5]!.id, joinStatus: JoinStatus.NEED_UPDATE },
+      data: { username: 'updateUser', password: defaultPassword, contact: '01044446666', name: '오수정', email: 'u@email.com', role: Role.USER, apartmentId: apartment.id, apartmentUnitId: units[5]!.id, joinStatus: JoinStatus.NEED_UPDATE },
     }),
   ]);
   // Residents 매핑
