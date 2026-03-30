@@ -15,3 +15,4 @@ front-end/public
 front-end/out
 front-end/.next
 connect-db.sh
+front-end/out/
