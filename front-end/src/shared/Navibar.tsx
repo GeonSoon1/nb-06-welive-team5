@@ -77,9 +77,17 @@ export default function Navibar() {
 
     eventSource.addEventListener('alarm', (event) => {
       try {
-        const newNotifications: Notification[] = JSON.parse(event.data);
+        // 1. 전체 페이로드를 파싱합니다.
+        const payload = JSON.parse(event.data);
+
+        // 2. payload 자체가 아니라 payload 내부의 'data' 배열을 가져옵니다.
+        const newNotifications: Notification[] = payload.data;
+
+        if (!Array.isArray(newNotifications)) return;
+
         setNotifications((prev) => {
           const existingIds = new Set(prev.map((n) => n.notificationId));
+          // 중복 제거 후 새로운 알림을 앞에 추가
           const filtered = newNotifications.filter((n) => !existingIds.has(n.notificationId));
           return filtered.length > 0 ? [...filtered, ...prev] : prev;
         });
@@ -87,7 +95,6 @@ export default function Navibar() {
         console.error('알림 데이터 파싱 에러:', error);
       }
     });
-
     eventSource.onerror = (err) => {
       console.error('SSE 연결 에러:', err);
       eventSource.close();

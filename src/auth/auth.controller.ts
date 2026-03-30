@@ -17,7 +17,6 @@ import { clearTokenCookies, setTokenCookies } from '../libs/auth/cookies';
 import UnauthorizedError from '../libs/errors/UnauthorizedError';
 
 export async function signupUser(req: ExpressRequest, res: ExpressResponse) {
-  console.log(req.body);
   const data = s.create(req.body, SignupUserBodyStruct);
   const user = await userAuthService.signupUser(data);
   return res.status(201).json(user);
