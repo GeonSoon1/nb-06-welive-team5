@@ -5,10 +5,9 @@ import * as notificationService from './notification.service';
 
 export const subscribeNotifications: ExpressHandler = async (req, res, next) => {
     try {
-        //! 를 통해 미들웨어가 사용자 정보를 주입하였음을 명시
         const userId = req.user!.id;
-
-        notificationService.streamNotifications(userId, res);
+        // 서비스가 async이므로 await를 붙여 비동기 에러를 catchAsync가 잡을 수 있게 합니다.
+        await notificationService.streamNotifications(userId, res);
     } catch (error) {
         next(error);
     }
