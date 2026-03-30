@@ -4,27 +4,31 @@ import { CustomError } from '../libs/errors/errorHandler';
 import { CreateNoticeDto, GetNoticeListDto, UpdateNoticeDto } from './notice.struct';
 import * as noticeRepository from './notice.repository';
 import ForbiddenError from '../libs/errors/ForbiddenError';
+import { sendNotificationToUser } from '../notifications/notification.service';
+import * as userRepository from '../users/user.repository';
 
 export const createNotice = async (userId: string, data: CreateNoticeDto) => {
     const { boardId, startDate, endDate, ...rest } = data;
-    // 2. 안전한 백엔드 단에서 userId를 이용해 해당 유저의 아파트와 게시판 정보를 조회합니다.
+
     const user = await prismaClient.user.findUnique({
         where: { id: userId },
         select: {
             apartment: {
                 select: {
-                    apartmentboardId: true // 진짜 필요한 아파트 게시판 ID만 쏙 뽑아옵니다.
-                }
-            }
-        }
+                    id: true,
+                    apartmentboardId: true,
+                },
+            },
+        },
     });
-    // 3. 예외 처리: 유저가 소속된 아파트가 없거나 게시판이 없는 경우 방어
-    if (!user || !user.apartment || !user.apartment.apartmentboardId) {
-        throw new Error("해당 사용자의 아파트 게시판 정보를 찾을 수 없습니다.");
-        // (실제 프로젝트에서는 커스텀 에러 클래스나 상태 코드를 던지시면 됩니다)
+
+    if (!user || !user.apartment || !user.apartment.id || !user.apartment.apartmentboardId) {
+        throw new Error('해당 사용자의 아파트 게시판 정보를 찾을 수 없습니다.');
     }
+
+    const apartmentId = user.apartment.id;
     const realBoardId = user.apartment.apartmentboardId;
-    // Prisma.NoticeCreateInput 타입에 맞춰 데이터 변환
+
     const noticeData: Prisma.NoticeCreateInput = {
         ...rest,
         startDate: startDate,
@@ -33,7 +37,28 @@ export const createNotice = async (userId: string, data: CreateNoticeDto) => {
         author: { connect: { id: userId } },
     };
 
-    return await noticeRepository.createNotice(noticeData);
+    const newNotice = await noticeRepository.createNotice(noticeData);
+
+    // 실시간 알림 전송 (아파트의 모든 입주민에게)
+    const residents = await userRepository.findUsersByApartmentIdAndRole(
+        prismaClient,
+        apartmentId,
+        Role.USER
+    );
+
+    if (residents.length > 0) {
+        const notificationPromises = residents.map((resident) =>
+            sendNotificationToUser({
+                userId: resident.id,
+                content: `새로운 공지사항이 등록되었습니다: ${newNotice.title}`,
+                notificationType: 'NOTICE_REG',
+                noticeId: newNotice.id,
+            })
+        );
+        await Promise.all(notificationPromises);
+    }
+
+    return newNotice;
 };
 
 export const getNoticeList = async (query: GetNoticeListDto, apartmentId: string | null, role: Role) => {

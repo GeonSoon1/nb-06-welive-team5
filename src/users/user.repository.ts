@@ -246,6 +246,50 @@ export async function deleteManyApartmentsByIds(db: DbClient, aptIds: string[]) 
 }
 
 /**
+ * 특정 Role을 가진 모든 유저를 검색하는 함수
+ */
+export async function findUsersByRole(db: DbClient, role: Role) {
+  return db.user.findMany({
+    where: {
+      role,
+    },
+    select: {
+      id: true,
+    },
+  });
+}
+
+/**
+ * 특정 아파트의 모든 관리자(ADMIN, SUPER_ADMIN)를 검색하는 함수
+ */
+export async function findAdminsByApartmentId(db: DbClient, apartmentId: string) {
+  return db.user.findMany({
+    where: {
+      apartmentId,
+      role: { in: [Role.ADMIN, Role.SUPER_ADMIN] },
+    },
+    select: {
+      id: true,
+    },
+  });
+}
+
+/**
+ * 특정 아파트와 특정 Role을 가진 모든 유저를 검색하는 함수
+ */
+export async function findUsersByApartmentIdAndRole(db: DbClient, apartmentId: string, role: Role) {
+  return db.user.findMany({
+    where: {
+      apartmentId,
+      role: role,
+    },
+    select: {
+      id: true,
+    },
+  });
+}
+
+/**
  * [Super-Admin] 관리자 정보(아파트 정보 포함) 삭제
  */
 export async function deleteUser(db: DbClient, adminId: string) {

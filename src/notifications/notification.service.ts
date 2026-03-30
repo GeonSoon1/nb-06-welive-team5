@@ -1,64 +1,80 @@
 import { Response } from 'express';
-import { EventEmitter } from 'events';
 import * as notificationRepository from './notification.repository';
 import { CustomError } from '../libs/errors/errorHandler';
+import { Notification, NotificationType } from '@prisma/client';
 
-// 전역 이벤트 에미터 생성 (알림 발생 시 이벤트 수신용)
-export const notificationEmitter = new EventEmitter();
-// 수많은 클라이언트 연결을 대비해 리스너 제한 해제
-notificationEmitter.setMaxListeners(0);
+// Map to store active SSE clients, mapping userId to their Response object
+const clients: { [userId: string]: Response; } = {};
 
 export const streamNotifications = (userId: string, res: Response) => {
-    // SSE Header 설정
+    // Set SSE headers
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.flushHeaders();
 
-    let intervalId: NodeJS.Timeout;
+    // Store the client's response object
+    clients[userId] = res;
+    console.log(`[SSE] Client connected: ${userId}`);
 
-    const sendNotifications = async () => {
-        try {
-            const notifications = await notificationRepository.findUnreadNotificationsByUserId(userId);
-
-            // API 명세에 맞게 데이터 매핑
-            const data = notifications.map(n => ({
-                notificationId: n.id,
-                content: n.content,
-                notificationType: n.notificationType,
-                notifiedAt: n.createdAt,
-                isChecked: n.isChecked,
-                complaintId: n.complaintId,
-                noticeId: n.noticeId,
-                pollId: n.voteId, // DB의 voteId를 API 명세의 pollId로 매핑
-            }));
-
-            const payload = {
-                type: 'alarm',
-                data: data
-            };
-
-            // SSE 포맷으로 데이터 전송
-            res.write(`data: ${JSON.stringify(payload)}\n\n`);
-        } catch (error) {
-            console.error('SSE Error:', error);
-            // 에러 발생 시 연결 종료 및 인터벌 해제
-            if (intervalId) clearInterval(intervalId);
-            res.end();
-        }
+    // Send a connection confirmation message
+    const payload = {
+        type: 'connection',
+        data: 'SSE connection established',
     };
+    res.write(`data: ${JSON.stringify(payload)}\n\n`);
 
-    // 최초 연결 시 즉시 전송
-    sendNotifications();
-
-    // 30초마다 알림 전송
-    intervalId = setInterval(sendNotifications, 30000);
-
-    // 클라이언트 연결 종료 시 인터벌 해제
+    // Handle client disconnection
     res.on('close', () => {
-        if (intervalId) clearInterval(intervalId);
+        console.log(`[SSE] Client disconnected: ${userId}`);
+        delete clients[userId];
         res.end();
     });
+};
+
+/**
+ * Creates a notification and sends it to the user if they are connected via SSE.
+ */
+export const sendNotificationToUser = async (data: {
+    userId: string;
+    content: string;
+    notificationType: NotificationType;
+    complaintId?: string;
+    noticeId?: string;
+    voteId?: string;
+}): Promise<Notification> => {
+    // 1. Save notification to the database
+    const newNotification = await notificationRepository.createNotification(data);
+
+    // 2. Check if the user is connected via SSE
+    const clientRes = clients[data.userId];
+
+    if (clientRes) {
+        // 3. Prepare the payload in the desired format
+        const payload = {
+            type: 'alarm',
+            data: [
+                {
+                    notificationId: newNotification.id,
+                    content: newNotification.content,
+                    notificationType: newNotification.notificationType,
+                    notifiedAt: newNotification.createdAt,
+                    isChecked: newNotification.isChecked,
+                    complaintId: newNotification.complaintId,
+                    noticeId: newNotification.noticeId,
+                    pollId: newNotification.voteId, // Map DB's voteId to pollId
+                },
+            ],
+        };
+
+        // 4. Send the notification to the specific user
+        clientRes.write(`data: ${JSON.stringify(payload)}\n\n`);
+        console.log(`[SSE] Sent notification to user ${data.userId}`);
+    } else {
+        console.log(`[SSE] User ${data.userId} not connected. Notification saved to DB.`);
+    }
+
+    return newNotification;
 };
 
 export const markAsRead = async (userId: string, notificationId: string) => {
@@ -82,6 +98,6 @@ export const markAsRead = async (userId: string, notificationId: string) => {
         isChecked: updated.isChecked,
         complaintId: updated.complaintId,
         noticeId: updated.noticeId,
-        pollId: updated.voteId
+        pollId: updated.voteId,
     };
 };
