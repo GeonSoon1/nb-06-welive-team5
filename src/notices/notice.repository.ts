@@ -50,7 +50,6 @@ export const findNoticeById = async (noticeId: string) => {
 };
 
 export const updateNotice = async (noticeId: string, data: Prisma.NoticeUpdateInput) => {
-    console.log("전달된 data 객체:", JSON.stringify(data, null, 2));
     return prismaClient.notice.update({
         where: { id: noticeId },
         data,

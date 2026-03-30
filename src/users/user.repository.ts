@@ -1,5 +1,5 @@
 // src/users/users.repository.ts
-import { Prisma, PrismaClient, JoinStatus, Role, User } from '@prisma/client';
+import { Prisma, PrismaClient, JoinStatus, ApartmentStatus, Role, User } from '@prisma/client';
 
 // 일반 쿼리와 트랜잭션 쿼리 모두에 대응
 export type DbClient = Prisma.TransactionClient | PrismaClient;
@@ -17,10 +17,12 @@ export async function findUserIdByContact(db: DbClient, contact: string) {
 }
 
 // super-admin이 하나의 admin의 상태를 ex) PENDING -> APPROVED로 승인
-export async function updateAdminStatus(db: DbClient, adminId: string, status: JoinStatus) {
+export async function updateAdminStatus(db: DbClient, adminId: string, status: ApartmentStatus) {
   return db.user.update({
     where: { id: adminId },
-    data: { joinStatus: status },
+    data: {
+      apartment: { update: { apartmentStatus: status as ApartmentStatus } },
+    },
   });
 }
 
@@ -42,26 +44,44 @@ export async function findUserWithApartmentById(
  */
 export async function updateAllAdmins(
   db: DbClient,
-  params: { 
-    targetRole: Role; 
-    fromStatus: JoinStatus; 
-    toStatus: JoinStatus; 
+  params: {
+    targetRole: Role;
+    fromStatus: ApartmentStatus;
+    toStatus: ApartmentStatus;
   },
 ) {
-  return db.user.updateMany({
+  // 1. 업데이트할 대상 유저 및 연관된 아파트 ID 조회
+  const users = await db.user.findMany({
     where: {
       role: params.targetRole,
-      joinStatus: params.fromStatus,
+      apartment: { apartmentStatus: params.fromStatus },
     },
-    data: {
-      joinStatus: params.toStatus,
-    },
+    select: { id: true, apartmentId: true },
+  });
+
+  const userIds = users.map((u) => u.id);
+  const apartmentIds = users.map((u) => u.apartmentId).filter((id): id is string => id !== null);
+
+  if (userIds.length === 0) return { count: 0 };
+
+  // 2. 아파트 테이블의 상태를 직접 일괄 업데이트 (updateMany는 중첩 업데이트 미지원)
+  if (apartmentIds.length > 0) {
+    await db.apartment.updateMany({
+      where: { id: { in: apartmentIds } },
+      data: { apartmentStatus: params.toStatus },
+    });
+  }
+
+  // 3. 유저 테이블의 상태 업데이트 및 결과 반환
+  return db.user.updateMany({
+    where: { id: { in: userIds } },
+    data: { joinStatus: params.toStatus as JoinStatus },
   });
 }
 
 export async function findUsersByStatus(
   db: DbClient,
-  where: { role: Role; joinStatus: JoinStatus }
+  where: { role: Role; apartment: { apartmentStatus: ApartmentStatus; }; }
 ) {
   return await db.user.findMany({
     where,
@@ -92,7 +112,7 @@ export async function updateAllUsers(
     apartmentId: string;
     targetRole: Role;
     fromStatus: JoinStatus;
-    toStatus: JoinStatus; 
+    toStatus: JoinStatus;
   },
 ) {
   return db.user.updateMany({
@@ -170,7 +190,7 @@ export async function updateUserPassword(db: DbClient, userId: string, password:
     where: { id: userId },
     data: { password },
     select: {
-      id : true,
+      id: true,
       name: true
     }
   });

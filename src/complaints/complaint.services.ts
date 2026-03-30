@@ -19,15 +19,15 @@ import ForbiddenError from '../libs/errors/ForbiddenError';
 
 function formatComplaint(
   c: ComplaintWithAuthor,
-  options: { isMasked?: boolean; includeDetails: true },
+  options: { isMasked?: boolean; includeDetails: true; },
 ): ComplaintDetailResponse;
 function formatComplaint(
   c: ComplaintWithAuthor,
-  options?: { isMasked?: boolean; includeDetails?: false },
+  options?: { isMasked?: boolean; includeDetails?: false; },
 ): ComplaintListResponse;
 function formatComplaint(
   c: ComplaintWithAuthor,
-  options: { isMasked?: boolean; includeDetails?: boolean } = {},
+  options: { isMasked?: boolean; includeDetails?: boolean; } = {},
 ): ComplaintListResponse | ComplaintDetailResponse {
   const { isMasked = false, includeDetails = false } = options;
   const writerName = c.author?.name || '알 수 없음';
@@ -123,7 +123,7 @@ export async function getComplaints(
   userId: string,
   userRole: string,
   query: GetComplaintsQueryDto,
-): Promise<{ complaints: ComplaintListResponse[]; totalCount: number }> {
+): Promise<{ complaints: ComplaintListResponse[]; totalCount: number; }> {
   const { complaints, totalCount } = await complaintRepository.getComplaints(apartmentId, query);
 
   const formattedComplaints = (complaints as ComplaintWithAuthor[]).map((c) => {
@@ -171,8 +171,12 @@ export async function updateUserComplaint(
   userId: string,
   apartmentId: string,
   data: UpdateUserComplaintDto,
+  userRole: Role
 ): Promise<ComplaintListResponse> {
-  await validateUserComplaintAccess(complaintId, userId, apartmentId);
+
+  const isAdmin = userRole === Role.ADMIN || userRole === Role.SUPER_ADMIN;
+  if (!isAdmin)
+    await validateUserComplaintAccess(complaintId, userId, apartmentId);
   const updatedComplaint = await complaintRepository.updateUserComplaint(complaintId, data);
 
   return formatComplaint(updatedComplaint as ComplaintWithAuthor);
@@ -183,9 +187,12 @@ export async function updateUserComplaint(
 export async function deleteUserComplaint(
   complaintId: string,
   userId: string,
-  apartmentId: string,
+  apartmentId: string, userRole: Role
 ): Promise<void> {
-  await validateUserComplaintAccess(complaintId, userId, apartmentId);
+
+  const isAdmin = userRole === Role.ADMIN || userRole === Role.SUPER_ADMIN;
+  if (!isAdmin)
+    await validateUserComplaintAccess(complaintId, userId, apartmentId);
   await complaintRepository.deleteUserComplaint(complaintId);
 }
 

@@ -28,6 +28,12 @@ export async function createResident(apartmentId: string, data: CreateResidentDt
   if (data.contact) {
     data.contact = data.contact.replace(/\D/g, '');
   }
+  if (data.building) {
+    data.building = data.building.replace(/동$/, '').replace(/\D/g, '');
+  }
+  if (data.unitNumber) {
+    data.unitNumber = data.unitNumber.replace(/호$/, '').replace(/\D/g, '');
+  }
 
   const newResident = await residentRepository.createResident(apartmentId, data);
   if (!newResident) throw new BadRequestError('입주민 리소스 생성(개별 등록) 실패');
@@ -110,13 +116,14 @@ export async function uploadResidentsFromCsv(
     csv
       .parseStream(stream, { headers: true })
       .on('data', (row) => {
+        const { residenceStatus, approvalStatus, ...restOfRow } = row;
         residents.push({
           apartmentId: apartmentId,
-          name: row.이름 || row.name,
-          contact: (row.연락처 || row.contact || '').toString().replace(/\D/g, ''),
-          dong: row.동 || row.building || '',
-          ho: row.호 || row.unitNumber || '',
-          isHouseholder: row.세대주여부 === '세대주' ? 'HOUSEHOLDER' : 'MEMBER',
+          name: restOfRow.이름 || restOfRow.name,
+          contact: (restOfRow.연락처 || restOfRow.contact || '').toString().replace(/\D/g, ''),
+          dong: restOfRow.동 || restOfRow.building || '',
+          ho: restOfRow.호 || restOfRow.unitNumber || '',
+          isHouseholder: restOfRow.세대주여부 === '세대주' ? 'HOUSEHOLDER' : 'MEMBER',
         });
       })
       .on('end', async () => {

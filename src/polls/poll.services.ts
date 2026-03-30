@@ -1,9 +1,10 @@
-import { Role } from '@prisma/client';
+import { Role, VoteStatus } from '@prisma/client';
 import { Prisma, prismaClient } from '../libs/constants';
 import { CustomError } from '../libs/errors/errorHandler';
 import { CreatePollDto, GetPollListDto, UpdatePollDto } from './poll.struct';
 import * as pollRepository from './poll.repository';
 import ForbiddenError from '../libs/errors/ForbiddenError';
+import BadRequestError from '../libs/errors/BadRequestError';
 
 /**
  * 투표 생성
@@ -12,6 +13,10 @@ import ForbiddenError from '../libs/errors/ForbiddenError';
  */
 export const createPoll = async (userId: string, apartmentId: string | null, pollData: CreatePollDto) => {
     const { options, boardId, buildingPermission, startDate, endDate, ...voteData } = pollData;
+
+    if (new Date(endDate) < new Date()) {
+        throw new BadRequestError('투표 종료 기간을 확인해 주세요.');
+    }
 
     if (!apartmentId) throw new ForbiddenError('소속된 아파트 정보가 없습니다.');
 
@@ -23,6 +28,11 @@ export const createPoll = async (userId: string, apartmentId: string | null, pol
 
     if (!apartment) throw new ForbiddenError('유효하지 않은 게시판입니다.');
 
+    let status: VoteStatus = VoteStatus.PENDING;
+    if (new Date(startDate) < new Date()) {
+        status = VoteStatus.IN_PROGRESS;
+    }
+
 
     const newPoll = await prismaClient.vote.create({
         data: {
@@ -32,6 +42,7 @@ export const createPoll = async (userId: string, apartmentId: string | null, pol
             endDate: endDate,
             authorId: userId,
             apartmentboardId: apartment.apartmentboardId,
+            status,
             voteOptions: {
                 create: options.map((option) => ({
                     content: option.title,

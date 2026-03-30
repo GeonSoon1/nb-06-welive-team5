@@ -1,4 +1,4 @@
-import { Role, JoinStatus } from '@prisma/client';
+import { Role, JoinStatus, ApartmentStatus } from '@prisma/client';
 import * as userRepository from './user.repository';
 import BadRequestError from '../libs/errors/BadRequestError';
 import { prismaClient } from '../libs/constants';
@@ -14,7 +14,7 @@ import ForbiddenError from '../libs/errors/ForbiddenError';
 /**
  * [super-admin] 특정 관리자(admin)의 가입 상태를 변경.
  */
-export async function updateAdminStatus(adminId: string, status: JoinStatus) {
+export async function updateAdminStatus(adminId: string, status: ApartmentStatus) {
   const targetUser = await userRepository.findUserWithApartmentById(prismaClient, adminId);
 
   if (!targetUser) {
@@ -28,7 +28,7 @@ export async function updateAdminStatus(adminId: string, status: JoinStatus) {
   return await prismaClient.$transaction(async (tx) => {
     await userRepository.updateAdminStatus(tx, adminId, status);
 
-    if (status === JoinStatus.APPROVED && targetUser.apartmentId) {
+    if (status === ApartmentStatus.APPROVED && targetUser.apartmentId) {
       await apartmentRepository.activateApartment(tx, targetUser.apartmentId, adminId);
     }
   });
@@ -41,11 +41,11 @@ export async function updateAdminStatus(adminId: string, status: JoinStatus) {
 /**
  * [super-admin] 관리자(admin)의 가입 상태를 일괄 변경.
  */
-export async function updateAllAdminStatus(status: JoinStatus) {
+export async function updateAllAdminStatus(status: ApartmentStatus) {
   // 1. 승인 대기 중인 모든 관리자와 그들의 아파트 ID를 가져오기
   const pendingAdmins = await userRepository.findUsersByStatus(prismaClient, {
     role: Role.ADMIN,
-    joinStatus: JoinStatus.PENDING,
+    apartment: { apartmentStatus: ApartmentStatus.PENDING },
   });
 
   if (pendingAdmins.length === 0) {
@@ -57,12 +57,12 @@ export async function updateAllAdminStatus(status: JoinStatus) {
     // A. 유저들 상태 일괄 변경
     const updateResult = await userRepository.updateAllAdmins(tx, {
       targetRole: Role.ADMIN,
-      fromStatus: JoinStatus.PENDING,
+      fromStatus: ApartmentStatus.PENDING,
       toStatus: status,
     });
 
     // B. 승인 시에만 연결된 아파트들도 모두 활성화
-    if (status === JoinStatus.APPROVED) {
+    if (status === ApartmentStatus.APPROVED) {
       const apartmentIds = pendingAdmins
         .map((admin) => admin.apartmentId)
         .filter((id): id is string => !!id);
@@ -83,32 +83,32 @@ export async function updateAllAdminStatus(status: JoinStatus) {
  */
 export async function updateProfileImage(userId: string, imagePath: string) {
   // 트랜젝션 작업중 발생한 오류는 500 Server Error로 분류.
-  return await prismaClient.$transaction(async (tx) => {  
+  return await prismaClient.$transaction(async (tx) => {
     const user = await userRepository.findUserRoleById(tx, userId);
-    
+
     // 1. DB에 저장된 값이 있고, 그게 '/public'으로 시작한다면
     if (user?.image && user.image.includes('amazonaws.com')) {
-      
+
       // htts://bucket.s3.ap-northeast-2.amazonaws.com/1773897003165-169871444.jpg
       // .com/ 뒤쪽만 짤라냄/ fileKey는 파일 이름
-      
+
       const fileKey = user.image.split('.com/')[1];
       // fileKey = 1773897003165-169871444.jpg
 
       // 2. 삭제할 파일 deletedFile 테이블에 저장.
       if (fileKey) {
         await userRepository.reserveFileDeletion(
-        tx,
-        decodeURIComponent(fileKey),
-        'USER_PROFILE_UPDATE'  
+          tx,
+          decodeURIComponent(fileKey),
+          'USER_PROFILE_UPDATE'
         );
         // console.log(`[CLEANUP] 삭제 예약 완료: , ${fileKey}`);
       }
     }
-    
+
     // 3. User테이블에 새 이미지 업데이트
     const updatedUser = await userRepository.updateImage(tx, userId, imagePath);
-    
+
     return updatedUser;
   });
 }
@@ -187,16 +187,16 @@ export async function cleanupRejectedUsers(params: {
 }) {
   // 오늘 날짜 기준으로 3일 전 날짜
   // const thresholdDate = subDays(new Date(), params.days);
-  
+
   const targetRole = params.requestRole === Role.SUPER_ADMIN ? Role.ADMIN : Role.USER;
-  
+
   if (params.requestRole === Role.ADMIN && !params.apartmentId) {
     throw new BadRequestError('아파트 정보가 없습니다.');
   }
 
   // 2. 트랜잭션 시작 
   return await prismaClient.$transaction(async (tx) => {
-    
+
     // A. 삭제 대상 조회 (Repository 활용)
     const targetUsers = await userRepository.findUsersForCleanup(tx, {
       role: targetRole,
@@ -219,7 +219,7 @@ export async function cleanupRejectedUsers(params: {
     // C. 최종 유저 삭제 (Repository 활용)
     return await userRepository.deleteManyUsersByIds(tx, userIds);
   });
-  
+
 }
 
 /**
@@ -228,7 +228,7 @@ export async function cleanupRejectedUsers(params: {
 export async function removeAdminAndAssociatedData(adminId: string) {
   return await prismaClient.$transaction(async (tx) => {
     const apartment = await apartmentRepository.findApartmentByAdminId(tx, adminId);
-    
+
     if (apartment) {
       await apartmentRepository.removeApartment(tx, apartment.id);
     }

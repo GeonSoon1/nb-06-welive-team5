@@ -1,4 +1,4 @@
-import { Role } from '@prisma/client';
+import { Role, Vote, VoteOption, NoticeCategory } from '@prisma/client';
 import { Prisma, prismaClient } from '../libs/constants';
 import { CustomError } from '../libs/errors/errorHandler';
 import { CreateNoticeDto, GetNoticeListDto, UpdateNoticeDto } from './notice.struct';
@@ -163,4 +163,31 @@ export const deleteNotice = async (noticeId: string, userId: string, userRole: R
     if (!isOwner && !isAdmin) throw new ForbiddenError('자신이 작성한 공지사항만 삭제하거나 관리자 권한이 필요합니다.');
 
     await noticeRepository.deleteNotice(noticeId);
+};
+
+export const createNoticeFromPoll = async (poll: Vote & { voteOptions: VoteOption[]; }) => {
+    const totalVotes = poll.voteOptions.reduce((acc, option) => acc + option.voteCount, 0);
+
+    const optionsSummary = poll.voteOptions
+        .map(option => {
+            const percentage = totalVotes > 0 ? ((option.voteCount / totalVotes) * 100).toFixed(2) : 0;
+            return `* ${option.content}: ${option.voteCount}표 (${percentage}%)`;
+        })
+        .join('\n');
+
+    const noticeContent = `투표가 종료되어 결과를 알려드립니다.\n\n` +
+        `총 투표 수: ${totalVotes}표\n\n` +
+        `**투표 결과**\n${optionsSummary}`;
+
+    const noticeData: Prisma.NoticeCreateInput = {
+        title: `[투표 결과] ${poll.title}`,
+        content: noticeContent,
+        category: NoticeCategory.RESIDENT_VOTE,
+        author: { connect: { id: poll.authorId! } },
+        apartmentboard: { connect: { id: poll.apartmentboardId } },
+        startDate: new Date(),
+        endDate: new Date(new Date().setDate(new Date().getDate() + 30)), // 30일 동안 게시
+    };
+
+    return await noticeRepository.createNotice(noticeData);
 };
