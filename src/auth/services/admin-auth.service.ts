@@ -88,6 +88,11 @@ export async function signupAdmin(input: SignupAdminBody): Promise<User> {
             contact: input.contact,
             apartmentId: apartment.id,
         });
+        // 생성된 유저의 id를 아파트의 adminId 필드에 저장합니다.
+        await tx.apartment.update({
+            where: { id: apartment.id },
+            data: { adminId: user.id }
+        });
         return user;
     });
 
@@ -110,12 +115,12 @@ export async function signupAdmin(input: SignupAdminBody): Promise<User> {
 
 
 export function formatAdminResponse(user: User): SignupAdminResponse {
-  return {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    joinStatus: user.joinStatus,
-    isActive: true, // "로그인에 성공했다"는 것 자체가 이미 이 유저가 활성화된 계정임을 증명
-  };
+    return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        joinStatus: user.joinStatus,
+        isActive: true, // "로그인에 성공했다"는 것 자체가 이미 이 유저가 활성화된 계정임을 증명
+    };
 }

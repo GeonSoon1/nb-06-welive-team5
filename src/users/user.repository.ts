@@ -18,9 +18,16 @@ export async function findUserIdByContact(db: DbClient, contact: string) {
 
 // super-admin이 하나의 admin의 상태를 ex) PENDING -> APPROVED로 승인
 export async function updateAdminStatus(db: DbClient, adminId: string, status: ApartmentStatus) {
+  // ApartmentStatus에 따른 JoinStatus 매핑
+  const joinStatusMap: Record<ApartmentStatus, JoinStatus> = {
+    [ApartmentStatus.APPROVED]: JoinStatus.APPROVED,
+    [ApartmentStatus.REJECTED]: JoinStatus.REJECTED,
+    [ApartmentStatus.PENDING]: JoinStatus.PENDING,
+  };
   return db.user.update({
     where: { id: adminId },
     data: {
+      joinStatus: joinStatusMap[status], // 매핑된 상태값 사용
       apartment: { update: { apartmentStatus: status as ApartmentStatus } },
     },
   });
@@ -63,19 +70,28 @@ export async function updateAllAdmins(
   const apartmentIds = users.map((u) => u.apartmentId).filter((id): id is string => id !== null);
 
   if (userIds.length === 0) return { count: 0 };
-
+  const joinStatusMap: Record<ApartmentStatus, JoinStatus> = {
+    [ApartmentStatus.APPROVED]: JoinStatus.APPROVED,
+    [ApartmentStatus.REJECTED]: JoinStatus.REJECTED,
+    [ApartmentStatus.PENDING]: JoinStatus.PENDING,
+  };
   // 2. 아파트 테이블의 상태를 직접 일괄 업데이트 (updateMany는 중첩 업데이트 미지원)
   if (apartmentIds.length > 0) {
+
     await db.apartment.updateMany({
       where: { id: { in: apartmentIds } },
-      data: { apartmentStatus: params.toStatus },
+      data: {
+        apartmentStatus: params.toStatus,
+      },
     });
   }
 
-  // 3. 유저 테이블의 상태 업데이트 및 결과 반환
+  // 4. 유저 테이블 일괄 업데이트 (JoinStatus 반영)
   return db.user.updateMany({
     where: { id: { in: userIds } },
-    data: { joinStatus: params.toStatus as JoinStatus },
+    data: {
+      joinStatus: joinStatusMap[params.toStatus] // 안전하게 매핑된 상태값 적용
+    },
   });
 }
 

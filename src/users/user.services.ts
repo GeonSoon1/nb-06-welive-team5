@@ -7,8 +7,6 @@ import { PasswordBody, UpdateAdminBody } from './user.struct';
 import NotFoundError from '../libs/errors/NotFoundError';
 import ValidationError from '../libs/errors/ValidationError';
 import * as apartmentRepository from '../apartments/apartment.repository';
-import { subDays } from 'date-fns';
-import ForbiddenError from '../libs/errors/ForbiddenError';
 
 
 /**
@@ -35,9 +33,6 @@ export async function updateAdminStatus(adminId: string, status: ApartmentStatus
 }
 
 
-/**
- * [super-admin] 관리자(admin)의 가입 상태를 일괄 변경.
- */
 /**
  * [super-admin] 관리자(admin)의 가입 상태를 일괄 변경.
  */
