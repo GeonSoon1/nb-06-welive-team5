@@ -40,7 +40,7 @@ describe('Complaint API 통합 테스트 (리팩토링 버전)', () => {
   const mockUserId = 'user-1';
 
   beforeAll(() => {
-    jest.spyOn(console, 'error').mockImplementation(() => {});
+    jest.spyOn(console, 'error').mockImplementation(() => { });
   });
 
   afterAll(() => {
@@ -181,7 +181,7 @@ describe('Complaint API 통합 테스트 (리팩토링 버전)', () => {
         'comp-1',
         mockUserId,
         mockAptId,
-        expect.objectContaining({ title: '수정된 제목' }),
+        expect.objectContaining({ title: '수정된 제목' }), Role.USER,
       );
     });
   });
@@ -198,7 +198,8 @@ describe('Complaint API 통합 테스트 (리팩토링 버전)', () => {
       expect(complaintService.deleteUserComplaint).toHaveBeenCalledWith(
         'comp-1',
         mockUserId,
-        mockAptId,
+        mockAptId, Role.USER,
+
       );
     });
   });

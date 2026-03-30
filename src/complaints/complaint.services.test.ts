@@ -37,7 +37,7 @@ describe('Complaint Service 최종 통합 테스트', () => {
   const mockAdminId = 'admin-999';
 
   beforeAll(() => {
-    jest.spyOn(console, 'error').mockImplementation(() => {});
+    jest.spyOn(console, 'error').mockImplementation(() => { });
   });
 
   afterAll(() => {
@@ -99,7 +99,7 @@ describe('Complaint Service 최종 통합 테스트', () => {
         totalCount: 1,
       });
 
-      const result: { complaints: ComplaintListResponse[]; totalCount: number } =
+      const result: { complaints: ComplaintListResponse[]; totalCount: number; } =
         await complaintService.getComplaints(mockApartmentId, mockUserId, Role.USER, queryParams);
 
       const { complaints } = result;
@@ -159,7 +159,7 @@ describe('Complaint Service 최종 통합 테스트', () => {
       await expect(
         complaintService.updateUserComplaint('comp-1', mockUserId, mockApartmentId, {
           title: '수정',
-        }),
+        }, Role.USER),
       ).rejects.toThrow(BadRequestError);
     });
 
@@ -183,7 +183,7 @@ describe('Complaint Service 최종 통합 테스트', () => {
         mockApartmentId,
         {
           title: '수정됨',
-        },
+        }, Role.USER,
       );
 
       expect(complaintRepository.updateUserComplaint).toHaveBeenCalledWith(
@@ -203,7 +203,7 @@ describe('Complaint Service 최종 통합 테스트', () => {
       });
       (complaintRepository.validateComplaintOwnership as jest.Mock).mockResolvedValue(true);
 
-      await complaintService.deleteUserComplaint('comp-1', mockUserId, mockApartmentId);
+      await complaintService.deleteUserComplaint('comp-1', mockUserId, mockApartmentId, Role.USER);
       expect(complaintRepository.deleteUserComplaint).toHaveBeenCalledWith('comp-1');
     });
   });

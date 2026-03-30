@@ -1,26 +1,43 @@
+import { VoteStatus } from '@prisma/client';
 import { prismaClient, Prisma } from '../libs/constants';
 
 export const updatePollStatuses = async () => {
     const now = new Date();
 
-    // 1. 종료 시간이 지난 투표를 CLOSED(마감)로 변경
-    await prismaClient.vote.updateMany({
+    // 1. 종료 시간이 지난 투표를 찾아라 (옵션 정보 포함)
+    const pollsToClose = await prismaClient.vote.findMany({
         where: {
             endDate: { lte: now },
-            status: { not: 'CLOSED' },
+            status: { not: VoteStatus.CLOSED },
         },
-        data: { status: 'CLOSED' },
+        include: {
+            voteOptions: true,
+        },
     });
+
+    if (pollsToClose.length > 0) {
+        const pollIdsToClose = pollsToClose.map((poll) => poll.id);
+
+        // 해당 투표들의 상태를 'CLOSED'로 변경
+        await prismaClient.vote.updateMany({
+            where: {
+                id: { in: pollIdsToClose },
+            },
+            data: { status: VoteStatus.CLOSED },
+        });
+    }
 
     // 2. 시작 시간이 지났고 진행 전인 투표를 IN_PROGRESS(진행 중)로 변경
     await prismaClient.vote.updateMany({
         where: {
             startDate: { lte: now },
             endDate: { gt: now },
-            status: 'PENDING',
+            status: VoteStatus.PENDING,
         },
-        data: { status: 'IN_PROGRESS' },
+        data: { status: VoteStatus.IN_PROGRESS },
     });
+
+    return pollsToClose; // 방금 마감 처리된 투표 목록을 반환
 };
 
 export const createPoll = async (pollData: Prisma.VoteCreateInput) => {

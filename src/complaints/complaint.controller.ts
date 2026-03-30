@@ -65,11 +65,13 @@ export async function updateUserComplaint(req: ExpressRequest, res: ExpressRespo
 
   const data = s.create(bodyWithoutExtras, UpdateUserComplaintStruct);
 
+  const userRole = req.user!.role;
   const result = await complaintService.updateUserComplaint(
     complaintId,
     userId,
     apartmentId!,
     data,
+    userRole
   );
 
   return res.status(200).json(result);
@@ -82,7 +84,8 @@ export async function deleteUserComplaint(req: ExpressRequest, res: ExpressRespo
 
   const complaintId = getValidComplaintId(req);
 
-  await complaintService.deleteUserComplaint(complaintId, userId, apartmentId!);
+  const userRole = req.user!.role;
+  await complaintService.deleteUserComplaint(complaintId, userId, apartmentId!, userRole);
 
   return res.status(200).json({ message: '정상적으로 삭제 처리되었습니다' });
 }

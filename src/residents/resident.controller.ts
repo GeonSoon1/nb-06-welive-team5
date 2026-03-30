@@ -38,7 +38,8 @@ const getValidResidentId = (req: ExpressRequest): string => {
 // 1. 입주민 리소스 생성(개별 등록)
 export async function createResident(req: ExpressRequest, res: ExpressResponse) {
   const apartmentId = req.user?.apartmentId;
-  const data = s.create(req.body, CreateResidentStruct);
+  const { apartmentId: _apartmentId, residenceStatus, approvalStatus, ...body } = req.body;
+  const data = s.create(body, CreateResidentStruct);
 
   if (!apartmentId) {
     throw new UnauthorizedError('아파트 정보가 유효하지 않습니다.');
