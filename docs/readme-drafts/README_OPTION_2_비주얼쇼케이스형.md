@@ -41,7 +41,7 @@
 
 <br />
 
-## 목차
+### 목차
 
 - [프로젝트 소개](#프로젝트-소개)
 - [팀원 소개](#팀원-소개)
@@ -51,7 +51,7 @@
 - [ERD](#erd)
 - [실행 방법](#실행-방법)
 
-## 프로젝트 소개
+### 프로젝트 소개
 
 <div align="center">
 
@@ -71,7 +71,7 @@
 
 <br />
 
-## 팀원 소개
+### 팀원 소개
 
 <!-- TODO: 실제 GitHub username으로 교체 -->
 
@@ -125,7 +125,7 @@
 
 <br />
 
-## 유저 플로우
+### 유저 플로우
 
 <!-- TODO: draw.io나 Excalidraw로 유저 플로우 다이어그램 제작 후 이미지 교체 -->
 <!-- <img src="./docs/images/user-flow.png" alt="유저 플로우" width="100%" /> -->
@@ -142,7 +142,7 @@
 
 <br />
 
-## 기능 소개
+### 기능 소개
 
 <!--
   ============================================================
@@ -158,7 +158,7 @@
   ============================================================
 -->
 
-### 회원가입 / 로그인
+#### 회원가입 / 로그인
 
 > JWT + Refresh Token | HTTP-Only 쿠키 | 역할별 가입 플로우
 
@@ -173,7 +173,7 @@
 
 <br />
 
-### 입주민 관리
+#### 입주민 관리
 
 > CSV 대량 등록 | 세대주/세대원 구분 | 유저 연동
 
@@ -188,7 +188,7 @@
 
 <br />
 
-### 공지사항
+#### 공지사항
 
 > 카테고리 분류 | 상단 고정 | 파일 첨부 | 조회수
 
@@ -203,7 +203,7 @@
 
 <br />
 
-### 투표 시스템
+#### 투표 시스템
 
 > 자동 상태 전환 | 실시간 집계 | 중복 방지
 
@@ -218,7 +218,7 @@
 
 <br />
 
-### 민원 관리
+#### 민원 관리
 
 > 공개/비공개 | 상태 워크플로우 | 댓글 소통
 
@@ -233,7 +233,7 @@
 
 <br />
 
-### 실시간 알림
+#### 실시간 알림
 
 > SSE (Server-Sent Events) | 유형별 알림 | 읽음 처리
 
@@ -247,7 +247,7 @@
 
 <br />
 
-### 캘린더 이벤트
+#### 캘린더 이벤트
 
 > 공지/투표 연동 | 월별 조회
 
@@ -260,7 +260,7 @@
 
 <br />
 
-### 인프라 / 배포
+#### 인프라 / 배포
 
 > Blue-Green 무중단 배포 | 4대 EC2 | ALB 트래픽 스위칭
 
@@ -284,11 +284,11 @@
 
 <br />
 
-## 기술 스택
+### 기술 스택
 
 <div align="center">
 
-### Backend
+#### Backend
 
 | 분류 | 기술 |
 |:---:|------|
@@ -301,7 +301,7 @@
 | Monitoring | ![Sentry](https://img.shields.io/badge/Sentry-362D59?style=for-the-badge&logo=sentry&logoColor=white) |
 | Test | ![Jest](https://img.shields.io/badge/Jest-C21325?style=for-the-badge&logo=jest&logoColor=white) |
 
-### Frontend
+#### Frontend
 
 | 분류 | 기술 |
 |:---:|------|
@@ -309,7 +309,7 @@
 | Styling | ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white) |
 | State | ![Zustand](https://img.shields.io/badge/Zustand-433E38?style=for-the-badge) |
 
-### Infra
+#### Infra
 
 | 분류 | 기술 |
 |:---:|------|
@@ -321,14 +321,14 @@
 
 <br />
 
-## ERD
+### ERD
 
 <!-- TODO: ERD 이미지 추가 (ERD Cloud / dbdiagram.io) -->
 <!-- <img src="./docs/images/erd.png" alt="ERD" width="100%" /> -->
 
 <br />
 
-## 실행 방법
+### 실행 방법
 
 ```bash
 # 1. 클론
@@ -353,7 +353,7 @@ cd front-end && npm install && npm run dev
 
 <br />
 
-## 프로젝트 문서
+### 프로젝트 문서
 
 <!-- TODO: 실제 링크로 교체 -->
 

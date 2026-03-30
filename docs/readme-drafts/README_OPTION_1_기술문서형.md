@@ -28,7 +28,7 @@
 
 <br />
 
-## 목차
+### 목차
 
 - [프로젝트 소개](#프로젝트-소개)
 - [팀원 소개](#팀원-소개)
@@ -43,7 +43,7 @@
 - [팀원별 구현 기능](#팀원별-구현-기능)
 - [개발 컨벤션](#개발-컨벤션)
 
-## 프로젝트 소개
+### 프로젝트 소개
 
 | 항목 | 내용 |
 |------|------|
@@ -60,7 +60,7 @@
 
 <br />
 
-## 팀원 소개
+### 팀원 소개
 
 <!-- TODO: 각 팀원의 GitHub username으로 교체 -->
 
@@ -102,9 +102,9 @@
 
 <br />
 
-## 기술 스택
+### 기술 스택
 
-### Backend
+#### Backend
 
 | 분류 | 기술 |
 |------|------|
@@ -121,7 +121,7 @@
 | **검증** | ![Superstruct](https://img.shields.io/badge/Superstruct-1E90FF?style=for-the-badge) |
 | **테스트** | ![Jest](https://img.shields.io/badge/Jest-C21325?style=for-the-badge&logo=jest&logoColor=white) ![Supertest](https://img.shields.io/badge/Supertest-009688?style=for-the-badge) |
 
-### Frontend
+#### Frontend
 
 | 분류 | 기술 |
 |------|------|
@@ -132,7 +132,7 @@
 | **HTTP** | ![Axios](https://img.shields.io/badge/Axios-5A29E4?style=for-the-badge&logo=axios&logoColor=white) |
 | **Form/검증** | ![React Hook Form](https://img.shields.io/badge/React_Hook_Form-EC5990?style=for-the-badge&logo=reacthookform&logoColor=white) ![Zod](https://img.shields.io/badge/Zod-3E67B1?style=for-the-badge&logo=zod&logoColor=white) |
 
-### Infra / DevOps
+#### Infra / DevOps
 
 | 분류 | 기술 |
 |------|------|
@@ -143,7 +143,7 @@
 
 <br />
 
-## 시스템 아키텍처
+### 시스템 아키텍처
 
 <!-- TODO: 아키텍처 다이어그램 이미지 추가 (draw.io나 Excalidraw로 제작 권장) -->
 <!-- <img src="./docs/images/architecture.png" alt="System Architecture" width="100%" /> -->
@@ -180,7 +180,7 @@
                 └──────────┘  └─────────┘
 ```
 
-### 데이터 흐름
+#### 데이터 흐름
 
 ```
 요청 → Router → Controller → Service → Repository → Prisma → PostgreSQL
@@ -191,12 +191,12 @@
 
 <br />
 
-## ERD
+### ERD
 
 <!-- TODO: ERD 이미지 추가 (ERD Cloud나 dbdiagram.io에서 export) -->
 <!-- <img src="./docs/images/erd.png" alt="ERD" width="100%" /> -->
 
-### 주요 엔티티 관계
+#### 주요 엔티티 관계
 
 ```
 User ──┬── 1:1 ──── Apartment (관리자)
@@ -217,7 +217,7 @@ Vote ──┬── 1:N ──── VoteOption (투표 선택지)
        └── 1:N ──── VoteRecord (투표 기록)
 ```
 
-### 핵심 Enum
+#### 핵심 Enum
 
 | Enum | 값 | 설명 |
 |------|-----|------|
@@ -229,9 +229,9 @@ Vote ──┬── 1:N ──── VoteOption (투표 선택지)
 
 <br />
 
-## 주요 기능
+### 주요 기능
 
-### 인증 / 인가
+#### 인증 / 인가
 
 | 기능 | 설명 |
 |------|------|
@@ -241,7 +241,7 @@ Vote ──┬── 1:N ──── VoteOption (투표 선택지)
 | 역할 기반 인가 | USER / ADMIN / SUPER_ADMIN 3단계 권한 분리 |
 | 가입 승인 워크플로우 | PENDING → APPROVED / REJECTED → NEED_UPDATE 상태 관리 |
 
-### 아파트 / 입주민 관리
+#### 아파트 / 입주민 관리
 
 | 기능 | 설명 |
 |------|------|
@@ -251,7 +251,7 @@ Vote ──┬── 1:N ──── VoteOption (투표 선택지)
 | CSV 다운로드 | 입주민 명부 CSV 내보내기 |
 | 유저-입주민 연동 | 가입한 사용자를 입주민으로 연결 |
 
-### 공지사항
+#### 공지사항
 
 | 기능 | 설명 |
 |------|------|
@@ -261,7 +261,7 @@ Vote ──┬── 1:N ──── VoteOption (투표 선택지)
 | 상단 고정 | 중요 공지 핀 고정 기능 |
 | 파일 첨부 | S3 기반 이미지/파일 첨부 |
 
-### 투표
+#### 투표
 
 | 기능 | 설명 |
 |------|------|
@@ -270,7 +270,7 @@ Vote ──┬── 1:N ──── VoteOption (투표 선택지)
 | 자동 상태 전환 | Cron Job으로 SCHEDULED → IN_PROGRESS → CLOSED 자동 변경 |
 | 투표 결과 | 실시간 투표 현황 및 결과 조회 |
 
-### 민원
+#### 민원
 
 | 기능 | 설명 |
 |------|------|
@@ -279,7 +279,7 @@ Vote ──┬── 1:N ──── VoteOption (투표 선택지)
 | 관리자 처리 | 관리자가 민원 상태 변경 및 처리 |
 | 댓글 소통 | 민원에 대한 댓글을 통해 입주민-관리자 소통 |
 
-### 캘린더 이벤트
+#### 캘린더 이벤트
 
 | 기능 | 설명 |
 |------|------|
@@ -287,7 +287,7 @@ Vote ──┬── 1:N ──── VoteOption (투표 선택지)
 | 월별 조회 | 연/월 기준 이벤트 목록 조회 |
 | 자동 연동 | 공지·투표 등록 시 캘린더에 자동 반영 |
 
-### 실시간 알림
+#### 실시간 알림
 
 | 기능 | 설명 |
 |------|------|
@@ -295,7 +295,7 @@ Vote ──┬── 1:N ──── VoteOption (투표 선택지)
 | 알림 유형 | 공지 등록, 투표 등록/마감, 민원 상태 변경, 가입 요청 등 |
 | 읽음 처리 | 개별 알림 읽음 표시 |
 
-### 파일 관리
+#### 파일 관리
 
 | 기능 | 설명 |
 |------|------|
@@ -304,11 +304,11 @@ Vote ──┬── 1:N ──── VoteOption (투표 선택지)
 
 <br />
 
-## API 명세
+### API 명세
 
 > 전체 API 목록입니다. 인증이 필요한 엔드포인트는 **Auth** 열에 표시했습니다.
 
-### 인증 (Auth)
+#### 인증 (Auth)
 
 | Method | Endpoint | Auth | 권한 | 설명 |
 |--------|----------|:----:|------|------|
@@ -326,14 +326,14 @@ Vote ──┬── 1:N ──── VoteOption (투표 선택지)
 | PATCH | `/api/auth/residents/status` | O | ADMIN | 입주민 일괄 승인 |
 | POST | `/api/auth/cleanup` | O | SUPER_ADMIN, ADMIN | 거절 계정 정리 |
 
-### 사용자 (Users)
+#### 사용자 (Users)
 
 | Method | Endpoint | Auth | 권한 | 설명 |
 |--------|----------|:----:|------|------|
 | PATCH | `/api/users/me` | O | - | 프로필 이미지 변경 |
 | PATCH | `/api/users/password` | O | - | 비밀번호 변경 |
 
-### 아파트 (Apartments)
+#### 아파트 (Apartments)
 
 | Method | Endpoint | Auth | 권한 | 설명 |
 |--------|----------|:----:|------|------|
@@ -342,7 +342,7 @@ Vote ──┬── 1:N ──── VoteOption (투표 선택지)
 | GET | `/api/apartments` | O | Role별 분기 | 아파트 목록 (인증) |
 | GET | `/api/apartments/:id` | O | Role별 분기 | 아파트 상세 (인증) |
 
-### 입주민 (Residents)
+#### 입주민 (Residents)
 
 | Method | Endpoint | Auth | 권한 | 설명 |
 |--------|----------|:----:|------|------|
@@ -356,7 +356,7 @@ Vote ──┬── 1:N ──── VoteOption (투표 선택지)
 | GET | `/api/residents/file/template` | O | ADMIN, SUPER_ADMIN | CSV 템플릿 다운로드 |
 | GET | `/api/residents/file` | O | ADMIN, SUPER_ADMIN | 입주민 CSV 내보내기 |
 
-### 공지사항 (Notices)
+#### 공지사항 (Notices)
 
 | Method | Endpoint | Auth | 권한 | 설명 |
 |--------|----------|:----:|------|------|
@@ -366,7 +366,7 @@ Vote ──┬── 1:N ──── VoteOption (투표 선택지)
 | PATCH | `/api/notices/:noticeId` | O | ADMIN, SUPER_ADMIN | 공지 수정 |
 | DELETE | `/api/notices/:noticeId` | O | ADMIN, SUPER_ADMIN | 공지 삭제 |
 
-### 투표 (Polls)
+#### 투표 (Polls)
 
 | Method | Endpoint | Auth | 권한 | 설명 |
 |--------|----------|:----:|------|------|
@@ -376,14 +376,14 @@ Vote ──┬── 1:N ──── VoteOption (투표 선택지)
 | PATCH | `/api/polls/:pollId` | O | ADMIN, SUPER_ADMIN | 투표 수정 |
 | DELETE | `/api/polls/:pollId` | O | ADMIN, SUPER_ADMIN | 투표 삭제 |
 
-### 투표 참여 (Votes)
+#### 투표 참여 (Votes)
 
 | Method | Endpoint | Auth | 권한 | 설명 |
 |--------|----------|:----:|------|------|
 | POST | `/api/options/:optionId/vote` | O | - | 투표하기 |
 | DELETE | `/api/options/:optionId/vote` | O | - | 투표 취소 |
 
-### 민원 (Complaints)
+#### 민원 (Complaints)
 
 | Method | Endpoint | Auth | 권한 | 설명 |
 |--------|----------|:----:|------|------|
@@ -394,7 +394,7 @@ Vote ──┬── 1:N ──── VoteOption (투표 선택지)
 | DELETE | `/api/complaints/:complaintId` | O | 작성자 | 민원 삭제 |
 | PATCH | `/api/complaints/:complaintId/status` | O | ADMIN, SUPER_ADMIN | 민원 상태 변경 |
 
-### 댓글 (Comments)
+#### 댓글 (Comments)
 
 | Method | Endpoint | Auth | 권한 | 설명 |
 |--------|----------|:----:|------|------|
@@ -402,14 +402,14 @@ Vote ──┬── 1:N ──── VoteOption (투표 선택지)
 | PATCH | `/api/comments/:commentId` | O | 작성자, ADMIN | 댓글 수정 |
 | DELETE | `/api/comments/:commentId` | O | 작성자, ADMIN | 댓글 삭제 |
 
-### 알림 (Notifications)
+#### 알림 (Notifications)
 
 | Method | Endpoint | Auth | 권한 | 설명 |
 |--------|----------|:----:|------|------|
 | GET | `/api/notifications/sse` | O | - | 실시간 알림 구독 (SSE) |
 | PATCH | `/api/notifications/:notificationId/read` | O | - | 알림 읽음 처리 |
 
-### 이벤트 (Events)
+#### 이벤트 (Events)
 
 | Method | Endpoint | Auth | 권한 | 설명 |
 |--------|----------|:----:|------|------|
@@ -419,7 +419,7 @@ Vote ──┬── 1:N ──── VoteOption (투표 선택지)
 
 <br />
 
-## 프로젝트 구조
+### 프로젝트 구조
 
 ```
 nb-06-welive-team5/
@@ -484,15 +484,15 @@ nb-06-welive-team5/
 
 <br />
 
-## Quick Start
+### Quick Start
 
-### 사전 요구사항
+#### 사전 요구사항
 
 - **Node.js** 20 이상
 - **PostgreSQL** 16 이상
 - **AWS 계정** (S3 버킷 — 파일 업로드용)
 
-### 1. 프로젝트 클론 및 의존성 설치
+#### 1. 프로젝트 클론 및 의존성 설치
 
 ```bash
 git clone https://github.com/GeonSoon1/nb-06-welive-team5.git
@@ -500,7 +500,7 @@ cd nb-06-welive-team5
 npm install
 ```
 
-### 2. 환경변수 설정
+#### 2. 환경변수 설정
 
 ```bash
 cp .env.example .env
@@ -533,7 +533,7 @@ SENTRY_DSN=your-sentry-dsn
 SUPPORT_CONTACT=010-1234-5678
 ```
 
-### 3. 데이터베이스 초기화
+#### 3. 데이터베이스 초기화
 
 ```bash
 # Prisma Client 생성 + 마이그레이션 적용
@@ -543,7 +543,7 @@ npx prisma migrate dev
 npm run db:seed
 ```
 
-### 4. 서버 실행
+#### 4. 서버 실행
 
 ```bash
 # 백엔드 (포트 8080)
@@ -555,12 +555,12 @@ npm install
 npm run dev
 ```
 
-### 5. 접속
+#### 5. 접속
 
 - **프론트엔드**: http://localhost:3000
 - **백엔드 API**: http://localhost:8080/api
 
-### 테스트 실행
+#### 테스트 실행
 
 ```bash
 npm run test          # 전체 테스트 + 커버리지
@@ -569,9 +569,9 @@ npm run typecheck     # TypeScript 타입 검사
 
 <br />
 
-## 배포 환경
+### 배포 환경
 
-### Blue-Green 무중단 배포
+#### Blue-Green 무중단 배포
 
 ```
 GitHub Push (dev)
@@ -612,7 +612,7 @@ GitHub Push (dev)
 
 <br />
 
-## 팀원별 구현 기능
+### 팀원별 구현 기능
 
 <!--
   TODO: 각 팀원 이름과 담당 기능을 실제로 채워주세요.
@@ -630,7 +630,7 @@ GitHub Push (dev)
   아래는 예시 구성입니다.
 -->
 
-### 팀원1 — 담당 모듈 A
+#### 팀원1 — 담당 모듈 A
 
 **담당 모듈**: `모듈1`, `모듈2`
 
@@ -643,7 +643,7 @@ GitHub Push (dev)
 
 <br />
 
-### 팀원2 — 담당 모듈 B
+#### 팀원2 — 담당 모듈 B
 
 **담당 모듈**: `모듈3`, `모듈4`
 
@@ -656,7 +656,7 @@ GitHub Push (dev)
 
 <br />
 
-### 팀원3 — 담당 모듈 C
+#### 팀원3 — 담당 모듈 C
 
 **담당 모듈**: `모듈5`, `모듈6`
 
@@ -669,9 +669,9 @@ GitHub Push (dev)
 
 <br />
 
-## 개발 컨벤션
+### 개발 컨벤션
 
-### 브랜치 전략
+#### 브랜치 전략
 
 ```
 main ──────────────────────────────── 운영 배포
@@ -683,7 +683,7 @@ main ─────────────────────────
         └── refactor/대상 ──────────── 리팩토링
 ```
 
-### 커밋 메시지
+#### 커밋 메시지
 
 ```
 Type: 설명
@@ -698,7 +698,7 @@ Type:
   ci       CI/CD
 ```
 
-### 코드 구조 (모듈별)
+#### 코드 구조 (모듈별)
 
 ```
 모듈명/
@@ -710,7 +710,7 @@ Type:
 └── 모듈명.type.ts          # 타입 정의
 ```
 
-### PR 리뷰 규칙
+#### PR 리뷰 규칙
 
 - PR 생성 시 최소 1명 리뷰 필수
 - 테스트 통과 확인 후 merge
