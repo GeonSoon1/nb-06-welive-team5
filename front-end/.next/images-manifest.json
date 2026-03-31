@@ -24,9 +24,7 @@
     "path": "/_next/image",
     "loader": "default",
     "loaderFile": "",
-    "domains": [
-      "sprint-be-project.s3.ap-northeast-2.amazonaws.com"
-    ],
+    "domains": [],
     "disableStaticImages": false,
     "minimumCacheTTL": 60,
     "formats": [
@@ -35,8 +33,15 @@
     "dangerouslyAllowSVG": false,
     "contentSecurityPolicy": "script-src 'none'; frame-src 'none'; sandbox;",
     "contentDispositionType": "attachment",
-    "remotePatterns": [],
-    "unoptimized": true,
+    "remotePatterns": [
+      {
+        "protocol": "https",
+        "hostname": "^(?:^(?:mywelive\\-bucket\\.s3\\.ap\\-northeast\\-2\\.amazonaws\\.com)$)$",
+        "port": "",
+        "pathname": "^(?:\\/(?!\\.{1,2}(?:\\/|$))(?:(?:(?!(?:^|\\/)\\.{1,2}(?:\\/|$)).)*?))$"
+      }
+    ],
+    "unoptimized": false,
     "sizes": [
       640,
       750,
