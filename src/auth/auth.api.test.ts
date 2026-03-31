@@ -63,13 +63,17 @@ describe('Auth API 종합 테스트 (Full Coverage - 227 Line Version)', () => {
   // 1. 일반 사용자 회원가입
   describe('POST /api/auth/signup', () => {
     it('성공: 필수 정보를 모두 입력하면 201을 반환한다', async () => {
-      const payload = {
-        username: 'testuser1',
-        password: 'Password123!',
-        name: '홍길동',
-        email: 'test@test.com',
-        contact: '01012345678',
-        unitId: 'unit-123',
+      const payload =
+      {
+        username: "user12",
+        password: "password123!",
+        contact: "01011112321",
+        name: "ㅇㅈㅁ",
+        email: "dwadwa@test.com",
+        apartmentName: "웰라이브 아파트",
+        apartmentDong: "101",
+        apartmentHo: "101",
+        role: "USER"
       };
       (userAuthService.signupUser as jest.Mock).mockResolvedValue({ id: 'user-1', ...payload });
 

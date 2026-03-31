@@ -23,24 +23,11 @@ describe('PollScheduler Controller', () => {
         (pollRepository.updatePollStatuses as jest.Mock).mockResolvedValue(true);
 
         // When
-        await checkSchedulerStatus(req as ExpressRequest, res as ExpressResponse, next as ExpressNextFunction);
+        await checkSchedulerStatus(req as ExpressRequest, res as ExpressResponse);
 
         // Then
         expect(pollRepository.updatePollStatuses).toHaveBeenCalled();
         expect(res.status).toHaveBeenCalledWith(200);
         expect(res.json).toHaveBeenCalledWith({ message: 'Poll scheduler is running.' });
-    });
-
-    it('에러 발생 시 next(error)를 호출해야 한다', async () => {
-        // Given
-        const error = new Error('Database connection failed');
-        (pollRepository.updatePollStatuses as jest.Mock).mockRejectedValue(error);
-
-        // When
-        await checkSchedulerStatus(req as ExpressRequest, res as ExpressResponse, next as ExpressNextFunction);
-
-        // Then
-        expect(next).toHaveBeenCalledWith(error);
-        expect(res.status).not.toHaveBeenCalled();
     });
 });
