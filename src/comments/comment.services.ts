@@ -5,6 +5,7 @@ import BadRequestError from '../libs/errors/BadRequestError';
 import NotFoundError from '../libs/errors/NotFoundError';
 import ForbiddenError from '../libs/errors/ForbiddenError';
 import { Role } from '@prisma/client';
+import { prismaClient } from '../libs/constants';
 
 const formatCommentResponse = (comment: CommentWithAuthor): FormattedCommentResponse => {
   const boardId = comment.complaintId || comment.noticeId || comment.voteId || '';
@@ -68,6 +69,8 @@ export async function deleteComment(commentId: string, userId: string, userRole:
   const isAdmin = userRole === Role.ADMIN || userRole === Role.SUPER_ADMIN;
 
   if (!isAuthor && !isAdmin) throw new ForbiddenError('삭제 권한이 없습니다.');
+  //-todo 이부분도 슈퍼어드민이 아닐 경우에 자신의 아파트만 삭제 가능하게끔
 
+  // ADMIN 권한이더라도 자신이 관리하는 아파트의 투표만 수정 가능하도록 제한
   await commentRepository.deleteComment(commentId);
 }

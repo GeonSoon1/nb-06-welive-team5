@@ -1,10 +1,5 @@
+import { VoteStatus } from '@prisma/client';
 import { superstruct, isUuid } from '../libs/constants';
-
-export enum VoteStatus {
-    PENDING = 'PENDING', //투표전
-    IN_PROGRESS = 'IN_PROGRESS', //투표중
-    CLOSED = 'CLOSED', //마감
-}
 
 export const CreatePollStruct = superstruct.object({
     boardId: superstruct.define('Uuid', (value) => typeof value === 'string' && isUuid.v4(value)),

@@ -5,6 +5,7 @@ import { CreatePollDto, GetPollListDto, UpdatePollDto } from './poll.struct';
 import * as pollRepository from './poll.repository';
 import ForbiddenError from '../libs/errors/ForbiddenError';
 import BadRequestError from '../libs/errors/BadRequestError';
+import * as noticeService from '../notices/notice.service';
 
 /**
  * 투표 생성
@@ -78,6 +79,23 @@ export const getPollList = async (query: GetPollListDto, apartmentId: string | n
     if (buildingPermission !== undefined) where.targetScope = buildingPermission;
     if (keyword) {
         where.OR = [{ title: { contains: keyword } }, { content: { contains: keyword } }];
+    }
+
+    //-todo cron 정상화시 해당 투표 목록 최신화 및 공지사항으로 이동 삭제 필요
+    const closedPolls = await pollRepository.updatePollStatuses();
+
+    if (closedPolls && closedPolls.length > 0) {
+        console.log(`[CRON_INFO] ${closedPolls.length}개 작업 처리 시작`);
+
+        const results = await Promise.allSettled(
+            closedPolls.map(poll => noticeService.createNoticeFromPoll(poll))
+        );
+
+        results.forEach((res, idx) => {
+            if (res.status === 'rejected') {
+                console.error(`[CRON_ERROR] ${idx}번째 공지 생성 실패:`, res.reason);
+            }
+        });
     }
 
     const { totalCount, polls } = await pollRepository.findPolls(skip, limit, where);

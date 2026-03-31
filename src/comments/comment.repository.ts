@@ -28,17 +28,36 @@ export async function validateBoardOwnership(
 export async function createComment(authorId: string, data: CreateCommentDto) {
   const { content, boardType, boardId } = data;
 
-  return prisma.comment.create({
-    data: {
-      content,
-      authorId,
-      ...(boardType === BoardType.COMPLAINT && { complaintId: boardId }),
-      ...(boardType === BoardType.NOTICE && { noticeId: boardId }),
-      ...(boardType === BoardType.VOTE && { voteId: boardId }),
-    },
-    include: {
-      author: { select: { name: true } },
-    },
+  // 트랜잭션을 사용하여 댓글 생성과 카운트 증가를 동시에 처리
+  return await prisma.$transaction(async (tx) => {
+    // 1. 댓글 생성
+    const newComment = await tx.comment.create({
+      data: {
+        content,
+        authorId,
+        ...(boardType === BoardType.COMPLAINT && { complaintId: boardId }),
+        ...(boardType === BoardType.NOTICE && { noticeId: boardId }),
+        ...(boardType === BoardType.VOTE && { voteId: boardId }),
+      },
+      include: {
+        author: { select: { name: true } },
+      },
+    });
+
+    // 2. 게시글의 댓글 수 1 증가 (increment)
+    if (boardType === BoardType.COMPLAINT) {
+      await tx.complaint.update({
+        where: { id: boardId },
+        data: { commentsCount: { increment: 1 } },
+      });
+    } else if (boardType === BoardType.NOTICE) {
+      await tx.notice.update({
+        where: { id: boardId },
+        data: { commentsCount: { increment: 1 } },
+      });
+    }
+
+    return newComment;
   });
 }
 
@@ -47,6 +66,19 @@ export async function getCommentById(id: string) {
     where: { id },
     include: {
       author: { select: { name: true } },
+    },
+  });
+}
+
+export async function getCommentApartmentIdById(id: string) {
+  return prisma.comment.findUnique({
+    where: { id },
+    include: {
+      author: {
+        select: {
+          apartmentId: true
+        }
+      },
     },
   });
 }
@@ -60,5 +92,26 @@ export async function updateComment(id: string, content: string) {
 }
 
 export async function deleteComment(id: string) {
-  await prisma.comment.delete({ where: { id } });
+  // 트랜잭션을 사용하여 댓글 삭제와 카운트 감소를 동시에 처리
+  await prisma.$transaction(async (tx) => {
+    // 1. 삭제할 댓글 조회 (어떤 게시판 소속인지 확인하기 위해)
+    const comment = await tx.comment.findUnique({ where: { id } });
+    if (!comment) return; // 이미 삭제되었거나 없는 댓글이면 종료
+
+    // 2. 댓글 삭제
+    await tx.comment.delete({ where: { id } });
+
+    // 3. 소속된 게시판의 댓글 수 1 감소 (decrement)
+    if (comment.complaintId) {
+      await tx.complaint.update({
+        where: { id: comment.complaintId },
+        data: { commentsCount: { decrement: 1 } },
+      });
+    } else if (comment.noticeId) {
+      await tx.notice.update({
+        where: { id: comment.noticeId },
+        data: { commentsCount: { decrement: 1 } },
+      });
+    }
+  });
 }
