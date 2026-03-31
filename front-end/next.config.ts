@@ -16,6 +16,8 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+
+  // 기존 SVG 설정 유지
   webpack(config: Configuration) {
     config.module?.rules?.push({
       test: /\.svg$/,

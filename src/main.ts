@@ -17,6 +17,13 @@ Sentry.init({
 
 const app = EXPRESS();
 
+// 로드밸런싱 제대로 작동하는지 확인
+app.get('/', (req, res) => {
+  const serverName = process.env.SERVER_NAME || 'Unknown';
+  console.log(`[Request Log] Handled by: ${serverName}`); // 터미널에 출력
+  res.send(`Hello! This response is from ${serverName}`); // 브라우저에 출력
+});
+
 // 1. 기본 미들웨어 설정 (CORS, Body Parser 등은 라우터보다 먼저 선언해야 함)
 app.use(
   cors({
