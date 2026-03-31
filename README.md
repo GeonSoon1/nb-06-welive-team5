@@ -129,25 +129,11 @@
 
 ### 기능 소개
 
-<!--
-  ============================================================
-  TODO: 각 기능별 스크린샷 또는 GIF를 추가해주세요!
-
-  스크린샷/GIF 촬영 팁:
-  - Mac: Cmd+Shift+5 (화면 녹화) → gifski로 GIF 변환
-  - Windows: Win+G (Xbox Game Bar) 또는 LICEcap
-  - 브라우저 크기를 1280x720으로 고정하면 일관된 사이즈
-  - GIF는 10초 이내, 핵심 동작만 간결하게
-
-  이미지 저장 위치: docs/images/ 폴더
-  ============================================================
--->
-
 #### 회원가입 / 로그인
 
 > JWT + Refresh Token | HTTP-Only 쿠키 | 역할별 가입 플로우
 
-<!-- <img src="./docs/images/feature-auth.gif" alt="로그인" width="700" /> -->
+<img src="./docs/images/feature-auth.gif" alt="로그인" width="700" />
 
 | 기능            | 설명                                     |
 | --------------- | ---------------------------------------- |
@@ -162,7 +148,7 @@
 
 > CSV 대량 등록 | 세대주/세대원 구분 | 유저 연동
 
-<!-- <img src="./docs/images/feature-resident.gif" alt="입주민 관리" width="700" /> -->
+<img src="./docs/images/feature-resident.gif" alt="입주민 관리" width="700" />
 
 | 기능         | 설명                            |
 | ------------ | ------------------------------- |
@@ -177,7 +163,7 @@
 
 > 카테고리 분류 | 상단 고정 | 파일 첨부 | 조회수
 
-<!-- <img src="./docs/images/feature-notice.gif" alt="공지사항" width="700" /> -->
+<img src="./docs/images/feature-notice.gif" alt="공지사항" width="700" />
 
 | 기능      | 설명                                 |
 | --------- | ------------------------------------ |
@@ -192,7 +178,7 @@
 
 > 자동 상태 전환 | 실시간 집계 | 중복 방지
 
-<!-- <img src="./docs/images/feature-poll.gif" alt="투표" width="700" /> -->
+<img src="./docs/images/feature-poll.gif" alt="투표" width="700" />
 
 | 기능      | 설명                                   |
 | --------- | -------------------------------------- |
@@ -207,7 +193,7 @@
 
 > 공개/비공개 | 상태 워크플로우 | 댓글 소통
 
-<!-- <img src="./docs/images/feature-complaint.gif" alt="민원" width="700" /> -->
+<img src="./docs/images/feature-complaint.gif" alt="민원" width="700" />
 
 | 기능        | 설명                             |
 | ----------- | -------------------------------- |
@@ -222,7 +208,7 @@
 
 > SSE (Server-Sent Events) | 유형별 알림 | 읽음 처리
 
-<!-- <img src="./docs/images/feature-notification.gif" alt="알림" width="700" /> -->
+<img src="./docs/images/feature-notification.gif" alt="알림" width="700" />
 
 | 기능        | 설명                                |
 | ----------- | ----------------------------------- |
@@ -236,7 +222,7 @@
 
 > 공지/투표 연동 | 월별 조회
 
-<!-- <img src="./docs/images/feature-calendar.gif" alt="캘린더" width="700" /> -->
+<img src="./docs/images/feature-calendar.gif" alt="캘린더" width="700" />
 
 | 기능        | 설명                  |
 | ----------- | --------------------- |
