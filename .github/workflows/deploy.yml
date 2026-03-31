@@ -71,7 +71,7 @@ jobs:
             echo "ID_1=${{ secrets.EC2_INSTANCE_ID_A }}" >> $GITHUB_ENV
             echo "ID_2=${{ secrets.EC2_INSTANCE_ID_B }}" >> $GITHUB_ENV
             echo "TARGET_TG_ARN=${{ secrets.TG_A_ARN }}" >> $GITHUB_ENV
-            echo "TARGET_PORT=80" >> $GITHUB_ENV
+            echo "TARGET_PORT=8080" >> $GITHUB_ENV
           fi
 
       # 2. [Application 배포] 대상 인스턴스에 최신 코드를 배포하고 지정된 포트로 서비스를 재시작합니다.
