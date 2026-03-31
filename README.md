@@ -323,11 +323,10 @@ cd front-end && npm install && npm run dev
 
 ### 프로젝트 문서
 
-<!-- TODO: ERD Cloud 링크 삽입하기-->
-
 | 문서         | 링크                                                                                                                                    |
 | ------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
-| ERD          | [ERD Cloud](https://your-erd-url.com)                                                                                                   |
+| 상세 문서    | [Wiki](https://github.com/GeonSoon1/nb-06-welive-team5/wiki)                                                                            |
+| ERD          | [ERD](https://github.com/GeonSoon1/nb-06-welive-team5/wiki/ERD)                                                                         |
 | 와이어프레임 | [Figma](figma.com/design/vRmUGGVrtSWD7YA4o1QQnf/-공유용--위리브-주민들과-아파트-관리-단체를-위한-상호-관리-플랫폼?t=cSJ0PqHA5kmOXpVF-1) |
 | 팀 노션      | [Notion](https://www.notion.so/5-3141acdd347a8135b9d8e1abecbfdc33?source=copy_link)                                                     |
 | API 문서     | [Swagger](https://nb-project-welive-be.vercel.app/api#/)                                                                                |
