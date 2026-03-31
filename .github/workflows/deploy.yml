@@ -96,13 +96,12 @@ jobs:
       # 3. [Health Check] 신규 배포된 인스턴스 쌍이 모두 'InService' 상태가 될 때까지 대기합니다.
       - name: Wait for Health Check
         run: |
-          echo "Waiting for ${{ env.TARGET_NAME }} pair ($ID_1, $ID_2) at Port ${{ env.TARGET_PORT }}..."
+          echo "Waiting for ${{ env.TARGET_NAME }} pair (${{ env.ID_1 }}, ${{ env.ID_2 }}) at Port ${{ env.TARGET_PORT }}..."
           aws elbv2 wait target-in-service \
             --target-group-arn ${{ env.TARGET_TG_ARN }} \
-            --targets Id=$ID_1 Id=$ID_2
+            --targets Id=${{ env.ID_1 }} Id=${{ env.ID_2 }}
 
       # 4. [Traffic Switch] 모든 타겟이 정상이면 로드밸런서 리스너를 신규 그룹으로 전환합니다.
       - name: Switch Traffic
         run: |
           aws elbv2 modify-listener --listener-arn ${{ secrets.ALB_LISTENER_ARN }} --default-actions Type=forward,TargetGroupArn=${{ env.TARGET_TG_ARN }}
-          aws elbv2 modify-listener --listener-arn ${{ secrets.ALB_LISTENER_8080_ARN }} --default-actions Type=forward,TargetGroupArn=${{ env.CURRENT_TG_ARN }}
