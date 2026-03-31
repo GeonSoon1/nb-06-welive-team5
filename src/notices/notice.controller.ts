@@ -7,70 +7,59 @@ import { consoleLoggingIntegration } from '@sentry/node';
 
 
 
-export const createNotice: ExpressHandler = async (req, res, next) => {
-    try {
-        const { userId, ...bodyWithoutUserId } = req.body;
-        const noticevalue = superstruct.create(bodyWithoutUserId, CreateNoticeStruct);
-        const _userId = req.user!.id;
-        await noticeService.createNotice(_userId, noticevalue);
-        res.status(201).json({ message: '정상적으로 등록 처리되었습니다' });
-    } catch (error) {
-        next(error);
-    }
+export const createNotice: ExpressHandler = async (req, res) => {
+
+    const { userId, ...bodyWithoutUserId } = req.body;
+    const noticevalue = superstruct.create(bodyWithoutUserId, CreateNoticeStruct);
+    const _userId = req.user!.id;
+    await noticeService.createNotice(_userId, noticevalue);
+    res.status(201).json({ message: '정상적으로 등록 처리되었습니다' });
+
 };
 
-export const getNoticeList: ExpressHandler = async (req, res, next) => {
-    try {
-        const query = superstruct.create(req.query, GetNoticeListQuery);
-        const { apartmentId, role } = req.user!;
+export const getNoticeList: ExpressHandler = async (req, res) => {
 
-        const result = await noticeService.getNoticeList(query, apartmentId, role);
-        res.status(200).json(result);
-    } catch (error) {
-        next(error);
-    }
+    const query = superstruct.create(req.query, GetNoticeListQuery);
+    const { apartmentId, role } = req.user!;
+
+    const result = await noticeService.getNoticeList(query, apartmentId, role);
+    res.status(200).json(result);
+
 };
 
-export const getNoticeDetail: ExpressHandler = async (req, res, next) => {
-    try {
+export const getNoticeDetail: ExpressHandler = async (req, res) => {
 
-        const { noticeId } = req.params;
-        if (typeof noticeId !== 'string' || !noticeId || !isUuid.v4(noticeId)) throw new CustomError(400, '잘못된 요청입니다. (noticeId)');
+    const { noticeId } = req.params;
+    if (typeof noticeId !== 'string' || !noticeId || !isUuid.v4(noticeId)) throw new CustomError(400, '잘못된 요청입니다. (noticeId)');
 
-        const { apartmentId, role } = req.user!;
-        const result = await noticeService.getNoticeDetail(noticeId, apartmentId, role);
-        res.status(200).json(result);
-    } catch (error) {
-        next(error);
-    }
+    const { apartmentId, role } = req.user!;
+    const result = await noticeService.getNoticeDetail(noticeId, apartmentId, role);
+    res.status(200).json(result);
+
 };
 
-export const updateNotice: ExpressHandler = async (req, res, next) => {
-    try {
-        const { noticeId } = req.params;
-        if (typeof noticeId !== 'string' || !noticeId || !isUuid.v4(noticeId)) throw new CustomError(400, '잘못된 요청입니다. (noticeId)');
-        const { userId, ...bodyWithoutUserId } = req.body;
-        const noticevalue = superstruct.create(bodyWithoutUserId, UpdateNoticeStruct);
-        const _userId = req.user!.id;
-        const userRole = req.user!.role;
+export const updateNotice: ExpressHandler = async (req, res) => {
 
-        const result = await noticeService.updateNotice(noticeId, _userId, userRole, noticevalue);
-        res.status(200).json(result);
-    } catch (error) {
-        next(error);
-    }
+    const { noticeId } = req.params;
+    if (typeof noticeId !== 'string' || !noticeId || !isUuid.v4(noticeId)) throw new CustomError(400, '잘못된 요청입니다. (noticeId)');
+    const { userId, ...bodyWithoutUserId } = req.body;
+    const noticevalue = superstruct.create(bodyWithoutUserId, UpdateNoticeStruct);
+    const _userId = req.user!.id;
+    const userRole = req.user!.role;
+
+    const result = await noticeService.updateNotice(noticeId, _userId, userRole, noticevalue);
+    res.status(200).json(result);
+
 };
 
-export const deleteNotice: ExpressHandler = async (req, res, next) => {
-    try {
-        const { noticeId } = req.params;
-        if (typeof noticeId !== 'string' || !noticeId || !isUuid.v4(noticeId)) throw new CustomError(400, '잘못된 요청입니다. (noticeId)');
+export const deleteNotice: ExpressHandler = async (req, res) => {
 
-        const userId = req.user!.id;
-        const userRole = req.user!.role;
-        await noticeService.deleteNotice(noticeId, userId, userRole);
-        res.status(200).json({ message: '정상적으로 삭제 처리되었습니다' });
-    } catch (error) {
-        next(error);
-    }
+    const { noticeId } = req.params;
+    if (typeof noticeId !== 'string' || !noticeId || !isUuid.v4(noticeId)) throw new CustomError(400, '잘못된 요청입니다. (noticeId)');
+
+    const userId = req.user!.id;
+    const userRole = req.user!.role;
+    await noticeService.deleteNotice(noticeId, userId, userRole);
+    res.status(200).json({ message: '정상적으로 삭제 처리되었습니다' });
+
 };

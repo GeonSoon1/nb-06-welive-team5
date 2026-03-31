@@ -370,32 +370,70 @@ async function main() {
   // --- 6. COMPLAINTS (상태별 민원 및 댓글) ---
   console.log('🗣️ Creating Complaints...');
 
-  // 6-1. 접수 대기 민원
+  // 6-1. 접수 대기 민원 (댓글 0개)
   await prisma.complaint.create({
-    data: { title: '101동 엘리베이터 소음', content: '엘리베이터 움직일 때마다 끼익 소리가 심합니다.', authorId: users[0].id, apartmentboardId: apartmentBoard.id, status: ComplaintStatus.PENDING, isPublic: true },
+    data: {
+      title: '101동 엘리베이터 소음',
+      content: '엘리베이터 움직일 때마다 끼익 소리가 심합니다.',
+      authorId: users[0].id,
+      apartmentboardId: apartmentBoard.id,
+      status: ComplaintStatus.PENDING,
+      isPublic: true,
+      viewCount: 1,
+      commentsCount: 0 // 명시적으로 0 설정
+    },
   });
 
-  // 6-2. 처리 중 민원 + 관리자 댓글
+  // 6-2. 처리 중 민원 + 관리자 댓글 (댓글 1개)
   const complaintProg = await prisma.complaint.create({
-    data: { title: '지하주차장 누수', content: '지하 1층 A구역 천장에서 물이 떨어집니다.', authorId: users[2].id, apartmentboardId: apartmentBoard.id, status: ComplaintStatus.IN_PROGRESS, isPublic: true },
+    data: {
+      title: '지하주차장 누수',
+      content: '지하 1층 A구역 천장에서 물이 떨어집니다.',
+      authorId: users[2].id,
+      apartmentboardId: apartmentBoard.id,
+      status: ComplaintStatus.IN_PROGRESS,
+      isPublic: true,
+      viewCount: 3,
+      commentsCount: 1 // 댓글을 1개 달 것이므로 1로 설정
+    },
   });
   await prisma.comment.create({
     data: { content: '현장 확인 완료하였으며, 보수 업체 배정 중입니다.', authorId: admin.id, complaintId: complaintProg.id }
   });
 
-  // 6-3. 처리 완료 민원
+  // 6-3. 처리 완료 민원 (댓글 2개)
   const complaintRes = await prisma.complaint.create({
-    data: { title: '가로등 전구 교체 요망', content: '놀이터 옆 가로등이 나갔습니다.', authorId: users[1].id, apartmentboardId: apartmentBoard.id, status: ComplaintStatus.RESOLVED, isPublic: true },
+    data: {
+      title: '가로등 전구 교체 요망',
+      content: '놀이터 옆 가로등이 나갔습니다.',
+      authorId: users[1].id,
+      apartmentboardId: apartmentBoard.id,
+      status: ComplaintStatus.RESOLVED,
+      isPublic: true,
+      viewCount: 10,
+      commentsCount: 2 // 댓글을 2개 달 것이므로 2로 설정,
+
+    },
+  });
+  await prisma.comment.create({
+    data: { content: '저녁에 너무 어둡습니다 빠른 교체 부탁드려요.', authorId: users[1].id, complaintId: complaintRes.id }
   });
   await prisma.comment.create({
     data: { content: '전구 교체 완료했습니다. 감사합니다.', authorId: admin.id, complaintId: complaintRes.id }
   });
 
-  // 6-4. 비공개 반려 민원
+  // 6-4. 비공개 반려 민원 (댓글 0개)
   await prisma.complaint.create({
-    data: { title: '층간소음 해결해주세요', content: '윗집 발소리가 너무 큽니다.', authorId: users[1].id, apartmentboardId: apartmentBoard.id, status: ComplaintStatus.REJECTED, isPublic: false },
+    data: {
+      title: '층간소음 해결해주세요',
+      content: '윗집 발소리가 너무 큽니다.',
+      authorId: users[1].id,
+      apartmentboardId: apartmentBoard.id,
+      status: ComplaintStatus.REJECTED,
+      isPublic: false,
+      commentsCount: 0 // 명시적으로 0 설정
+    },
   });
-
   // --- 7. VOTES (상태별 투표 및 결과) ---
   console.log('🗳️ Creating Votes...');
 

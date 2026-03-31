@@ -1,4 +1,4 @@
-import { VoteStatus } from './poll.struct';
+import { VoteStatus } from '@prisma/client';
 
 
 export interface PollType {

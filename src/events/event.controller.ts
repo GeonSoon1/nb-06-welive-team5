@@ -7,10 +7,10 @@ import {
     GetEventsQueryStruct
 } from './event.struct';
 import { CreateEventDto, GetEventsQuery } from './event.types';
-
+// -todo query를 바로 받는것이 아닌 notice나 poll 처럼 한단계 완충이 필요함
 // GET /api/event
 export async function getEvents(req: ExpressRequest, res: ExpressResponse) {
-    const query = s.create(req.query, GetEventsQueryStruct) as unknown as GetEventsQuery;
+    const query = s.create(req.query, GetEventsQueryStruct);
     const events = await eventService.getEventList(query);
     return res.status(200).json(events);
 }
@@ -18,7 +18,7 @@ export async function getEvents(req: ExpressRequest, res: ExpressResponse) {
 // PUT /api/event
 export async function putEvent(req: ExpressRequest, res: ExpressResponse) {
     // API 명세에 따라 Query Parameter로 데이터를 받음
-    const data = s.create(req.query, CreateEventQueryStruct) as unknown as CreateEventDto;
+    const data = s.create(req.query, CreateEventQueryStruct);
 
     await eventService.createOrUpdateEvent(data);
     return res.status(204).send();

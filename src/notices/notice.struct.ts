@@ -1,13 +1,14 @@
+import { NoticeCategory } from '@prisma/client';
 import { superstruct, isUuid } from '../libs/constants';
 
-export const NoticeCategory = {
-    MAINTENANCE: 'MAINTENANCE',
-    EMERGENCY: 'EMERGENCY',
-    COMMUNITY: 'COMMUNITY',
-    RESIDENT_VOTE: 'RESIDENT_VOTE',
-    RESIDENT_COUNCIL: 'RESIDENT_COUNCIL',
-    ETC: 'ETC'
-} as const;
+// export const NoticeCategory = {
+//     MAINTENANCE: 'MAINTENANCE',
+//     EMERGENCY: 'EMERGENCY',
+//     COMMUNITY: 'COMMUNITY',
+//     RESIDENT_VOTE: 'RESIDENT_VOTE',
+//     RESIDENT_COUNCIL: 'RESIDENT_COUNCIL',
+//     ETC: 'ETC'
+// } as const;
 
 export const CreateNoticeStruct = superstruct.object({
     category: superstruct.enums(Object.values(NoticeCategory)),

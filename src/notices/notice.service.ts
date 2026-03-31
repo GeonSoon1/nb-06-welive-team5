@@ -6,6 +6,7 @@ import * as noticeRepository from './notice.repository';
 import ForbiddenError from '../libs/errors/ForbiddenError';
 import { sendNotificationToUser } from '../notifications/notification.service';
 import * as userRepository from '../users/user.repository';
+import BadRequestError from '../libs/errors/BadRequestError';
 
 export const createNotice = async (userId: string, data: CreateNoticeDto) => {
     const { boardId, startDate, endDate, ...rest } = data;
@@ -23,7 +24,7 @@ export const createNotice = async (userId: string, data: CreateNoticeDto) => {
     });
 
     if (!user || !user.apartment || !user.apartment.id || !user.apartment.apartmentboardId) {
-        throw new Error('해당 사용자의 아파트 게시판 정보를 찾을 수 없습니다.');
+        throw new BadRequestError('해당 사용자의 아파트 게시판 정보를 찾을 수 없습니다.');
     }
 
     const apartmentId = user.apartment.id;
@@ -154,7 +155,7 @@ export const updateNotice = async (noticeId: string, userId: string, userRole: R
     const isOwner = notice.authorId === userId;
     const isAdmin = userRole === Role.ADMIN || userRole === Role.SUPER_ADMIN;
     if (!isOwner && !isAdmin) throw new ForbiddenError('자신이 작성한 공지사항만 수정하거나 관리자 권한이 필요합니다.');
-
+    //-todo 슈퍼 어드민이 아닌 경우 자신의 아파트 만 업데이트 가능하도록 수정이 필요
     const { boardId, startDate, endDate, ...rest } = data;
     const updateData: Prisma.NoticeUpdateInput = {
         ...rest,
@@ -187,6 +188,7 @@ export const deleteNotice = async (noticeId: string, userId: string, userRole: R
     const isAdmin = userRole === Role.ADMIN || userRole === Role.SUPER_ADMIN;
     if (!isOwner && !isAdmin) throw new ForbiddenError('자신이 작성한 공지사항만 삭제하거나 관리자 권한이 필요합니다.');
 
+    //-todo 슈퍼 어드민이 아닌 경우 자신의 아파트 만 삭제 가능하도록 수정이 필요
     await noticeRepository.deleteNotice(noticeId);
 };
 
