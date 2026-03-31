@@ -1,0 +1,3 @@
+pollScheduler 는
+poll 스케줄러 상태 확인용으로
+오직 개발용 입니다.

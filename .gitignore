@@ -2,3 +2,17 @@ node_modules/
 dist/
 .env
 .DS_Store
+/generated/prisma
+/upload
+
+coverage/
+public/uploads/profiles/*
+front-end/.github
+front-end/.gitignore
+front-end/.prettierrc
+front-end/node_modules/
+front-end/public
+front-end/out
+front-end/.next
+connect-db.sh
+front-end/out/

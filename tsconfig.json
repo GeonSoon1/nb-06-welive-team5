@@ -1,0 +1,50 @@
+{
+  // Visit https://aka.ms/tsconfig to read more about this file
+  "compilerOptions": {
+    // File Layout
+    "rootDir": "./src",
+    "outDir": "./dist",
+
+    // Environment Settings
+    // See also https://aka.ms/tsconfig/module
+
+    "module": "commonjs",
+    "target": "es2016",
+    "typeRoots": ["./types", "./node_modules/@types"],
+    // For nodejs:
+    "lib": ["esnext"], // [수정] 서버 환경이므로 DOM(브라우저) 라이브러리 제거, 최신 JS 문법 사용
+    "types": ["node", "express", "jest"], // [수정] process.env 등 Node.js 내장 타입 인식을 위해 필수 (npm i -D @types/node 필요)
+    // and npm install -D @types/node
+
+    // Other Outputs
+    "sourceMap": true,
+    "declaration": false, // [수정] 라이브러리 배포용이 아니므로 .d.ts 파일 생성 불필요 (빌드 속도 향상)
+    "declarationMap": false,
+
+    // Stricter Typechecking Options
+    "noUncheckedIndexedAccess": true,
+    // "exactOptionalPropertyTypes": true, // [제안] Prisma 등 사용 시 undefined와 키 생략을 엄격히 구분하면 불편할 수 있어 비활성화 추천
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    // Style Options
+    // "noImplicitReturns": true,
+    // "noImplicitOverride": true,
+    // "noUnusedLocals": true,
+    // "noUnusedParameters": true,
+    // "noFallthroughCasesInSwitch": true,
+    // "noPropertyAccessFromIndexSignature": true,
+
+    // Recommended Options
+    "esModuleInterop": true,
+    "strict": true,
+    // "jsx": "react-jsx", // [삭제] Node.js 서버 개발에는 React JSX 설정 불필요
+    // "verbatimModuleSyntax": true,
+    // "isolatedModules": true,
+    "noUncheckedSideEffectImports": true,
+    "moduleDetection": "force",
+    "skipLibCheck": true,
+    "noImplicitAny": true,
+    "moduleResolution": "node"
+  },
+  "include": ["src/**/*", "types/**/*"]
+}
