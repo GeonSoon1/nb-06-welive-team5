@@ -105,4 +105,3 @@ jobs:
       - name: Switch Traffic
         run: |
           aws elbv2 modify-listener --listener-arn ${{ secrets.ALB_LISTENER_ARN }} --default-actions Type=forward,TargetGroupArn=${{ env.TARGET_TG_ARN }}
-          aws elbv2 modify-listener --listener-arn ${{ secrets.ALB_LISTENER_8080_ARN }} --default-actions Type=forward,TargetGroupArn=${{ env.CURRENT_TG_ARN }}
