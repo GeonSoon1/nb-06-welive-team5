@@ -48,11 +48,13 @@ describe('User Profile API 테스트 (user.api.test.ts)', () => {
   });
 
   // 1. 비밀번호 변경 테스트
-  describe('PATCH /api/users/password', () => {
-    it('성공: 현재 비밀번호가 일치하면 200을 반환한다', async () => {
+  // 1. 비밀번호 변경 테스트 (통합 API 경로로 수정)
+  describe('PATCH /api/users/me (비밀번호 변경)', () => {
+    it('성공: 현재 비밀번호와 새 비밀번호를 정확히 입력하면 200을 반환한다', async () => {
       const payload = {
         currentPassword: 'OldPassword123!',
         newPassword: 'NewPassword123!',
+        confirmPassword: 'NewPassword123!', // <-- [필수 추가] 통합 컨트롤러는 이 값을 요구합니다.
       };
 
       (userService.updatePassword as jest.Mock).mockResolvedValue({
@@ -60,16 +62,25 @@ describe('User Profile API 테스트 (user.api.test.ts)', () => {
         name: '에딘트',
       });
 
-      const res = await request(app).patch('/api/users/password').send(payload);
+      // 👇 [중요] '/api/users/password' 가 아니라 '/api/users/me' 로 요청해야 합니다!
+      const res = await request(app).patch('/api/users/me').send(payload);
 
       expect(res.status).toBe(200);
-      expect(res.body.message).toContain('비밀번호가 변경되었습니다');
+      // 👇 [중요] 통합 컨트롤러는 성공 메시지를 'details'에 담아서 보냅니다.
+      expect(res.body.details).toContain('비밀번호가 변경되었습니다');
     });
 
-    it('실패: 새 비밀번호가 정책에 맞지 않으면 400을 반환한다', async () => {
+    it('실패: 새 비밀번호가 정책에 맞지 않거나 필수 값이 누락되면 400을 반환한다', async () => {
+      const payload = {
+        currentPassword: 'Old!',
+        newPassword: '123',
+        confirmPassword: '123', // <-- [필수 추가]
+      };
+
+      // 👇 [중요] '/api/users/password' 가 아니라 '/api/users/me' 로 요청해야 합니다!
       const res = await request(app)
-        .patch('/api/users/password')
-        .send({ currentPassword: 'Old!', newPassword: '123' });
+        .patch('/api/users/me')
+        .send(payload);
 
       expect(res.status).toBe(400);
     });
