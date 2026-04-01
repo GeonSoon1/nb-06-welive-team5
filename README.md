@@ -97,7 +97,7 @@
       <br />
       <sub>팀원</sub>
       <br /><br />
-      <a href="https://github.com/팀원3"><img src="https://img.shields.io/badge/GitHub-181717?style=flat-square&logo=github&logoColor=white" /></a>
+      <a href="https://github.com/Sunyoung82"><img src="https://img.shields.io/badge/GitHub-181717?style=flat-square&logo=github&logoColor=white" /></a>
     </td>
   </tr>
   <tr>
@@ -233,7 +233,7 @@
 
 #### 인프라 / 배포
 
-> Blue-Green 무중단 배포 | 4대 EC2 | ALB 트래픽 스위칭
+> Blue-Green 무중단 배포 | 2대 EC2 | ALB 트래픽 스위칭
 
 <img src="./docs/images/infra-architecture.png" alt="인프라" width="700" />
 
