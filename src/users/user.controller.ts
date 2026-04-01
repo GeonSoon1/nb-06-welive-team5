@@ -113,6 +113,39 @@ export const updateUserProfile = catchAsync(async (req: ExpressRequest, res: Exp
   });
 });
 
+/**
+ * 현재 로그인 유저의 프로필 이미지 조회.
+ * GET /api/users/me/avatar
+ */
+export const getMyProfileImage = catchAsync(async (req: ExpressRequest, res: ExpressResponse) => {
+  if (!req.user) {
+    throw new UnauthorizedError('인증 정보가 없습니다. 다시 로그인해주세요.');
+  }
+
+  const { body, contentType, cacheControl } = await userService.getProfileImageFile(req.user.id);
+
+  res.setHeader('Content-Type', contentType);
+  res.setHeader('Cache-Control', cacheControl);
+
+  // AWS SDK 런타임별 Body 타입 차이를 안전하게 처리한다.
+  const readableBody = body as NodeJS.ReadableStream & {
+    transformToByteArray?: () => Promise<Uint8Array>;
+  };
+
+  if (typeof readableBody.pipe === 'function') {
+    readableBody.pipe(res);
+    return;
+  }
+
+  if (typeof readableBody.transformToByteArray === 'function') {
+    const bytes = await readableBody.transformToByteArray();
+    res.end(Buffer.from(bytes));
+    return;
+  }
+
+  throw new ValidationError('이미지 데이터를 읽을 수 없습니다.');
+});
+
 
 /**
  * 프로필 이미지 변경.

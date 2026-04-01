@@ -3,7 +3,7 @@ import Input from '@/shared/Input';
 import Textarea from '@/shared/Textarea';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { adminSignupSchema, AdminSignupForm } from '@/entities/auth/schema/signup.schema';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,17 +18,6 @@ export default function AdminSignup() {
   const [showPassword, setShowPassword] = useState(false);
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
   const router = useRouter();
-
-  useEffect(() => {
-    const checkUser = async () => {
-      // 로컬 스토리지나 쿠키를 체크하여 로그인 상태면 리다이렉트
-      const isLogin = localStorage.getItem('access_token'); // 예시입니다
-      if (isLogin) {
-        router.replace('/');
-      }
-    };
-    checkUser();
-  }, [router]);
 
   const rangeFields = [
     { label: '단지', startId: 'startComplexNumber', endId: 'endComplexNumber' },

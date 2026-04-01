@@ -1,6 +1,11 @@
 import { CustomError } from '../libs/errors/errorHandler';
 import * as pollsVoteRepository from './poll-vote.repository';
 
+const getPollEndAt = (poll: unknown): Date | null => {
+    const { endTime, endDate } = (poll ?? {}) as { endTime?: Date; endDate?: Date };
+    return endTime ?? endDate ?? null;
+};
+
 export const addVote = async (optionId: string, userId: string) => {
     const option = await pollsVoteRepository.findOptionWithVote(optionId);
     if (!option) {
@@ -11,7 +16,12 @@ export const addVote = async (optionId: string, userId: string) => {
     const pollId = poll.id;
     const apartmentboardId = poll.apartmentboardId;
 
-    if (poll.endDate < new Date()) {
+    const pollEndAt = getPollEndAt(poll);
+    if (!pollEndAt) {
+        throw new CustomError(500, '투표 종료 시간이 설정되지 않았습니다.');
+    }
+
+    if (pollEndAt < new Date()) {
         throw new CustomError(400, '투표 기간이 종료되었습니다.');
     }
 
@@ -21,7 +31,11 @@ export const addVote = async (optionId: string, userId: string) => {
 
     const existingVote = await pollsVoteRepository.findUserVote(userId, pollId);
     if (existingVote) {
-        throw new CustomError(409, '이미 해당 투표에 참여했습니다. 투표를 변경하려면 기존 투표를 취소하고 다시 시도해주세요.');
+        throw new CustomError(
+            409,
+            '이미 해당 투표에 참여했습니다. 투표를 변경하려면 기존 투표를 취소하고 다시 시도해주세요.',
+            { existingOptionId: existingVote.voteOptionId }
+        );
     }
 
     const updatedOption = await pollsVoteRepository.createVoteAndUpdateCount(optionId, userId, pollId, apartmentboardId);

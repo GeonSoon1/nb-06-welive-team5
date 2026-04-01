@@ -17,9 +17,13 @@ import { SUPPORT_CONTACT } from '../constants';
  */
 export class CustomError extends Error {
     public statusCode: number;
-    public data: Record<string, object> | null;
+    public data: Record<string, unknown> | null;
 
-    constructor(statusCode = 500, message = '', data = null) {
+    constructor(
+        statusCode = 500,
+        message = '',
+        data: Record<string, unknown> | null = null
+    ) {
         super(message);
         this.statusCode = statusCode;
         this.name = this.constructor.name;

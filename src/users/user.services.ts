@@ -7,6 +7,10 @@ import { PasswordBody, UpdateAdminBody } from './user.struct';
 import NotFoundError from '../libs/errors/NotFoundError';
 import ValidationError from '../libs/errors/ValidationError';
 import * as apartmentRepository from '../apartments/apartment.repository';
+import { GetObjectCommand } from '@aws-sdk/client-s3';
+import { s3Client } from '../libs/s3Client';
+import { S3_BUCKET_NAME } from '../libs/constants';
+import ForbiddenError from '../libs/errors/ForbiddenError';
 
 
 /**
@@ -105,6 +109,58 @@ export async function updateProfileImage(userId: string, imagePath: string) {
 
     return updatedUser;
   });
+}
+
+/**
+ * 프로필 이미지 파일 스트림 조회.
+ */
+export async function getProfileImageFile(userId: string) {
+  const user = await userRepository.findUserImageById(prismaClient, userId);
+
+  if (!user?.image) {
+    throw new NotFoundError('등록된 프로필 이미지가 없습니다.');
+  }
+
+  let key = '';
+  try {
+    const parsedUrl = new URL(user.image);
+    key = decodeURIComponent(parsedUrl.pathname.replace(/^\/+/, ''));
+  } catch {
+    throw new BadRequestError('저장된 프로필 이미지 경로가 올바르지 않습니다.');
+  }
+
+  if (!key) {
+    throw new BadRequestError('프로필 이미지 키를 확인할 수 없습니다.');
+  }
+
+  try {
+    const object = await s3Client.send(
+      new GetObjectCommand({
+        Bucket: S3_BUCKET_NAME,
+        Key: key,
+      }),
+    );
+
+    if (!object.Body) {
+      throw new NotFoundError('프로필 이미지 파일을 찾을 수 없습니다.');
+    }
+
+    return {
+      body: object.Body,
+      contentType: object.ContentType || 'application/octet-stream',
+      cacheControl: object.CacheControl || 'private, max-age=60',
+    };
+  } catch (error: any) {
+    if (error?.name === 'NoSuchKey' || error?.$metadata?.httpStatusCode === 404) {
+      throw new NotFoundError('프로필 이미지 파일을 찾을 수 없습니다.');
+    }
+
+    if (error?.name === 'AccessDenied' || error?.$metadata?.httpStatusCode === 403) {
+      throw new ForbiddenError('S3 이미지 조회 권한이 없습니다.');
+    }
+
+    throw error;
+  }
 }
 
 

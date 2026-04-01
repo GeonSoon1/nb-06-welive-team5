@@ -39,8 +39,8 @@ export const createPoll = async (userId: string, apartmentId: string | null, pol
         data: {
             ...voteData,
             targetScope: buildingPermission,
-            startDate: startDate,
-            endDate: endDate,
+            startTime: startDate,
+            endTime: endDate,
             authorId: userId,
             apartmentboardId: apartment.apartmentboardId,
             status,
@@ -110,8 +110,8 @@ export const getPollList = async (query: GetPollListDto, apartmentId: string | n
                 buildingPermission: poll.targetScope,
                 createdAt: poll.createdAt,
                 updatedAt: poll.updatedAt,
-                startDate: poll.startDate,
-                endDate: poll.endDate,
+                startDate: poll.startTime,
+                endDate: poll.endTime,
                 status: poll.status,
             };
         }),
@@ -147,8 +147,8 @@ export const getPollById = async (pollId: string, apartmentId: string | null, ro
         buildingPermission: poll.targetScope,
         createdAt: poll.createdAt,
         updatedAt: poll.updatedAt,
-        startDate: poll.startDate,
-        endDate: poll.endDate,
+        startDate: poll.startTime,
+        endDate: poll.endTime,
         status: poll.status,
         content: poll.content,
         boardName: poll.apartmentboardId,
@@ -184,8 +184,8 @@ export const updatePoll = async (pollId: string, userId: string, userRole: Role,
     const updateData: Prisma.VoteUpdateInput = { ...voteData };
 
     if (buildingPermission !== undefined) updateData.targetScope = buildingPermission;
-    if (startDate) updateData.startDate = startDate;
-    if (endDate) updateData.endDate = endDate;
+    if (startDate) updateData.startTime = startDate;
+    if (endDate) updateData.endTime = endDate;
 
     if (options) {
         // 기존 옵션의 ID 목록 추출

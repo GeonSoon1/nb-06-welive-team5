@@ -1,13 +1,15 @@
-import { VoteStatus } from '@prisma/client';
+import { VoteStatus, Vote, VoteOption } from '@prisma/client';
 import { prismaClient, Prisma } from '../libs/constants';
 
-export const updatePollStatuses = async () => {
+type ClosedPollWithOptions = Vote & { voteOptions: VoteOption[] };
+
+export const updatePollStatuses = async (): Promise<ClosedPollWithOptions[]> => {
     const now = new Date();
 
     // 1. 종료 시간이 지난 투표를 찾아라 (옵션 정보 포함)
     const pollsToClose = await prismaClient.vote.findMany({
         where: {
-            endDate: { lte: now },
+            endTime: { lte: now },
             status: { not: VoteStatus.CLOSED },
         },
         include: {
@@ -30,8 +32,8 @@ export const updatePollStatuses = async () => {
     // 2. 시작 시간이 지났고 진행 전인 투표를 IN_PROGRESS(진행 중)로 변경
     await prismaClient.vote.updateMany({
         where: {
-            startDate: { lte: now },
-            endDate: { gt: now },
+            startTime: { lte: now },
+            endTime: { gt: now },
             status: VoteStatus.PENDING,
         },
         data: { status: VoteStatus.IN_PROGRESS },

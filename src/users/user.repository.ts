@@ -160,6 +160,18 @@ export async function findUserRoleById(db: DbClient, userId: string) {
 }
 
 /**
+ * 프로필 이미지 조회.
+ */
+export async function findUserImageById(db: DbClient, userId: string) {
+  return db.user.findUnique({
+    where: { id: userId },
+    select: {
+      image: true,
+    },
+  });
+}
+
+/**
  * 프로필 이미지 변경.
  */
 export async function updateImage(db: DbClient, userId: string, imagePath: string) {

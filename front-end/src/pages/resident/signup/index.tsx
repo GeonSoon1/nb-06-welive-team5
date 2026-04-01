@@ -11,7 +11,10 @@ import { postResidentSignup } from '@/entities/auth/api/signup.api';
 import { isAxiosError } from 'axios';
 import { useRouter } from 'next/navigation';
 import SearchApartment from '@/widgets/signup/SearchApartment';
-import { getApartments, getApartmentDetail } from '@/entities/apartment/api/apartment.api';
+import {
+  getPublicApartments,
+  getPublicApartmentDetail,
+} from '@/entities/apartment/api/apartment.api';
 // import { blockLoginUser } from '@/shared/hooks/blockLoginUser';
 
 // export const getServerSideProps = blockLoginUser();
@@ -24,14 +27,6 @@ export default function ResidentSignup() {
   const [dongOptions, setDongOptions] = useState<{ label: string; value: string }[]>([]);
   const [hoOptions, setHoOptions] = useState<{ label: string; value: string }[]>([]);
   const router = useRouter();
-
-  useEffect(() => {
-    // 로컬 스토리지나 쿠키에 토큰이 있는지 확인 (프로젝트 방식에 맞게 수정)
-    const access_token = localStorage.getItem('access_token'); 
-    if (access_token) {
-      router.replace('/');
-    }
-  }, [router]);
 
   const {
     register,
@@ -78,7 +73,7 @@ export default function ResidentSignup() {
   useEffect(() => {
     const fetchApartments = async () => {
       try {
-        const fetched = await getApartments();
+        const fetched = await getPublicApartments();
         setApartments(fetched);
         const names = fetched.map((apt) => apt.name);
         setApartmentNames(names);
@@ -95,7 +90,7 @@ export default function ResidentSignup() {
 
     const fetchDetail = async () => {
       try {
-        const detail = await getApartmentDetail(selected.id);
+        const detail = await getPublicApartmentDetail(selected.id);
         const dongs = generateDongs(
           Number(detail.startComplexNumber),
           Number(detail.endComplexNumber),

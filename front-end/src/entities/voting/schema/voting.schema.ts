@@ -9,6 +9,7 @@ export const votingFormSchema = z.object({
   options: z
     .array(
       z.object({
+        id: z.string().uuid().optional(),
         value: z.string().min(1, '항목을 입력해주세요'),
         enabled: z.boolean(),
       }),

@@ -27,7 +27,7 @@ export default function VotingFormItem() {
 
   const handleAdd = () => {
     if (fields.length >= 5) return;
-    append({ value: '', enabled: true });
+    append({ id: undefined, value: '', enabled: true });
   };
 
   return (
