@@ -56,7 +56,9 @@ export async function findResidentsByApartment(
 
 /**
  * resident 테이블과 연결되지 않은 가입 유저(User)를
- * 관리자 입주민 승인 화면에서 함께 노출하기 위한 조회.
+ * 관리자 입주민 계정 관리 화면에서 함께 노출하기 위한 조회.
+ * - PENDING: 승인/거절 액션 대상
+ * - REJECTED: 거절 계정 관리 대상
  */
 export async function findSignupUsersWithoutResidentByApartment(
   apartmentId: string,
@@ -68,7 +70,7 @@ export async function findSignupUsersWithoutResidentByApartment(
     where: {
       apartmentId,
       role: Role.USER,
-      joinStatus: JoinStatus.PENDING,
+      joinStatus: { in: [JoinStatus.PENDING, JoinStatus.REJECTED] },
       resident: null,
       ...(keyword && {
         OR: [
