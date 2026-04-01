@@ -86,12 +86,20 @@ jobs:
             ${{ env.ID_2 }}
           working-directory: /home/ubuntu/nb-06-welive-team5
           command: |
-            git fetch origin main
-            git checkout ${{ github.sha }}
-            npm install --production
-            npx prisma generate
-            npx prisma migrate deploy
-            PORT=${{ env.TARGET_PORT }} pm2 reload welive-api --update-env
+            su - ubuntu -c '
+              cd /home/ubuntu/nb-06-welive-team5
+              git fetch origin main
+              git checkout ${{ github.sha }}
+              npm install
+              npm run build
+              npx prisma generate
+              npx prisma migrate deploy
+            '
+
+            su - ssm-user -c '
+              cd /home/ubuntu/nb-06-welive-team5
+              PORT=8080 pm2 reload welive-api --update-env
+            '
 
       # 3. [Health Check] 신규 배포된 인스턴스 쌍이 모두 'InService' 상태가 될 때까지 대기합니다.
       - name: Wait for Health Check
