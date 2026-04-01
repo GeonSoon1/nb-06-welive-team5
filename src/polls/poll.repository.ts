@@ -1,7 +1,9 @@
 import { VoteStatus, Vote, VoteOption } from '@prisma/client';
 import { prismaClient, Prisma } from '../libs/constants';
+import { PrismaClient } from '@prisma/client';
 
 type ClosedPollWithOptions = Vote & { voteOptions: VoteOption[] };
+type DbClient = Prisma.TransactionClient | PrismaClient;
 
 export const updatePollStatuses = async (): Promise<ClosedPollWithOptions[]> => {
     const now = new Date();
@@ -9,7 +11,7 @@ export const updatePollStatuses = async (): Promise<ClosedPollWithOptions[]> => 
     // 1. 종료 시간이 지난 투표를 찾아라 (옵션 정보 포함)
     const pollsToClose = await prismaClient.vote.findMany({
         where: {
-            endTime: { lte: now },
+            endDate: { lte: now },
             status: { not: VoteStatus.CLOSED },
         },
         include: {
@@ -32,8 +34,8 @@ export const updatePollStatuses = async (): Promise<ClosedPollWithOptions[]> => 
     // 2. 시작 시간이 지났고 진행 전인 투표를 IN_PROGRESS(진행 중)로 변경
     await prismaClient.vote.updateMany({
         where: {
-            startTime: { lte: now },
-            endTime: { gt: now },
+            startDate: { lte: now },
+            endDate: { gt: now },
             status: VoteStatus.PENDING,
         },
         data: { status: VoteStatus.IN_PROGRESS },
@@ -42,8 +44,9 @@ export const updatePollStatuses = async (): Promise<ClosedPollWithOptions[]> => 
     return pollsToClose; // 방금 마감 처리된 투표 목록을 반환
 };
 
-export const createPoll = async (pollData: Prisma.VoteCreateInput) => {
-    return prismaClient.vote.create({
+export const createPoll = async (pollData: Prisma.VoteCreateInput, tx?: DbClient) => {
+    const db = tx || prismaClient;
+    return db.vote.create({
         data: pollData,
         include: {
             voteOptions: true,
@@ -81,8 +84,9 @@ export const findPollById = async (pollId: string) => {
     });
 };
 
-export const updatePoll = async (pollId: string, data: Prisma.VoteUpdateInput) => {
-    return prismaClient.vote.update({
+export const updatePoll = async (pollId: string, data: Prisma.VoteUpdateInput, tx?: DbClient) => {
+    const db = tx || prismaClient;
+    return db.vote.update({
         where: { id: pollId },
         data,
         include: {

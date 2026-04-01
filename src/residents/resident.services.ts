@@ -9,6 +9,8 @@ import { CsvUploadResult } from './resident.type';
 import { CreateResidentDto, UpdateResidentDto, GetResidentsQueryDto } from './resident.struct';
 import { JoinStatus, Role } from '@prisma/client';
 
+type ResidentApprovalDb = Prisma.TransactionClient | typeof prisma;
+
 async function validateResidentOwnership(residentId: string, apartmentId: string) {
   const resident = await residentRepository.findResidentById(residentId);
 
@@ -21,6 +23,60 @@ async function validateResidentOwnership(residentId: string, apartmentId: string
   }
 
   return resident;
+}
+
+async function ensureResidentResourceForApprovedUser(
+  db: ResidentApprovalDb,
+  user: {
+    id: string;
+    name: string;
+    contact: string;
+    apartmentUnit: {
+      dong: string;
+      ho: string;
+    } | null;
+  },
+  apartmentId: string,
+) {
+  if (!user.apartmentUnit) {
+    throw new BadRequestError('동/호수 정보가 없는 계정은 승인할 수 없습니다.');
+  }
+
+  const matchedResident = await residentRepository.findResidentForAutoApprove(db, {
+    apartmentId,
+    dong: user.apartmentUnit.dong,
+    ho: user.apartmentUnit.ho,
+    name: user.name,
+    contact: user.contact,
+  });
+
+  if (matchedResident) {
+    if (matchedResident.userId && matchedResident.userId !== user.id) {
+      throw new BadRequestError('같은 입주민 명부가 이미 다른 계정과 연결되어 있습니다.');
+    }
+
+    if (!matchedResident.userId) {
+      await residentRepository.linkResidentToUser(db, {
+        residentId: matchedResident.id,
+        userId: user.id,
+      });
+    }
+
+    return;
+  }
+
+  await db.resident.create({
+    data: {
+      apartmentId,
+      userId: user.id,
+      dong: user.apartmentUnit.dong,
+      ho: user.apartmentUnit.ho,
+      name: user.name,
+      contact: user.contact,
+      isHouseholder: 'MEMBER',
+      residenceStatus: 'RESIDENCE',
+    },
+  });
 }
 
 // 1. 입주민 리소스 생성(개별 등록)
@@ -44,6 +100,20 @@ export async function createResident(apartmentId: string, data: CreateResidentDt
 export async function getResidents(apartmentId: string, query: GetResidentsQueryDto) {
   const result = await residentRepository.findResidentsByApartment(apartmentId, query);
   if (!result) throw new BadRequestError('입주민 목록 조회 실패');
+
+  // 관리자 승인 화면(isRegistered=true)에서는 resident 미연결 가입유저도 함께 노출한다.
+  if (query.isRegistered === 'true') {
+    const signupUsers = await residentRepository.findSignupUsersWithoutResidentByApartment(
+      apartmentId,
+      query,
+    );
+
+    return {
+      residents: [...result.residents, ...signupUsers],
+      totalCount: result.totalCount + signupUsers.length,
+    };
+  }
+
   return result;
 }
 
@@ -176,38 +246,106 @@ export async function exportResidentsToCsv(apartmentId: string, query: GetReside
 }
 
 // 10. 입주민 (user) 상태 변경 (건순)
-export async function updateResidentStatus(residentId: string, status: JoinStatus) {
-  // 1. ResidentId를 통해 연결된 UserId와 현재 정보를 가져옴
-  const resident = await residentRepository.findResidentWithAuthInfo(prisma, residentId);
+export async function updateResidentStatus(targetId: string, apartmentId: string, status: JoinStatus) {
+  return await prisma.$transaction(async (tx) => {
+    // 1. ResidentId를 통해 연결된 UserId와 현재 정보를 가져옴
+    const resident = await residentRepository.findResidentWithAuthInfo(tx, targetId);
 
-  if (!resident) {
-    throw new BadRequestError('해당 주민 정보를 찾을 수 없습니다.');
-  }
+    // 1-a. resident로 조회된 경우: 기존 플로우
+    if (resident) {
+      if (resident.apartmentId !== apartmentId) {
+        throw new ForbiddenError('해당 아파트의 주민 정보에 접근할 권한이 없습니다.');
+      }
 
-  if (!resident.userId) {
-    throw new BadRequestError('해당 주민과 연결된 유저 계정이 존재하지 않습니다.');
-  }
+      if (!resident.userId) {
+        throw new BadRequestError('해당 주민과 연결된 유저 계정이 존재하지 않습니다.');
+      }
 
-  // 2. 보안 검증: 대상이 일반 주민(USER)인지 확인
-  if (resident.user?.role !== Role.USER) {
-    throw new BadRequestError('일반 주민 권한을 가진 계정만 상태 변경이 가능합니다.');
-  }
+      // 2. 보안 검증: 대상이 일반 주민(USER)인지 확인
+      if (resident.user?.role !== Role.USER) {
+        throw new BadRequestError('일반 주민 권한을 가진 계정만 상태 변경이 가능합니다.');
+      }
 
-  // 3. 비즈니스 로직: 멱등성 체크 (이미 같은 상태면 업데이트 생략)
-  if (resident.user?.joinStatus === status) {
-    return;
-  }
+      // 3. 비즈니스 로직: 멱등성 체크 (이미 같은 상태면 업데이트 생략)
+      if (resident.user?.joinStatus === status) {
+        return;
+      }
 
-  return await userRepository.updateUserStatus(prisma, resident.userId, status);
+      return await userRepository.updateUserStatus(tx, resident.userId, status);
+    }
+
+    // 1-b. resident 미연결 가입유저(user.id=targetId) fallback
+    const user = await tx.user.findFirst({
+      where: {
+        id: targetId,
+        apartmentId,
+        role: Role.USER,
+      },
+      select: {
+        id: true,
+        name: true,
+        contact: true,
+        joinStatus: true,
+        apartmentUnit: {
+          select: {
+            dong: true,
+            ho: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestError('해당 주민 정보를 찾을 수 없습니다.');
+    }
+
+    if (user.joinStatus === status) {
+      return;
+    }
+
+    if (status === JoinStatus.APPROVED) {
+      await ensureResidentResourceForApprovedUser(tx, user, apartmentId);
+    }
+
+    return await userRepository.updateUserStatus(tx, user.id, status);
+  });
 }
 
 // 11. 입주민 (user) 상태 일괄 변경 (건순)
 export async function updateAllResidentStatus(apartmentId: string, status: JoinStatus) {
-  const result = await userRepository.updateAllUsers(prisma, {
-    apartmentId,
-    targetRole: Role.USER,
-    fromStatus: JoinStatus.PENDING,
-    toStatus: status,
+  const result = await prisma.$transaction(async (tx) => {
+    if (status === JoinStatus.APPROVED) {
+      const pendingUsersWithoutResident = await tx.user.findMany({
+        where: {
+          apartmentId,
+          role: Role.USER,
+          joinStatus: JoinStatus.PENDING,
+          resident: null,
+        },
+        select: {
+          id: true,
+          name: true,
+          contact: true,
+          apartmentUnit: {
+            select: {
+              dong: true,
+              ho: true,
+            },
+          },
+        },
+      });
+
+      for (const pendingUser of pendingUsersWithoutResident) {
+        await ensureResidentResourceForApprovedUser(tx, pendingUser, apartmentId);
+      }
+    }
+
+    return await userRepository.updateAllUsers(tx, {
+      apartmentId,
+      targetRole: Role.USER,
+      fromStatus: JoinStatus.PENDING,
+      toStatus: status,
+    });
   });
 
   return result;

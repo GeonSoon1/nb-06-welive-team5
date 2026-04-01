@@ -1,6 +1,7 @@
-import { PrismaClient, ResidenceStatus } from '@prisma/client'; // 건순님
+import { HouseHolderStatus, JoinStatus, PrismaClient, ResidenceStatus, Role } from '@prisma/client'; // 건순님
 import { prismaClient as prisma, Prisma } from '../libs/constants';
 import { CreateResidentDto, UpdateResidentDto, GetResidentsQueryDto } from './resident.struct';
+import { SignupUserWithNoResident } from './resident.type';
 
 // 1. 입주민 리소스 생성(개별 등록)
 export async function createResident(apartmentId: string, data: CreateResidentDto) {
@@ -51,6 +52,72 @@ export async function findResidentsByApartment(
   ]);
 
   return { residents, totalCount };
+}
+
+/**
+ * resident 테이블과 연결되지 않은 가입 유저(User)를
+ * 관리자 입주민 승인 화면에서 함께 노출하기 위한 조회.
+ */
+export async function findSignupUsersWithoutResidentByApartment(
+  apartmentId: string,
+  query: GetResidentsQueryDto = {},
+): Promise<SignupUserWithNoResident[]> {
+  const { building, unitNumber, keyword } = query;
+
+  const users = await prisma.user.findMany({
+    where: {
+      apartmentId,
+      role: Role.USER,
+      joinStatus: JoinStatus.PENDING,
+      resident: null,
+      ...(keyword && {
+        OR: [
+          { name: { contains: keyword } },
+          { contact: { contains: keyword } },
+          { email: { contains: keyword } },
+          { username: { contains: keyword } },
+        ],
+      }),
+      ...((building || unitNumber) && {
+        apartmentUnit: {
+          ...(building && { dong: building }),
+          ...(unitNumber && { ho: unitNumber }),
+        },
+      }),
+    },
+    select: {
+      id: true,
+      name: true,
+      contact: true,
+      email: true,
+      joinStatus: true,
+      apartmentUnit: {
+        select: {
+          dong: true,
+          ho: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+
+  return users.map((user) => ({
+    id: user.id,
+    userId: user.id,
+    dong: user.apartmentUnit?.dong ?? '',
+    ho: user.apartmentUnit?.ho ?? '',
+    name: user.name,
+    contact: user.contact,
+    isHouseholder: HouseHolderStatus.MEMBER,
+    residenceStatus: ResidenceStatus.NO_RESIDENCE,
+    user: {
+      id: user.id,
+      email: user.email,
+      joinStatus: user.joinStatus,
+    },
+  }));
 }
 
 // 3. 입주민 상세조회
@@ -151,6 +218,7 @@ export async function findResidentWithAuthInfo(db: DbClient, residentId: string)
   return await db.resident.findUnique({
     where: { id: residentId },
     select: {
+      apartmentId: true,
       userId: true,
       user: { // DB에서 User 테이블이랑 JOIN 해서 그 안에 있는 구체적인 정보 가져오기.
         select: {

@@ -8,12 +8,12 @@ import {
   GetResidentsQueryDto,
   ResidentIdParamsStruct,
 } from './resident.struct';
-import { ResidentWithUser } from './resident.type';
+import { ResidentListItem } from './resident.type';
 import BadRequestError from '../libs/errors/BadRequestError';
 import UnauthorizedError from '../libs/errors/UnauthorizedError';
 import { UpdateStatusBodyStruct } from '../users/user.struct';
 
-const mapToResidentResponse = (r: ResidentWithUser) => ({
+const mapToResidentResponse = (r: ResidentListItem) => ({
   id: r.id,
   userId: r.user?.id || null,
   building: r.dong,
@@ -162,9 +162,14 @@ export async function updateResidentStatus(req: ExpressRequest, res: ExpressResp
 
   // 2. 바디 데이터 검증
   const { status } = s.create(req.body, UpdateStatusBodyStruct);
+  const apartmentId = req.user?.apartmentId;
+
+  if (!apartmentId) {
+    throw new UnauthorizedError('아파트 정보가 유효하지 않습니다.');
+  }
 
   // 3. 서비스 호출
-  await residentService.updateResidentStatus(residentId, status);
+  await residentService.updateResidentStatus(residentId, apartmentId, status);
 
   return res.status(200).json({
     message: '작업이 성공적으로 완료되었습니다',

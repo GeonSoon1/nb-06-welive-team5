@@ -6,6 +6,7 @@ import * as pollRepository from './poll.repository';
 import ForbiddenError from '../libs/errors/ForbiddenError';
 import BadRequestError from '../libs/errors/BadRequestError';
 import * as noticeService from '../notices/notice.service';
+import * as eventRepository from '../events/event.repository';
 
 /**
  * 투표 생성
@@ -35,24 +36,36 @@ export const createPoll = async (userId: string, apartmentId: string | null, pol
     }
 
 
-    const newPoll = await prismaClient.vote.create({
-        data: {
-            ...voteData,
-            targetScope: buildingPermission,
-            startTime: startDate,
-            endTime: endDate,
-            authorId: userId,
-            apartmentboardId: apartment.apartmentboardId,
-            status,
-            voteOptions: {
-                create: options.map((option) => ({
-                    content: option.title,
-                })),
+    const newPoll = await prismaClient.$transaction(async (tx) => {
+        const createdPoll = await pollRepository.createPoll(
+            {
+                ...voteData,
+                targetScope: buildingPermission,
+                startDate,
+                endDate,
+                author: { connect: { id: userId } },
+                apartmentboard: { connect: { id: apartment.apartmentboardId } },
+                status,
+                voteOptions: {
+                    create: options.map((option) => ({
+                        content: option.title,
+                    })),
+                },
             },
-        },
-        include: {
-            voteOptions: true,
-        },
+            tx,
+        );
+
+        await eventRepository.upsertEvent(
+            {
+                boardType: 'POLL',
+                boardId: createdPoll.id,
+                startDate: createdPoll.startDate,
+                endDate: createdPoll.endDate,
+            },
+            tx,
+        );
+
+        return createdPoll;
     });
     return newPoll;
 
@@ -110,8 +123,8 @@ export const getPollList = async (query: GetPollListDto, apartmentId: string | n
                 buildingPermission: poll.targetScope,
                 createdAt: poll.createdAt,
                 updatedAt: poll.updatedAt,
-                startDate: poll.startTime,
-                endDate: poll.endTime,
+                startDate: poll.startDate,
+                endDate: poll.endDate,
                 status: poll.status,
             };
         }),
@@ -147,8 +160,8 @@ export const getPollById = async (pollId: string, apartmentId: string | null, ro
         buildingPermission: poll.targetScope,
         createdAt: poll.createdAt,
         updatedAt: poll.updatedAt,
-        startDate: poll.startTime,
-        endDate: poll.endTime,
+        startDate: poll.startDate,
+        endDate: poll.endDate,
         status: poll.status,
         content: poll.content,
         boardName: poll.apartmentboardId,
@@ -184,8 +197,8 @@ export const updatePoll = async (pollId: string, userId: string, userRole: Role,
     const updateData: Prisma.VoteUpdateInput = { ...voteData };
 
     if (buildingPermission !== undefined) updateData.targetScope = buildingPermission;
-    if (startDate) updateData.startTime = startDate;
-    if (endDate) updateData.endTime = endDate;
+    if (startDate) updateData.startDate = startDate;
+    if (endDate) updateData.endDate = endDate;
 
     if (options) {
         // 기존 옵션의 ID 목록 추출
@@ -212,7 +225,21 @@ export const updatePoll = async (pollId: string, userId: string, userRole: Role,
         };
     }
 
-    return await pollRepository.updatePoll(pollId, updateData);
+    return await prismaClient.$transaction(async (tx) => {
+        const updatedPoll = await pollRepository.updatePoll(pollId, updateData, tx);
+
+        await eventRepository.upsertEvent(
+            {
+                boardType: 'POLL',
+                boardId: updatedPoll.id,
+                startDate: updatedPoll.startDate,
+                endDate: updatedPoll.endDate,
+            },
+            tx,
+        );
+
+        return updatedPoll;
+    });
 };
 
 /**
