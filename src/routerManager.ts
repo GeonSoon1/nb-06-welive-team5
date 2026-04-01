@@ -16,6 +16,19 @@ import pollSchedulerRouter from './pollScheduler/poll-Scheduler.router';
 
 export const routerManager = EXPRESS.Router();
 
+//서비스 헬스체크 (ALB/모니터링/제출 검증용)
+routerManager.get('/health', (_req, res) => {
+  const serverName = process.env.SERVER_NAME || 'Unknown';
+
+  return res.status(200).json({
+    success: true,
+    status: 'ok',
+    service: 'welive-api',
+    serverName,
+    timestamp: new Date().toISOString(),
+  });
+});
+
 //인증관리
 routerManager.use('/auth', authRouter);
 
