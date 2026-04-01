@@ -18,6 +18,8 @@ const userRouter = Router();
 //   catchAsync(userController.updatePassword));
 
 // userRouter.ts
+userRouter.get('/me/avatar', authenticate, userController.getMyProfileImage);
+
 userRouter.patch(
   '/me', 
   authenticate, 

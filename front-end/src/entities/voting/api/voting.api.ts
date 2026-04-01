@@ -104,6 +104,7 @@ export const deleteVoting = async (pollId: string) => {
 
 //주민 투표 수정 API
 export interface UpdateVotingOption {
+  id?: string;
   title: string;
 }
 

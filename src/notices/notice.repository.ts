@@ -1,7 +1,11 @@
 import { prismaClient, Prisma } from '../libs/constants';
+import { PrismaClient } from '@prisma/client';
 
-export const createNotice = async (data: Prisma.NoticeCreateInput) => {
-    return prismaClient.notice.create({
+export type DbClient = Prisma.TransactionClient | PrismaClient;
+
+export const createNotice = async (data: Prisma.NoticeCreateInput, tx?: DbClient) => {
+    const db = tx || prismaClient;
+    return db.notice.create({
         data,
     });
 };
@@ -49,8 +53,9 @@ export const findNoticeById = async (noticeId: string) => {
     });
 };
 
-export const updateNotice = async (noticeId: string, data: Prisma.NoticeUpdateInput) => {
-    return prismaClient.notice.update({
+export const updateNotice = async (noticeId: string, data: Prisma.NoticeUpdateInput, tx?: DbClient) => {
+    const db = tx || prismaClient;
+    return db.notice.update({
         where: { id: noticeId },
         data,
     });

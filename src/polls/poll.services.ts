@@ -6,6 +6,7 @@ import * as pollRepository from './poll.repository';
 import ForbiddenError from '../libs/errors/ForbiddenError';
 import BadRequestError from '../libs/errors/BadRequestError';
 import * as noticeService from '../notices/notice.service';
+import * as eventRepository from '../events/event.repository';
 
 /**
  * 투표 생성
@@ -35,24 +36,36 @@ export const createPoll = async (userId: string, apartmentId: string | null, pol
     }
 
 
-    const newPoll = await prismaClient.vote.create({
-        data: {
-            ...voteData,
-            targetScope: buildingPermission,
-            startDate: startDate,
-            endDate: endDate,
-            authorId: userId,
-            apartmentboardId: apartment.apartmentboardId,
-            status,
-            voteOptions: {
-                create: options.map((option) => ({
-                    content: option.title,
-                })),
+    const newPoll = await prismaClient.$transaction(async (tx) => {
+        const createdPoll = await pollRepository.createPoll(
+            {
+                ...voteData,
+                targetScope: buildingPermission,
+                startDate,
+                endDate,
+                author: { connect: { id: userId } },
+                apartmentboard: { connect: { id: apartment.apartmentboardId } },
+                status,
+                voteOptions: {
+                    create: options.map((option) => ({
+                        content: option.title,
+                    })),
+                },
             },
-        },
-        include: {
-            voteOptions: true,
-        },
+            tx,
+        );
+
+        await eventRepository.upsertEvent(
+            {
+                boardType: 'POLL',
+                boardId: createdPoll.id,
+                startDate: createdPoll.startDate,
+                endDate: createdPoll.endDate,
+            },
+            tx,
+        );
+
+        return createdPoll;
     });
     return newPoll;
 
@@ -212,7 +225,21 @@ export const updatePoll = async (pollId: string, userId: string, userRole: Role,
         };
     }
 
-    return await pollRepository.updatePoll(pollId, updateData);
+    return await prismaClient.$transaction(async (tx) => {
+        const updatedPoll = await pollRepository.updatePoll(pollId, updateData, tx);
+
+        await eventRepository.upsertEvent(
+            {
+                boardType: 'POLL',
+                boardId: updatedPoll.id,
+                startDate: updatedPoll.startDate,
+                endDate: updatedPoll.endDate,
+            },
+            tx,
+        );
+
+        return updatedPoll;
+    });
 };
 
 /**

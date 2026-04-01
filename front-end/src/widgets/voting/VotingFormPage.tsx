@@ -16,7 +16,7 @@ import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { votingFormSchema } from '@/entities/voting/schema/voting.schema';
 import { z } from 'zod';
-import { AxiosError } from 'axios';
+import { AxiosError, isAxiosError } from 'axios';
 
 const titleStyle = 'w-[50px] text-[14px] font-semibold mr-[30px]';
 
@@ -27,8 +27,21 @@ interface Props {
 
 type VotingFormType = z.infer<typeof votingFormSchema>;
 
+const toPollStatus = (status?: string): PollStatus => {
+  switch (status) {
+    case PollStatus.IN_PROGRESS:
+      return PollStatus.IN_PROGRESS;
+    case PollStatus.CLOSED:
+      return PollStatus.CLOSED;
+    case PollStatus.PENDING:
+    default:
+      return PollStatus.PENDING;
+  }
+};
+
 export default function VotingFormPage({ isEdit = false, initialData }: Props) {
   const userId = useAuthStore((state) => state.user?.id);
+  const userRole = useAuthStore((state) => state.user?.role);
   const boardId = useAuthStore((state) => state.user?.boardIds.POLL);
   const apartmentId = useAuthStore((state) => state.user?.apartmentId);
   const router = useRouter();
@@ -57,6 +70,7 @@ export default function VotingFormPage({ isEdit = false, initialData }: Props) {
     watch,
     setValue,
     trigger,
+    reset,
     formState: { isValid, errors },
   } = methods;
 
@@ -91,22 +105,63 @@ export default function VotingFormPage({ isEdit = false, initialData }: Props) {
     fetchDongOptions();
   }, [apartmentId]);
 
+  useEffect(() => {
+    if (!isEdit || !initialData) return;
+
+    reset({
+      title: initialData.title ?? '',
+      content: initialData.content ?? '',
+      buildingPermission:
+        initialData.buildingPermission === 0
+          ? 'all'
+          : (initialData.buildingPermission?.toString() ?? 'all'),
+      startDate: initialData.startDate ?? '',
+      endDate: initialData.endDate ?? '',
+      options:
+        initialData.options?.map((opt) => ({
+          id: opt.id,
+          value: opt.title,
+          enabled: true,
+        })) ?? [
+          { id: undefined, value: '', enabled: true },
+          { id: undefined, value: '', enabled: true },
+        ],
+    });
+  }, [isEdit, initialData, reset]);
+
   const onSubmit = async (formData: VotingFormType) => {
     if (!userId || !boardId) {
       alert('로그인이 필요하거나 게시판 정보가 없습니다.');
       return;
     }
+
+    if (userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN') {
+      alert('관리자 권한이 필요합니다. 관리자 계정으로 로그인 후 다시 시도해주세요.');
+      return;
+    }
+
     try {
+      const startAt = new Date(formData.startDate);
+      const endAt = new Date(formData.endDate);
+
+      if (Number.isNaN(startAt.getTime()) || Number.isNaN(endAt.getTime())) {
+        alert('투표 일시를 다시 선택해주세요.');
+        return;
+      }
+
       const payload = {
         boardId,
-        status: PollStatus.PENDING,
+        status: isEdit ? toPollStatus(initialData?.status) : PollStatus.PENDING,
         title: formData.title,
         content: formData.content,
         buildingPermission:
           formData.buildingPermission === 'all' ? 0 : Number(formData.buildingPermission),
-        startDate: new Date(formData.startDate).toISOString(),
-        endDate: new Date(formData.endDate).toISOString(),
-        options: formData.options.filter((opt) => opt.enabled).map((opt) => ({ title: opt.value })),
+        startDate: startAt.toISOString(),
+        endDate: endAt.toISOString(),
+        options: formData.options.filter((opt) => opt.enabled).map((opt) => ({
+          ...(opt.id && { id: opt.id }),
+          title: opt.value,
+        })),
       };
 
       if (isEdit && initialData?.pollId) {
@@ -118,12 +173,18 @@ export default function VotingFormPage({ isEdit = false, initialData }: Props) {
     } catch (error) {
       console.error(error);
 
-      const axiosError = error as AxiosError<{ message: string }>;
+      if (isAxiosError(error)) {
+        const axiosError = error as AxiosError<{ message?: string; error?: string }>;
+        const message =
+          axiosError.response?.data?.message ??
+          axiosError.response?.data?.error ??
+          `투표 ${isEdit ? '수정' : '등록'}에 실패했습니다.`;
 
-      const message =
-        axiosError.response?.data?.message ?? `투표 ${isEdit ? '수정' : '등록'}에 실패했습니다.`;
+        alert(message);
+        return;
+      }
 
-      alert(message);
+      alert(`투표 ${isEdit ? '수정' : '등록'}에 실패했습니다.`);
     }
   };
 

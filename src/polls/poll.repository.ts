@@ -1,7 +1,11 @@
-import { VoteStatus } from '@prisma/client';
+import { VoteStatus, Vote, VoteOption } from '@prisma/client';
 import { prismaClient, Prisma } from '../libs/constants';
+import { PrismaClient } from '@prisma/client';
 
-export const updatePollStatuses = async () => {
+type ClosedPollWithOptions = Vote & { voteOptions: VoteOption[] };
+type DbClient = Prisma.TransactionClient | PrismaClient;
+
+export const updatePollStatuses = async (): Promise<ClosedPollWithOptions[]> => {
     const now = new Date();
 
     // 1. 종료 시간이 지난 투표를 찾아라 (옵션 정보 포함)
@@ -40,8 +44,9 @@ export const updatePollStatuses = async () => {
     return pollsToClose; // 방금 마감 처리된 투표 목록을 반환
 };
 
-export const createPoll = async (pollData: Prisma.VoteCreateInput) => {
-    return prismaClient.vote.create({
+export const createPoll = async (pollData: Prisma.VoteCreateInput, tx?: DbClient) => {
+    const db = tx || prismaClient;
+    return db.vote.create({
         data: pollData,
         include: {
             voteOptions: true,
@@ -79,8 +84,9 @@ export const findPollById = async (pollId: string) => {
     });
 };
 
-export const updatePoll = async (pollId: string, data: Prisma.VoteUpdateInput) => {
-    return prismaClient.vote.update({
+export const updatePoll = async (pollId: string, data: Prisma.VoteUpdateInput, tx?: DbClient) => {
+    const db = tx || prismaClient;
+    return db.vote.update({
         where: { id: pollId },
         data,
         include: {

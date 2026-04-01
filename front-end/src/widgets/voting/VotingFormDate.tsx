@@ -12,6 +12,7 @@ interface Props {
 export default function VotingFormDate({ startAt, endAt, setStart, setEnd }: Props) {
   const formatISODateToDisplay = (isoString: string) => {
     const date = new Date(isoString);
+    if (Number.isNaN(date.getTime())) return '';
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
     const d = String(date.getDate()).padStart(2, '0');
@@ -68,6 +69,14 @@ export default function VotingFormDate({ startAt, endAt, setStart, setEnd }: Pro
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [open]);
+
+  useEffect(() => {
+    const formattedStart = startAt ? formatISODateToDisplay(startAt) : '';
+    const formattedEnd = endAt ? formatISODateToDisplay(endAt) : '';
+
+    setStartLabel(formattedStart || '시작 시간');
+    setEndLabel(formattedEnd || '종료 시간');
+  }, [startAt, endAt]);
 
   return (
     <div className='flex items-center'>

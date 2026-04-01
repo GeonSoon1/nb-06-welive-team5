@@ -135,9 +135,7 @@ export async function updateAllUsers(
     where: {
       role: params.targetRole,
       joinStatus: params.fromStatus,
-      resident: { // user와 연결된 resident가 있으면 가서 resident 테이블과 관계를 맺고 resident 테이블의 apartmentId와 입력한 apartmentId가 같는 것을 조건으로 한다.
-        apartmentId: params.apartmentId,
-      }
+      apartmentId: params.apartmentId,
     },
     data: {
       joinStatus: params.toStatus,
@@ -154,6 +152,18 @@ export async function findUserRoleById(db: DbClient, userId: string) {
     select: {
       role: true,
       joinStatus: true,
+      image: true,
+    },
+  });
+}
+
+/**
+ * 프로필 이미지 조회.
+ */
+export async function findUserImageById(db: DbClient, userId: string) {
+  return db.user.findUnique({
+    where: { id: userId },
+    select: {
       image: true,
     },
   });

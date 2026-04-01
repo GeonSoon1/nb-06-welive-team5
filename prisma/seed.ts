@@ -359,10 +359,14 @@ async function main() {
     },
   });
 
+  if (!noticeSchedule.startDate || !noticeSchedule.endDate) {
+    throw new Error('Scheduled notice requires both startDate and endDate.');
+  }
+
   await prisma.event.create({
     data: {
       title: noticeSchedule.title, type: BoardType.NOTICE, category: NotificationType.NOTICE_REG,
-      startDate: noticeSchedule.startDate!, endDate: noticeSchedule.endDate!,
+      startDate: noticeSchedule.startDate, endDate: noticeSchedule.endDate,
       apartmentId: apartment.id, noticeId: noticeSchedule.id,
     }
   });

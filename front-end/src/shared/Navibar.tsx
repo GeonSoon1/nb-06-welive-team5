@@ -6,6 +6,7 @@ import NotificationPanel from './NotificationPanel';
 import axiosInstance from './lib/axios';
 import { useAuthStore } from './store/auth.store';
 import { useRouter } from 'next/router';
+import { getCurrentUserAvatarUrl } from './lib/avatar';
 
 export interface Notification {
   notificationId: string;
@@ -21,6 +22,7 @@ export interface Notification {
 export default function Navibar() {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [avatarErrored, setAvatarErrored] = useState(false);
   const user = useAuthStore((state) => state.user);
   const clearUser = useAuthStore((state) => state.clearUser);
   const router = useRouter();
@@ -28,6 +30,14 @@ export default function Navibar() {
 
   // 읽지 않은 알림 개수
   const unreadCount = notifications.filter((n) => !n.isChecked).length;
+  const avatarSrc =
+    !avatarErrored && user?.avatar?.trim()
+      ? getCurrentUserAvatarUrl(user.avatar)
+      : '/img/userImage.svg';
+
+  useEffect(() => {
+    setAvatarErrored(false);
+  }, [user?.avatar]);
 
   // 역할별 링크
   const getLinkByRole = (role?: string) => {
@@ -154,12 +164,13 @@ export default function Navibar() {
           {/* 유저 이미지 및 이름 */}
           <div className='flex items-center gap-2.5'>
             <Image
-              src={user?.avatar ?? '/img/userImage.svg'}
+              src={avatarSrc}
               alt='유저 이미지'
               width={36}
               height={36}
               priority
               className='rounded-full object-cover'
+              onError={() => setAvatarErrored(true)}
             />
             <p className='text-gray-500'>{user?.name ?? '사용자'}</p>
           </div>

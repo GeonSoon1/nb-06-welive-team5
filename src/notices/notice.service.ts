@@ -7,9 +7,21 @@ import ForbiddenError from '../libs/errors/ForbiddenError';
 import { sendNotificationToUser } from '../notifications/notification.service';
 import * as userRepository from '../users/user.repository';
 import BadRequestError from '../libs/errors/BadRequestError';
+import * as eventRepository from '../events/event.repository';
+
+function validateNoticeSchedule(startDate?: Date, endDate?: Date) {
+    if ((startDate && !endDate) || (!startDate && endDate)) {
+        throw new BadRequestError('일정 등록 시 시작일과 종료일을 모두 입력해야 합니다.');
+    }
+
+    if (startDate && endDate && startDate > endDate) {
+        throw new BadRequestError('종료일은 시작일보다 빠를 수 없습니다.');
+    }
+}
 
 export const createNotice = async (userId: string, data: CreateNoticeDto) => {
     const { boardId, startDate, endDate, ...rest } = data;
+    validateNoticeSchedule(startDate, endDate);
 
     const user = await prismaClient.user.findUnique({
         where: { id: userId },
@@ -38,7 +50,23 @@ export const createNotice = async (userId: string, data: CreateNoticeDto) => {
         author: { connect: { id: userId } },
     };
 
-    const newNotice = await noticeRepository.createNotice(noticeData);
+    const newNotice = await prismaClient.$transaction(async (tx) => {
+        const createdNotice = await noticeRepository.createNotice(noticeData, tx);
+
+        if (createdNotice.startDate && createdNotice.endDate) {
+            await eventRepository.upsertEvent(
+                {
+                    boardType: 'NOTICE',
+                    boardId: createdNotice.id,
+                    startDate: createdNotice.startDate,
+                    endDate: createdNotice.endDate,
+                },
+                tx,
+            );
+        }
+
+        return createdNotice;
+    });
 
     // 실시간 알림 전송 (아파트의 모든 입주민에게)
     const residents = await userRepository.findUsersByApartmentIdAndRole(
@@ -157,13 +185,33 @@ export const updateNotice = async (noticeId: string, userId: string, userRole: R
     if (!isOwner && !isAdmin) throw new ForbiddenError('자신이 작성한 공지사항만 수정하거나 관리자 권한이 필요합니다.');
     //-todo 슈퍼 어드민이 아닌 경우 자신의 아파트 만 업데이트 가능하도록 수정이 필요
     const { boardId, startDate, endDate, ...rest } = data;
+    const effectiveStartDate = startDate ?? notice.startDate ?? undefined;
+    const effectiveEndDate = endDate ?? notice.endDate ?? undefined;
+    validateNoticeSchedule(effectiveStartDate, effectiveEndDate);
+
     const updateData: Prisma.NoticeUpdateInput = {
         ...rest,
         ...(startDate && { startDate }),
         ...(endDate && { endDate }),
     };
 
-    const updated = await noticeRepository.updateNotice(noticeId, updateData);
+    const updated = await prismaClient.$transaction(async (tx) => {
+        const updatedNotice = await noticeRepository.updateNotice(noticeId, updateData, tx);
+
+        if (updatedNotice.startDate && updatedNotice.endDate) {
+            await eventRepository.upsertEvent(
+                {
+                    boardType: 'NOTICE',
+                    boardId: updatedNotice.id,
+                    startDate: updatedNotice.startDate,
+                    endDate: updatedNotice.endDate,
+                },
+                tx,
+            );
+        }
+
+        return updatedNotice;
+    });
 
     return {
         noticeId: updated.id,
@@ -216,5 +264,21 @@ export const createNoticeFromPoll = async (poll: Vote & { voteOptions: VoteOptio
         endDate: new Date(new Date().setDate(new Date().getDate() + 30)), // 30일 동안 게시
     };
 
-    return await noticeRepository.createNotice(noticeData);
+    return await prismaClient.$transaction(async (tx) => {
+        const createdNotice = await noticeRepository.createNotice(noticeData, tx);
+
+        if (createdNotice.startDate && createdNotice.endDate) {
+            await eventRepository.upsertEvent(
+                {
+                    boardType: 'NOTICE',
+                    boardId: createdNotice.id,
+                    startDate: createdNotice.startDate,
+                    endDate: createdNotice.endDate,
+                },
+                tx,
+            );
+        }
+
+        return createdNotice;
+    });
 };

@@ -22,7 +22,7 @@ export function useResidentInfo({ building, unitNumber, approvalStatus, keyword 
           params: {
             building: building !== '전체' ? building : undefined,
             unitNumber: unitNumber !== '전체' ? unitNumber : undefined,
-            name: keyword || undefined,
+            keyword: keyword || undefined,
           },
         });
         setRawData(res.data.residents);

@@ -11,12 +11,14 @@ export default function ProfileImageUploader({
   initialImageUrl,
 }: ProfileImageUploaderProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     onFileChange(file);
+    setLoadFailed(false);
 
     const reader = new FileReader();
     reader.onloadend = () => setPreviewUrl(reader.result as string);
@@ -25,17 +27,21 @@ export default function ProfileImageUploader({
 
   useEffect(() => {
     if (initialImageUrl && !previewUrl) {
+      setLoadFailed(false);
       setPreviewUrl(initialImageUrl);
     }
   }, [initialImageUrl, previewUrl]);
 
+  const imageSrc = !loadFailed && previewUrl ? previewUrl : '/img/profile.svg';
+
   return (
     <div className='relative mb-6 h-[100px] w-[100px] rounded-full border border-gray-200'>
       <Image
-        src={previewUrl ?? '/img/profile.svg'}
+        src={imageSrc}
         alt='프로필 이미지'
         fill
         className='rounded-full object-cover'
+        onError={() => setLoadFailed(true)}
       />
       <label
         htmlFor='profileImageUpload'

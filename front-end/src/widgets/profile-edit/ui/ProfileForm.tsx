@@ -12,6 +12,7 @@ import { profileSchema } from '@/entities/profile/schema/profile.schema';
 import { patchChangeProfile } from '@/entities/profile/api/profile.api';
 import { z } from 'zod';
 import { isAxiosError, AxiosError } from 'axios';
+import { getCurrentUserAvatarUrl } from '@/shared/lib/avatar';
 
 export default function ProfileForm() {
   const [showPassword, setShowPassword] = useState(false);
@@ -40,6 +41,7 @@ export default function ProfileForm() {
   const isPasswordValid = !errors.currentPassword && !errors.newPassword && !errors.confirmPassword;
 
   const isButtonEnabled = (isTryingToChangePassword && isPasswordValid) || selectedFile !== null;
+  const initialAvatarUrl = userData?.avatar ? getCurrentUserAvatarUrl(userData.avatar) : undefined;
 
   const onSubmit = async (data: z.infer<typeof profileSchema>) => {
     try {
@@ -75,7 +77,7 @@ export default function ProfileForm() {
 
       <ProfileImageUploader
         onFileChange={setSelectedFile}
-        initialImageUrl={userData?.avatar ?? undefined}
+        initialImageUrl={initialAvatarUrl}
       />
 
       <ProfileReadOnly
