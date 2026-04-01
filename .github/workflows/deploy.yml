@@ -97,6 +97,20 @@ jobs:
             PORT=${{ env.TARGET_PORT }} SERVER_NAME=${{ env.TARGET_SERVER_NAME }} pm2 reload welive-api --update-env || PORT=${{ env.TARGET_PORT }} SERVER_NAME=${{ env.TARGET_SERVER_NAME }} pm2 start dist/main.js --name welive-api --update-env
 
       # 3. [Health Check] 신규 배포된 인스턴스가 'InService' 상태가 될 때까지 대기합니다.
+      - name: Keep Both Target Groups Attached (Current 100 / Target 0)
+        run: |
+          if [ "${{ env.CURRENT_TG_ARN }}" == "${{ secrets.TG_A_ARN }}" ]; then
+            WEIGHT_A=100
+            WEIGHT_B=0
+          else
+            WEIGHT_A=0
+            WEIGHT_B=100
+          fi
+
+          aws elbv2 modify-listener \
+            --listener-arn "${{ secrets.ALB_LISTENER_ARN }}" \
+            --default-actions "Type=forward,ForwardConfig={TargetGroups=[{TargetGroupArn=${{ secrets.TG_A_ARN }},Weight=${WEIGHT_A}},{TargetGroupArn=${{ secrets.TG_B_ARN }},Weight=${WEIGHT_B}]}}"
+
       - name: Wait for Health Check
         run: |
           echo "Waiting for ${{ env.TARGET_NAME }} target (${{ env.TARGET_INSTANCE_ID }}) at Port ${{ env.TARGET_PORT }}..."
@@ -107,4 +121,14 @@ jobs:
       # 4. [Traffic Switch] 모든 타겟이 정상이면 로드밸런서 리스너를 신규 그룹으로 전환합니다.
       - name: Switch Traffic
         run: |
-          aws elbv2 modify-listener --listener-arn ${{ secrets.ALB_LISTENER_ARN }} --default-actions Type=forward,TargetGroupArn=${{ env.TARGET_TG_ARN }}
+          if [ "${{ env.TARGET_TG_ARN }}" == "${{ secrets.TG_A_ARN }}" ]; then
+            WEIGHT_A=100
+            WEIGHT_B=0
+          else
+            WEIGHT_A=0
+            WEIGHT_B=100
+          fi
+
+          aws elbv2 modify-listener \
+            --listener-arn "${{ secrets.ALB_LISTENER_ARN }}" \
+            --default-actions "Type=forward,ForwardConfig={TargetGroups=[{TargetGroupArn=${{ secrets.TG_A_ARN }},Weight=${WEIGHT_A}},{TargetGroupArn=${{ secrets.TG_B_ARN }},Weight=${WEIGHT_B}]}}"
