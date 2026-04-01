@@ -1,4 +1,4 @@
-name: CI/CD Pipeline (Blue-Green 2:2)
+name: CI/CD Pipeline (Blue-Green 1:1)
 
 on:
   push:
@@ -36,14 +36,9 @@ jobs:
 
   deploy:
     needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      - name: Download Build Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: build-artifact
-          path: dist/
-
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -56,50 +51,58 @@ jobs:
         run: |
           CURRENT_TG_ARN=$(aws elbv2 describe-listeners --listener-arns ${{ secrets.ALB_LISTENER_ARN }} --query "Listeners[0].DefaultActions[0].TargetGroupArn" --output text)
 
+          # 리스너가 가중치 기반 포워딩(blue 100, green 0 등)일 때는 ForwardConfig에서 활성 TG를 찾는다.
+          if [ -z "$CURRENT_TG_ARN" ] || [ "$CURRENT_TG_ARN" = "None" ]; then
+            CURRENT_TG_ARN=$(aws elbv2 describe-listeners --listener-arns ${{ secrets.ALB_LISTENER_ARN }} --query "Listeners[0].DefaultActions[0].ForwardConfig.TargetGroups[?Weight > \`0\`]|[0].TargetGroupArn" --output text)
+          fi
+
+          if [ -z "$CURRENT_TG_ARN" ] || [ "$CURRENT_TG_ARN" = "None" ]; then
+            echo "Failed to resolve current target group from listener ${{ secrets.ALB_LISTENER_ARN }}"
+            exit 1
+          fi
+
           echo "CURRENT_TG_ARN=$CURRENT_TG_ARN" >> $GITHUB_ENV
 
           if [ "$CURRENT_TG_ARN" == "${{ secrets.TG_A_ARN }}" ]; then
             echo "TARGET_NAME=GREEN" >> $GITHUB_ENV
-            echo TARGET_INSTANCE_IDS=${{ secrets.EC2_INSTANCE_ID_C }},${{ secrets.EC2_INSTANCE_ID_D }} >> $GITHUB_ENV
-            echo "ID_1=${{ secrets.EC2_INSTANCE_ID_C }}" >> $GITHUB_ENV
-            echo "ID_2=${{ secrets.EC2_INSTANCE_ID_D }}" >> $GITHUB_ENV
+            echo "TARGET_INSTANCE_ID=${{ secrets.EC2_INSTANCE_ID_C }}" >> $GITHUB_ENV
             echo "TARGET_TG_ARN=${{ secrets.TG_B_ARN }}" >> $GITHUB_ENV
             echo "TARGET_PORT=8080" >> $GITHUB_ENV
+            echo "TARGET_SERVER_NAME=SERVER_C" >> $GITHUB_ENV
           else
             echo "TARGET_NAME=BLUE" >> $GITHUB_ENV
-            echo TARGET_INSTANCE_IDS=${{ secrets.EC2_INSTANCE_ID_A }},${{ secrets.EC2_INSTANCE_ID_B }} >> $GITHUB_ENV
-            echo "ID_1=${{ secrets.EC2_INSTANCE_ID_A }}" >> $GITHUB_ENV
-            echo "ID_2=${{ secrets.EC2_INSTANCE_ID_B }}" >> $GITHUB_ENV
+            echo "TARGET_INSTANCE_ID=${{ secrets.EC2_INSTANCE_ID_A }}" >> $GITHUB_ENV
             echo "TARGET_TG_ARN=${{ secrets.TG_A_ARN }}" >> $GITHUB_ENV
             echo "TARGET_PORT=8080" >> $GITHUB_ENV
+            echo "TARGET_SERVER_NAME=SERVER_A" >> $GITHUB_ENV
           fi
 
       # 2. [Application 배포] 대상 인스턴스에 최신 코드를 배포하고 지정된 포트로 서비스를 재시작합니다.
-      - name: Deploy to Target Instances via SSM
+      - name: Deploy to Target Instance via SSM
         uses: peterkimzz/aws-ssm-send-command@master
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
           instance-ids: |
-            ${{ env.ID_1 }}
-            ${{ env.ID_2 }}
-          working-directory: /home/ubuntu/nb-06-welive-team5
+            ${{ env.TARGET_INSTANCE_ID }}
+          working-directory: /home/ssm-user/nb-06-welive-team5
           command: |
-            git fetch origin dev
-            git checkout ${{ github.sha }}
-            npm install --production
+            git fetch origin --prune
+            git checkout --force ${{ github.sha }}
+            npm ci
             npx prisma generate
             npx prisma migrate deploy
-            PORT=${{ env.TARGET_PORT }} pm2 reload welive-api --update-env
+            npm run build
+            PORT=${{ env.TARGET_PORT }} SERVER_NAME=${{ env.TARGET_SERVER_NAME }} pm2 reload welive-api --update-env || PORT=${{ env.TARGET_PORT }} SERVER_NAME=${{ env.TARGET_SERVER_NAME }} pm2 start dist/main.js --name welive-api --update-env
 
-      # 3. [Health Check] 신규 배포된 인스턴스 쌍이 모두 'InService' 상태가 될 때까지 대기합니다.
+      # 3. [Health Check] 신규 배포된 인스턴스가 'InService' 상태가 될 때까지 대기합니다.
       - name: Wait for Health Check
         run: |
-          echo "Waiting for ${{ env.TARGET_NAME }} pair (${{ env.ID_1 }}, ${{ env.ID_2 }}) at Port ${{ env.TARGET_PORT }}..."
+          echo "Waiting for ${{ env.TARGET_NAME }} target (${{ env.TARGET_INSTANCE_ID }}) at Port ${{ env.TARGET_PORT }}..."
           aws elbv2 wait target-in-service \
             --target-group-arn ${{ env.TARGET_TG_ARN }} \
-            --targets Id=${{ env.ID_1 }} Id=${{ env.ID_2 }}
+            --targets Id=${{ env.TARGET_INSTANCE_ID }}
 
       # 4. [Traffic Switch] 모든 타겟이 정상이면 로드밸런서 리스너를 신규 그룹으로 전환합니다.
       - name: Switch Traffic
