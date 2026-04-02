@@ -49,11 +49,12 @@ export default function ProfileForm() {
 
   const onSubmit = async (data: z.infer<typeof profileSchema>) => {
     try {
-      const { currentPassword, newPassword } = data;
+      const { currentPassword, newPassword, confirmPassword } = data;
 
       await patchChangeProfile({
         currentPassword,
         newPassword,
+        confirmPassword,
         file: selectedFile ?? undefined,
       });
 
