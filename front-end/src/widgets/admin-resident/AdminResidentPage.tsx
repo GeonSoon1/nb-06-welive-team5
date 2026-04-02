@@ -131,16 +131,29 @@ export default function AdminResidentPage() {
   };
 
   // 양식 다운로드
-  const handleClickDownloadForm = () => {
+  const handleClickDownloadForm = async () => {
     try {
+      const response = await axiosInstance.get('/residents/file/template', {
+        responseType: 'blob',
+      });
+
+      const disposition = response.headers['content-disposition'];
+      let filename = 'template.csv';
+      if (disposition && disposition.includes('filename=')) {
+        filename = decodeURIComponent(disposition.split('filename=')[1].replace(/"/g, ''));
+      }
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
-      link.href = `${process.env.NEXT_PUBLIC_API_BASE_URL}/residents/file/template`;
-      link.setAttribute('download', '양식.csv');
+      link.href = url;
+      link.setAttribute('download', filename);
       document.body.appendChild(link);
       link.click();
       link.remove();
+      window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('양식 다운로드 중 오류 발생:', error);
+      alert('양식 다운로드에 실패했습니다.');
     }
   };
 

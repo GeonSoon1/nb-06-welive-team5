@@ -139,6 +139,7 @@ export async function getTemplate(req: ExpressRequest, res: ExpressResponse) {
   const csvStream = await residentService.getCsvTemplate();
   res.setHeader('Content-disposition', 'attachment; filename="template.csv"');
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.write('\uFEFF');
   csvStream.pipe(res);
 }
 
@@ -152,6 +153,7 @@ export async function exportCsv(req: ExpressRequest, res: ExpressResponse) {
 
   res.setHeader('Content-disposition', 'attachment; filename="residents.csv"');
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.write('\uFEFF');
   csvStream.pipe(res);
 }
 

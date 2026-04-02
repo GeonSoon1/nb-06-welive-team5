@@ -5,8 +5,8 @@
   "devFiles": [],
   "ampDevFiles": [],
   "lowPriorityFiles": [
-    "static/9gPEbewWAqvqM2KWgWzd2/_buildManifest.js",
-    "static/9gPEbewWAqvqM2KWgWzd2/_ssgManifest.js"
+    "static/uriC9sr0rSs3hHT1brI-K/_buildManifest.js",
+    "static/uriC9sr0rSs3hHT1brI-K/_ssgManifest.js"
   ],
   "rootMainFiles": [],
   "rootMainFilesTree": {},
@@ -177,7 +177,7 @@
       "static/chunks/9007-4a05ea4549718760.js",
       "static/chunks/6381-9aac37ae1405f191.js",
       "static/chunks/95-0b40af5e1ce325fc.js",
-      "static/chunks/pages/admin/resident-3748857b02bd831f.js"
+      "static/chunks/pages/admin/resident-e0db023f1c602e22.js"
     ],
     "/admin/resident-info": [
       "static/chunks/webpack-73c202d500686ac1.js",

@@ -214,6 +214,30 @@ describe('Resident Service 유닛 테스트', () => {
         BadRequestError,
       );
     });
+
+    it('엑셀에서 선행 0이 사라진 010 번호(10xxxxxxxx)는 업로드 시 복구해야 한다.', async () => {
+      const mockApartmentId = 'apt-1234';
+      const mockCsvContent = `이름,연락처,동,호,세대주여부\n홍길동,1033334444,101,402,세대원`;
+      const mockBuffer = Buffer.from(mockCsvContent, 'utf-8');
+
+      (residentRepository.createManyResidents as jest.Mock).mockResolvedValue({
+        count: 1,
+      });
+
+      const result = await residentService.uploadResidentsFromCsv(mockApartmentId, mockBuffer);
+
+      expect(result.count).toBe(1);
+      expect(residentRepository.createManyResidents).toHaveBeenCalledWith([
+        {
+          apartmentId: mockApartmentId,
+          name: '홍길동',
+          contact: '01033334444',
+          dong: '101',
+          ho: '402',
+          isHouseholder: 'MEMBER',
+        },
+      ]);
+    });
   });
 
   describe('exportResidentsToCsv (입주민 목록 다운로드 서비스)', () => {
