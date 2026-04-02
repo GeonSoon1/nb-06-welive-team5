@@ -15,8 +15,12 @@ export const normalizeApiBaseUrl = (raw?: string | null): string => {
 
   try {
     const parsed = new URL(trimmed);
+    const sanitizedPath = parsed.pathname.replace(/\/$/, '');
+    const apiStartIndex = sanitizedPath.indexOf('/api');
     const normalizedPath =
-      parsed.pathname && parsed.pathname !== '/' ? parsed.pathname.replace(/\/$/, '') : '/api';
+      apiStartIndex >= 0
+        ? sanitizedPath.slice(0, apiStartIndex + '/api'.length)
+        : '/api';
     return `${parsed.origin}${normalizedPath}`;
   } catch {
     return DEFAULT_API_BASE_URL;
