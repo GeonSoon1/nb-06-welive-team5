@@ -16,10 +16,10 @@ export interface AuthUser {
   joinStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | 'NEED_UPDATE';
   apartmentId: string;
   boardIds: {
-    COMPLAINT: string;
-    NOTICE: string;
-    POLL: string;
-  };
+    COMPLAINT?: string;
+    NOTICE?: string;
+    POLL?: string;
+  } | null;
 }
 
 interface AuthState {
