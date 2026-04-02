@@ -10,7 +10,7 @@ export interface AuthUser {
   role: UserRole;
   username: string;
   contact: string;
-  avatar: string;
+  avatar: string | null;
   residentDong?: string;
   isActive: boolean;
   joinStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | 'NEED_UPDATE';

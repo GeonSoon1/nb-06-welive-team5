@@ -1,5 +1,11 @@
 import * as s from 'superstruct';
-import { ExpressRequest, ExpressResponse, CLEANUP_GRACE_PERIOD_DAYS } from '../libs/constants';
+import {
+  ExpressRequest,
+  ExpressResponse,
+  CLEANUP_GRACE_PERIOD_DAYS,
+  AWS_REGION,
+  S3_BUCKET_NAME,
+} from '../libs/constants';
 import {
   UpdateStatusBodyStruct,
   AdminIdParamsStruct,
@@ -11,6 +17,33 @@ import * as userService from './user.services';
 import UnauthorizedError from '../libs/errors/UnauthorizedError';
 import { catchAsync } from '../libs/catchAsync';
 import ValidationError from '../libs/errors/ValidationError';
+
+function encodeS3KeyForUrl(key: string): string {
+  return key
+    .split('/')
+    .map((segment) => encodeURIComponent(segment))
+    .join('/');
+}
+
+function resolveUploadedImagePath(file?: Express.MulterS3.File): string | null {
+  if (!file) return null;
+
+  if (file.location) {
+    return file.location;
+  }
+
+  const bucket = file.bucket || S3_BUCKET_NAME;
+  const key = file.key;
+
+  if (!bucket || !key) {
+    return null;
+  }
+
+  const regionHost = AWS_REGION === 'us-east-1' ? 's3' : `s3.${AWS_REGION}`;
+  const encodedKey = encodeS3KeyForUrl(key);
+
+  return `https://${bucket}.${regionHost}.amazonaws.com/${encodedKey}`;
+}
 
 /**
  * [슈퍼 관리자] 관리자 가입 상태 변경 (단건)
@@ -86,11 +119,11 @@ export const updateUserProfile = catchAsync(async (req: ExpressRequest, res: Exp
 
   // --- 시나리오 B: 프로필 이미지 변경 로직 ---
   // S3에 파일이 성공적으로 업로드되어 location URL이 존재하는 경우
-  if (file && file.location) {
-    const imagePath = file.location;
+  const imagePath = resolveUploadedImagePath(file);
+  if (imagePath) {
 
     // 기존 서비스 로직 호출 (기존 파일 S3 삭제 예약 포함)
-    const updatedUserWithImage = await userService.updateProfileImage(userId, imagePath);
+    await userService.updateProfileImage(userId, imagePath);
     
     updateActionTaken = true;
     // 비밀번호 메시지가 이미 있다면 줄바꿈 추가
@@ -157,7 +190,8 @@ export async function updateProfileImage(req: ExpressRequest, res: ExpressRespon
   //그래서 TypeScript에게 '이 파일은 S3가 준 거니까 location이라는 정보가 들어있어'라고 알려주는 과정(as any 또는 as Express.MulterS3.File)이 필요하다.
 
   // ex) file.location: htts://my-bucket.s3.ap-northeast-2.amazonaws.com/profiles/user-123.png
-  if (!file || !file.location) {
+  const imagePath = resolveUploadedImagePath(file);
+  if (!imagePath) {
     return res.status(400).json({ message: '이미지 업로드에 실패했습니다. 다시 시도해주세요.' });
   }
 
@@ -167,9 +201,6 @@ export async function updateProfileImage(req: ExpressRequest, res: ExpressRespon
   }
 
   const userId = req.user.id;
-
-  // 2. 저장된 파일 경로(S3 URL)
-  const imagePath = file.location;
 
   const updatedUser = await userService.updateProfileImage(userId, imagePath);
 

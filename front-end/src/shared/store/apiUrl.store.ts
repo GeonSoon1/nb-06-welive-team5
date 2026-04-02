@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { normalizeApiBaseUrl } from '@/shared/lib/apiBaseUrl';
 
 interface ApiUrlState {
   url: string;
@@ -7,24 +8,24 @@ interface ApiUrlState {
 }
 
 export const useApiUrlStore = create<ApiUrlState>((set) => {
-  let initialUrl = 'http://localhost:9000/api';
+  let initialUrl = normalizeApiBaseUrl(process.env.NEXT_PUBLIC_API_BASE_URL);
 
   if (typeof window !== 'undefined') {
-    initialUrl =
-      localStorage.getItem('apiBaseUrl') ||
-      process.env.NEXT_PUBLIC_API_BASE_URL ||
-      'http://localhost:9000/api';
+    initialUrl = normalizeApiBaseUrl(
+      localStorage.getItem('apiBaseUrl') || process.env.NEXT_PUBLIC_API_BASE_URL,
+    );
   }
 
   return {
     url: initialUrl,
     setUrl: (url) => {
-      localStorage.setItem('apiBaseUrl', url);
-      set({ url });
+      const normalizedUrl = normalizeApiBaseUrl(url);
+      localStorage.setItem('apiBaseUrl', normalizedUrl);
+      set({ url: normalizedUrl });
     },
     reset: () => {
       localStorage.removeItem('apiBaseUrl');
-      const defaultUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:9000/api';
+      const defaultUrl = normalizeApiBaseUrl(process.env.NEXT_PUBLIC_API_BASE_URL);
       set({ url: defaultUrl });
     },
   };

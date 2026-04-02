@@ -31,8 +31,8 @@ export default function Navibar() {
   // 읽지 않은 알림 개수
   const unreadCount = notifications.filter((n) => !n.isChecked).length;
   const avatarSrc =
-    !avatarErrored && user?.avatar?.trim()
-      ? getCurrentUserAvatarUrl(user.avatar)
+    !avatarErrored && user?.id
+      ? getCurrentUserAvatarUrl(user.avatar ?? user.id)
       : '/img/userImage.svg';
 
   useEffect(() => {
@@ -168,6 +168,7 @@ export default function Navibar() {
               alt='유저 이미지'
               width={36}
               height={36}
+              unoptimized
               priority
               className='rounded-full object-cover'
               onError={() => setAvatarErrored(true)}

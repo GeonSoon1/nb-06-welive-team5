@@ -40,6 +40,7 @@ export default function ProfileImageUploader({
         src={imageSrc}
         alt='프로필 이미지'
         fill
+        unoptimized
         className='rounded-full object-cover'
         onError={() => setLoadFailed(true)}
       />

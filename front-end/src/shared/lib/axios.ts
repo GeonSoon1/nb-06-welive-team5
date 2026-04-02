@@ -1,11 +1,8 @@
 import axios from 'axios';
+import { getApiBaseUrl } from './apiBaseUrl';
 
 const getBaseUrl = (): string => {
-  if (typeof window !== 'undefined') {
-    const storedUrl = localStorage.getItem('apiBaseUrl');
-    if (storedUrl && storedUrl.startsWith('http')) return storedUrl;
-  }
-  return process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:9000/api';
+  return getApiBaseUrl();
 };
 
 const axiosInstance = axios.create({
