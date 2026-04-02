@@ -10,6 +10,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { profileSchema } from '@/entities/profile/schema/profile.schema';
 import { patchChangeProfile } from '@/entities/profile/api/profile.api';
+import { postLogout } from '@/entities/auth/api/logout.api';
 import { z } from 'zod';
 import { isAxiosError, AxiosError } from 'axios';
 import { getCurrentUserAvatarUrl } from '@/shared/lib/avatar';
@@ -21,6 +22,7 @@ export default function ProfileForm() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const userData = useAuthStore((state) => state.user);
+  const clearUser = useAuthStore((state) => state.clearUser);
 
   const {
     register,
@@ -41,18 +43,28 @@ export default function ProfileForm() {
   const isPasswordValid = !errors.currentPassword && !errors.newPassword && !errors.confirmPassword;
 
   const isButtonEnabled = (isTryingToChangePassword && isPasswordValid) || selectedFile !== null;
-  const initialAvatarUrl = userData?.avatar ? getCurrentUserAvatarUrl(userData.avatar) : undefined;
+  const initialAvatarUrl = userData?.id
+    ? getCurrentUserAvatarUrl(userData.avatar ?? userData.id)
+    : undefined;
 
   const onSubmit = async (data: z.infer<typeof profileSchema>) => {
     try {
-      const { currentPassword, newPassword } = data;
+      const { currentPassword, newPassword, confirmPassword } = data;
 
       await patchChangeProfile({
         currentPassword,
         newPassword,
+        confirmPassword,
         file: selectedFile ?? undefined,
       });
 
+      try {
+        await postLogout();
+      } catch (logoutError) {
+        console.error('프로필 변경 후 로그아웃 요청 실패:', logoutError);
+      }
+
+      clearUser();
       alert('프로필이 성공적으로 수정되었습니다. 다시 로그인해주세요.');
       window.location.href = '/';
     } catch (error) {

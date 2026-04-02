@@ -12,7 +12,7 @@ export enum PollStatus {
 }
 
 export interface CreateVotingRequest {
-  boardId: string;
+  boardId?: string;
   status: PollStatus;
   title: string;
   content: string;

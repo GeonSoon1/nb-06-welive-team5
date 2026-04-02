@@ -11,6 +11,57 @@ import { JoinStatus, Role } from '@prisma/client';
 
 type ResidentApprovalDb = Prisma.TransactionClient | typeof prisma;
 
+const hasKnownCsvHeader = (text: string): boolean => {
+  const firstLine = text.split(/\r?\n/, 1)[0]?.replace(/^\uFEFF/, '') ?? '';
+  if (!firstLine) return false;
+
+  const knownHeaders = ['이름', '연락처', '동', '호', '세대주여부', 'name', 'contact', 'building', 'unitNumber'];
+  return knownHeaders.some((header) => firstLine.includes(header));
+};
+
+const decodeCsvBuffer = (fileBuffer: Buffer): string => {
+  const utf8Text = fileBuffer.toString('utf8');
+  if (hasKnownCsvHeader(utf8Text)) return utf8Text;
+
+  const eucKrText = new TextDecoder('euc-kr').decode(fileBuffer);
+  if (hasKnownCsvHeader(eucKrText)) return eucKrText;
+
+  return utf8Text;
+};
+
+const normalizeCsvRow = (row: Record<string, unknown>): Record<string, string> => {
+  const normalized: Record<string, string> = {};
+
+  for (const [key, value] of Object.entries(row)) {
+    const normalizedKey = key.replace(/^\uFEFF/, '').trim();
+    normalized[normalizedKey] = typeof value === 'string' ? value.trim() : String(value ?? '').trim();
+  }
+
+  return normalized;
+};
+
+const normalizeDong = (value: string): string => value.replace(/동$/, '').replace(/\D/g, '');
+const normalizeHo = (value: string): string => value.replace(/호$/, '').replace(/\D/g, '');
+const normalizeContact = (value: string): string => {
+  const digits = value.replace(/\D/g, '');
+  if (digits.length === 10 && digits.startsWith('10')) {
+    return `0${digits}`;
+  }
+  return digits;
+};
+
+const toHouseholderStatus = (value: string): 'HOUSEHOLDER' | 'MEMBER' => {
+  const normalized = value.trim().toLowerCase();
+  return value.trim() === '세대주' ||
+    normalized === 'householder' ||
+    normalized === 'y' ||
+    normalized === 'yes' ||
+    normalized === 'true' ||
+    normalized === '1'
+    ? 'HOUSEHOLDER'
+    : 'MEMBER';
+};
+
 async function validateResidentOwnership(residentId: string, apartmentId: string) {
   const resident = await residentRepository.findResidentById(residentId);
 
@@ -82,7 +133,7 @@ async function ensureResidentResourceForApprovedUser(
 // 1. 입주민 리소스 생성(개별 등록)
 export async function createResident(apartmentId: string, data: CreateResidentDto) {
   if (data.contact) {
-    data.contact = data.contact.replace(/\D/g, '');
+    data.contact = normalizeContact(data.contact);
   }
   if (data.building) {
     data.building = data.building.replace(/동$/, '').replace(/\D/g, '');
@@ -130,7 +181,7 @@ export async function createResidentFromUser(apartmentId: string, userId: string
 
   const result = await createResident(apartmentId, {
     name: user.name,
-    contact: user.contact.replace(/\D/g, ''),
+    contact: normalizeContact(user.contact),
     building: user.apartmentUnit?.dong ?? '',
     unitNumber: user.apartmentUnit?.ho ?? '',
     isHouseholder: 'MEMBER',
@@ -154,7 +205,7 @@ export async function updateResident(
   await validateResidentOwnership(id, apartmentId);
 
   if (updateData.contact) {
-    updateData.contact = updateData.contact.replace(/\D/g, '');
+    updateData.contact = normalizeContact(updateData.contact);
   }
 
   const result = await residentRepository.updateResident(id, updateData);
@@ -179,25 +230,42 @@ export async function uploadResidentsFromCsv(
   fileBuffer: Buffer,
 ): Promise<CsvUploadResult> {
   const residents: Prisma.ResidentCreateManyInput[] = [];
+  const csvText = decodeCsvBuffer(fileBuffer).replace(/^\uFEFF/, '');
 
   return new Promise((resolve, reject) => {
-    const stream = Readable.from(fileBuffer);
+    const stream = Readable.from([csvText]);
 
     csv
       .parseStream(stream, { headers: true })
-      .on('data', (row) => {
-        const { residenceStatus, approvalStatus, ...restOfRow } = row;
+      .on('data', (row: Record<string, unknown>) => {
+        const normalizedRow = normalizeCsvRow(row);
+        const { residenceStatus, approvalStatus, ...restOfRow } = normalizedRow as Record<string, string>;
+
+        const name = restOfRow.이름 || restOfRow.name || '';
+        const contact = normalizeContact(restOfRow.연락처 || restOfRow.contact || '');
+        const dong = normalizeDong(restOfRow.동 || restOfRow.building || '');
+        const ho = normalizeHo(restOfRow.호 || restOfRow.unitNumber || '');
+        const householderValue = restOfRow.세대주여부 || restOfRow.isHouseholder || '';
+
+        if (!name || !contact || !dong || !ho) {
+          return;
+        }
+
         residents.push({
           apartmentId: apartmentId,
-          name: restOfRow.이름 || restOfRow.name,
-          contact: (restOfRow.연락처 || restOfRow.contact || '').toString().replace(/\D/g, ''),
-          dong: restOfRow.동 || restOfRow.building || '',
-          ho: restOfRow.호 || restOfRow.unitNumber || '',
-          isHouseholder: restOfRow.세대주여부 === '세대주' ? 'HOUSEHOLDER' : 'MEMBER',
+          name,
+          contact,
+          dong,
+          ho,
+          isHouseholder: toHouseholderStatus(householderValue),
         });
       })
       .on('end', async () => {
         try {
+          if (residents.length === 0) {
+            throw new BadRequestError('CSV 파일에서 유효한 입주민 데이터를 찾을 수 없습니다.');
+          }
+
           const result = await residentRepository.createManyResidents(residents);
           if (!result) throw new BadRequestError('파일로부터 입주민 리소스 생성 실패');
           resolve(result);

@@ -42,7 +42,6 @@ const toPollStatus = (status?: string): PollStatus => {
 export default function VotingFormPage({ isEdit = false, initialData }: Props) {
   const userId = useAuthStore((state) => state.user?.id);
   const userRole = useAuthStore((state) => state.user?.role);
-  const boardId = useAuthStore((state) => state.user?.boardIds.POLL);
   const apartmentId = useAuthStore((state) => state.user?.apartmentId);
   const router = useRouter();
 
@@ -130,8 +129,8 @@ export default function VotingFormPage({ isEdit = false, initialData }: Props) {
   }, [isEdit, initialData, reset]);
 
   const onSubmit = async (formData: VotingFormType) => {
-    if (!userId || !boardId) {
-      alert('로그인이 필요하거나 게시판 정보가 없습니다.');
+    if (!userId) {
+      alert('로그인이 필요합니다.');
       return;
     }
 
@@ -150,7 +149,6 @@ export default function VotingFormPage({ isEdit = false, initialData }: Props) {
       }
 
       const payload = {
-        boardId,
         status: isEdit ? toPollStatus(initialData?.status) : PollStatus.PENDING,
         title: formData.title,
         content: formData.content,

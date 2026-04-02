@@ -100,10 +100,38 @@ export default function LoginPage() {
       }
     } catch (error: unknown) {
       if (isAxiosError(error)) {
-        const axiosError = error as AxiosError<{ message?: string; error?: string }>;
-        alert(
-          axiosError.response?.data?.error ?? axiosError.response?.data?.message ?? '로그인 실패',
-        );
+        const axiosError = error as AxiosError<{ message?: string; error?: string } | string>;
+        const status = axiosError.response?.status;
+        const responseData = axiosError.response?.data;
+
+        const parsedMessage =
+          typeof responseData === 'string'
+            ? responseData
+            : responseData?.error ?? responseData?.message;
+
+        if (typeof parsedMessage === 'string' && parsedMessage.includes('승인')) {
+          router.replace('/waiting');
+          return;
+        }
+
+        const isHtmlPayload =
+          typeof parsedMessage === 'string' &&
+          (parsedMessage.includes('<!DOCTYPE html>') || parsedMessage.includes('<html'));
+
+        if (isHtmlPayload) {
+          alert('API 주소 설정이 올바르지 않습니다. 설정 페이지에서 API Base URL을 확인해주세요.');
+          return;
+        }
+
+        if (status === 403) {
+          const fallbackPendingMessage = '아직 승인 대기 중인 계정입니다. 관리자의 승인 후 이용해 주세요.';
+          const forbiddenMessage = parsedMessage ?? fallbackPendingMessage;
+
+          alert(forbiddenMessage);
+          return;
+        }
+
+        alert(parsedMessage ?? '로그인 실패');
       } else {
         alert('예상치 못한 오류가 발생했습니다.');
       }

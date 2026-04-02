@@ -14,7 +14,7 @@ import * as eventRepository from '../events/event.repository';
  * @param pollData 컨트롤러에서 검증된 DTO
  */
 export const createPoll = async (userId: string, apartmentId: string | null, pollData: CreatePollDto) => {
-    const { options, boardId, buildingPermission, startDate, endDate, ...voteData } = pollData;
+    const { options, boardId: _boardId, buildingPermission, startDate, endDate, ...voteData } = pollData;
 
     if (new Date(endDate) < new Date()) {
         throw new BadRequestError('투표 종료 기간을 확인해 주세요.');

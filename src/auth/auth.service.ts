@@ -3,7 +3,6 @@ import * as authRepository from './auth.repository';
 import { verifyPassword } from '../libs/auth/password';
 import { verifyRefreshToken, generateTokens } from '../libs/auth/token';
 import UnauthorizedError from '../libs/errors/UnauthorizedError';
-import ForbiddenError from '../libs/errors/ForbiddenError';
 import { LoginResponse, LoginInput, AuthTokens } from './auth.type';
 
 
@@ -17,7 +16,7 @@ export async function login(input: LoginInput): Promise<{user: LoginResponse; to
   if (!isValid) throw new UnauthorizedError("아이디 또는 비밀번호가 일치하지 않습니다.");
  
   if (user.joinStatus !== JoinStatus.APPROVED) {
-    throw new ForbiddenError('아직 승인 대기 중인 계정입니다. 관리자의 승인 후 이용해 주세요.')
+    throw new UnauthorizedError('아직 승인 대기 중인 계정입니다. 관리자의 승인 후 이용해 주세요.')
   }
 
   // 3. 토큰 생성

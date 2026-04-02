@@ -1,11 +1,8 @@
 import axios from 'axios';
+import { getApiBaseUrl } from './apiBaseUrl';
 
 const getBaseUrl = (): string => {
-  if (typeof window !== 'undefined') {
-    const storedUrl = localStorage.getItem('apiBaseUrl');
-    if (storedUrl && storedUrl.startsWith('http')) return storedUrl;
-  }
-  return process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:9000/api';
+  return getApiBaseUrl();
 };
 
 const axiosInstance = axios.create({
@@ -13,10 +10,39 @@ const axiosInstance = axios.create({
   withCredentials: true,
 });
 
+axiosInstance.interceptors.request.use((config) => {
+  config.baseURL = getBaseUrl();
+  return config;
+});
+
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    const responseData = error.response?.data;
+    const contentType = error.response?.headers?.['content-type'];
+
+    const isHtmlPayload =
+      typeof responseData === 'string' &&
+      (responseData.includes('<!DOCTYPE html>') ||
+        responseData.includes('<html') ||
+        (typeof contentType === 'string' && contentType.includes('text/html')));
+
+    if (typeof window !== 'undefined' && isHtmlPayload && !originalRequest._apiFallbackRetried) {
+      originalRequest._apiFallbackRetried = true;
+      const fallbackBaseUrl = `${window.location.origin.replace(/\/$/, '')}/api`;
+      localStorage.setItem('apiBaseUrl', fallbackBaseUrl);
+
+      if (typeof originalRequest.url === 'string' && originalRequest.url.startsWith('http')) {
+        const absolutePath = originalRequest.url.replace(/^https?:\/\/[^/]+/, '');
+        originalRequest.url = absolutePath.startsWith('/api/')
+          ? absolutePath.replace(/^\/api/, '')
+          : absolutePath;
+      }
+
+      originalRequest.baseURL = fallbackBaseUrl;
+      return axiosInstance(originalRequest);
+    }
 
     const isRefreshUrl = originalRequest.url?.includes('/auth/refresh');
 

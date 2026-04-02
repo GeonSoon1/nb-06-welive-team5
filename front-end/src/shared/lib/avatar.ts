@@ -1,16 +1,7 @@
-const getApiBaseUrl = (): string => {
-  if (typeof window !== 'undefined') {
-    const storedUrl = localStorage.getItem('apiBaseUrl');
-    if (storedUrl && storedUrl.startsWith('http')) {
-      return storedUrl.replace(/\/$/, '');
-    }
-  }
+import { getApiBaseUrl } from './apiBaseUrl';
 
-  return (process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:9000/api').replace(/\/$/, '');
-};
-
-export const getCurrentUserAvatarUrl = (versionKey?: string | null): string => {
+export const getCurrentUserAvatarUrl = (avatar?: string | null): string => {
   const baseUrl = getApiBaseUrl();
-  const version = versionKey ? `?v=${encodeURIComponent(versionKey)}` : '';
+  const version = avatar ? `?v=${encodeURIComponent(avatar)}` : '';
   return `${baseUrl}/users/me/avatar${version}`;
 };

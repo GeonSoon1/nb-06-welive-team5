@@ -8,6 +8,7 @@ import NoticeMain from '@/entities/notice/ui/NoticeMain';
 import { SELECT_OPTIONS } from '@/entities/notice/model/constants';
 import Select from '@/shared/Select';
 import axiosInstance from '@/shared/lib/axios';
+import { isAxiosError } from 'axios';
 import { useAuthStore } from '@/shared/store/auth.store';
 import { useRouter } from 'next/router';
 
@@ -37,19 +38,25 @@ export default function CreateAdminNoticePage() {
   };
 
   const fetchData = async () => {
-    try {
-      await axiosInstance.post('/notices', newNotice);
-    } catch (error) {
-      console.error('공지사항 등록 실패:', error);
-    }
+    return axiosInstance.post('/notices', newNotice);
   };
 
   const handleCreateSubmit = async () => {
     try {
       await fetchData();
+      alert('공지사항이 등록되었습니다.');
       router.push('/admin/notice');
     } catch (error) {
       console.error('등록 실패:', error);
+      if (isAxiosError(error)) {
+        const message =
+          typeof error.response?.data === 'string'
+            ? error.response.data
+            : (error.response?.data as { message?: string })?.message;
+        alert(message ?? '공지사항 등록에 실패했습니다.');
+        return;
+      }
+      alert('공지사항 등록 중 오류가 발생했습니다.');
     }
   };
 
@@ -106,6 +113,7 @@ export default function CreateAdminNoticePage() {
       </div>
 
       <NoticeMain
+        notice={newNotice}
         handleNotice={handleCreateNotice}
         handleSubmit={handleCreateSubmit}
         isDisabled={!isNoticeValid(newNotice)}

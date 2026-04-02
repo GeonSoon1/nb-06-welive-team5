@@ -48,13 +48,18 @@ export default function EditAdminNoticePage() {
   // newNotice 가공
   const handleEditSubmit = async () => {
     if (!data || !user) return;
+    const boardId = user.boardIds?.NOTICE;
+    if (!boardId) {
+      alert('게시판 정보가 없습니다. 다시 로그인 후 시도해주세요.');
+      return;
+    }
 
     const newNotice = {
       userId: user.id,
       category: data.category,
       title: data.title,
       content: data.content,
-      boardId: user.boardIds.NOTICE,
+      boardId,
       isPinned: data.isPinned || false,
       startDate: data.startDate,
       endDate: data.endDate,

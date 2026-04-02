@@ -3,6 +3,7 @@ import axios from '@/shared/lib/axios';
 interface ChangeProfileRequest {
   currentPassword?: string;
   newPassword?: string;
+  confirmPassword?: string;
   file?: File;
 }
 
@@ -15,6 +16,10 @@ export const patchChangeProfile = async (data: ChangeProfileRequest) => {
 
   if (data.newPassword) {
     formData.append('newPassword', data.newPassword);
+  }
+
+  if (data.confirmPassword) {
+    formData.append('confirmPassword', data.confirmPassword);
   }
 
   if (data.file) {

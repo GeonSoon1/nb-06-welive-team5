@@ -5,7 +5,6 @@ import Button from '@/shared/Button';
 import Select from '@/shared/Select';
 import axios from '@/shared/lib/axios';
 import { useState, useEffect } from 'react';
-import { useAuthStore } from '@/shared/store/auth.store';
 
 type Props = {
   isEdit?: boolean;
@@ -18,9 +17,6 @@ export default function CivilWriteForm({ isEdit = false }: Props) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [isPublic, setIsPublic] = useState(true);
-
-  const user = useAuthStore((state) => state.user);
-  const boardId = user?.boardIds.COMPLAINT;
 
   useEffect(() => {
     if (isEdit && id && typeof id === 'string') {
@@ -49,7 +45,6 @@ export default function CivilWriteForm({ isEdit = false }: Props) {
           title,
           content,
           isPublic,
-          boardId,
         });
         alert('민원이 등록되었습니다.');
       }

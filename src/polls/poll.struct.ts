@@ -2,7 +2,9 @@ import { VoteStatus } from '@prisma/client';
 import { superstruct, isUuid } from '../libs/constants';
 
 export const CreatePollStruct = superstruct.object({
-    boardId: superstruct.define('Uuid', (value) => typeof value === 'string' && isUuid.v4(value)),
+    boardId: superstruct.optional(
+        superstruct.define('Uuid', (value) => typeof value === 'string' && isUuid.v4(value))
+    ),
     status: superstruct.enums(Object.values(VoteStatus)),
     title: superstruct.size(superstruct.string(), 1, 100),
     content: superstruct.string(),
